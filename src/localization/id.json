@@ -1,0 +1,469 @@
+{
+  "auth": {
+    "login": {
+      "title": "Selamat Datang",
+      "subtitle": "Masuk ke akun KosanKu Anda",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Masukkan email Anda",
+      "phoneLabel": "Nomor Telepon",
+      "phonePlaceholder": "+628123456789",
+      "passwordLabel": "Kata Sandi",
+      "passwordPlaceholder": "Masukkan kata sandi",
+      "loginButton": "Masuk",
+      "registerLink": "Belum punya akun? Daftar",
+      "forgotPassword": "Lupa kata sandi?",
+      "orContinueWith": "atau lanjutkan dengan",
+      "loginWithPhone": "Masuk dengan Nomor Telepon",
+      "loginWithEmail": "Masuk dengan Email"
+    },
+    "register": {
+      "title": "Buat Akun Baru",
+      "subtitle": "Bergabung dengan KosanKu",
+      "fullNameLabel": "Nama Lengkap",
+      "fullNamePlaceholder": "Masukkan nama lengkap",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Masukkan email Anda",
+      "phoneLabel": "Nomor Telepon",
+      "phonePlaceholder": "+628123456789",
+      "passwordLabel": "Kata Sandi",
+      "passwordPlaceholder": "Minimal 8 karakter",
+      "confirmPasswordLabel": "Konfirmasi Kata Sandi",
+      "confirmPasswordPlaceholder": "Ulangi kata sandi",
+      "roleLabel": "Saya adalah",
+      "roleOwner": "Pemilik Kosan",
+      "roleTenant": "Pencari Kosan",
+      "registerButton": "Daftar",
+      "loginLink": "Sudah punya akun? Masuk",
+      "termsText": "Dengan mendaftar, Anda menyetujui",
+      "termsLink": "Syarat & Ketentuan"
+    },
+    "otp": {
+      "title": "Verifikasi OTP",
+      "subtitleEmail": "Kode OTP telah dikirim ke",
+      "subtitlePhone": "Kode OTP telah dikirim ke nomor",
+      "otpLabel": "Kode OTP",
+      "otpPlaceholder": "Masukkan 6 digit kode",
+      "verifyButton": "Verifikasi",
+      "resendCode": "Kirim ulang kode",
+      "resendCountdown": "Kirim ulang dalam {{seconds}} detik",
+      "expiredMessage": "Kode OTP sudah kedaluwarsa. Klik kirim ulang.",
+      "invalidCode": "Kode OTP tidak valid. Silakan coba lagi."
+    },
+    "profileSetup": {
+      "title": "Lengkapi Profil",
+      "subtitle": "Isi data diri untuk memulai",
+      "avatarLabel": "Foto Profil",
+      "changeAvatar": "Ganti Foto",
+      "saveButton": "Simpan & Mulai",
+      "skipButton": "Lewati untuk sekarang"
+    },
+    "errors": {
+      "emailRequired": "Email wajib diisi",
+      "emailInvalid": "Format email tidak valid",
+      "phoneRequired": "Nomor telepon wajib diisi",
+      "phoneInvalid": "Format nomor telepon tidak valid",
+      "passwordRequired": "Kata sandi wajib diisi",
+      "passwordTooShort": "Kata sandi minimal 8 karakter",
+      "passwordMismatch": "Kata sandi tidak cocok",
+      "emailAlreadyUsed": "Email sudah terdaftar",
+      "loginFailed": "Email atau kata sandi salah",
+      "otpInvalid": "Kode OTP tidak valid",
+      "otpExpired": "Kode OTP sudah kedaluwarsa",
+      "networkError": "Periksa koneksi internet Anda"
+    }
+  },
+
+  "property": {
+    "list": {
+      "title": "Properti Saya",
+      "emptyTitle": "Belum Ada Properti",
+      "emptySubtitle": "Tambahkan properti pertama Anda",
+      "addButton": "Tambah Properti",
+      "totalRooms": "{{count}} Kamar",
+      "activeRooms": "{{count}} Terisi"
+    },
+    "form": {
+      "addTitle": "Tambah Properti",
+      "editTitle": "Edit Properti",
+      "nameLabel": "Nama Properti",
+      "namePlaceholder": "Contoh: Kos Putra Sejahtera",
+      "descriptionLabel": "Deskripsi",
+      "descriptionPlaceholder": "Ceritakan tentang kosan Anda...",
+      "addressLabel": "Alamat Lengkap",
+      "addressPlaceholder": "Jl. Contoh No. 1, RT 01/RW 02",
+      "cityLabel": "Kota",
+      "cityPlaceholder": "Pilih kota",
+      "districtLabel": "Kecamatan",
+      "districtPlaceholder": "Masukkan kecamatan",
+      "locationLabel": "Lokasi di Peta",
+      "locationHint": "Seret pin untuk menentukan lokasi",
+      "genderPolicyLabel": "Kebijakan Gender",
+      "genderMale": "Putra",
+      "genderFemale": "Putri",
+      "genderMixed": "Campur",
+      "facilitiesLabel": "Fasilitas Umum",
+      "rulesLabel": "Peraturan Kosan",
+      "rulesPlaceholder": "Tuliskan peraturan kosan...",
+      "photoLabel": "Foto Properti",
+      "addPhotoButton": "Tambah Foto",
+      "billingDayLabel": "Tanggal Generate Tagihan",
+      "billingDueDaysLabel": "Jatuh Tempo (hari setelah generate)",
+      "saveButton": "Simpan Properti",
+      "updateButton": "Perbarui Properti"
+    },
+    "detail": {
+      "roomsTab": "Kamar",
+      "infoTab": "Informasi",
+      "facilityTab": "Fasilitas",
+      "rulesTab": "Peraturan",
+      "contactOwner": "Hubungi Pemilik",
+      "viewOnMap": "Lihat di Peta"
+    }
+  },
+
+  "room": {
+    "list": {
+      "title": "Kamar",
+      "addButton": "Tambah Kamar",
+      "filterAll": "Semua",
+      "filterAvailable": "Tersedia",
+      "filterOccupied": "Terisi"
+    },
+    "form": {
+      "addTitle": "Tambah Kamar",
+      "editTitle": "Edit Kamar",
+      "roomNumberLabel": "Nomor/Kode Kamar",
+      "roomNumberPlaceholder": "Contoh: A1, 101",
+      "roomTypeLabel": "Tipe Kamar",
+      "floorNumberLabel": "Lantai",
+      "sizeLabel": "Luas (m²)",
+      "sizePlaceholder": "Contoh: 12",
+      "priceLabel": "Harga Sewa per Bulan (Rp)",
+      "pricePlaceholder": "Contoh: 1200000",
+      "descriptionLabel": "Deskripsi Kamar",
+      "facilitiesLabel": "Fasilitas Kamar",
+      "facilitiesHint": "Aktifkan/nonaktifkan fasilitas per kamar",
+      "additionalCostLabel": "Biaya Tambahan (Rp)",
+      "photoLabel": "Foto Kamar",
+      "saveButton": "Simpan Kamar"
+    },
+    "status": {
+      "available": "Tersedia",
+      "pending": "Sedang Diproses",
+      "occupied": "Terisi",
+      "maintenance": "Perbaikan"
+    },
+    "type": {
+      "standard": "Standard",
+      "deluxe": "Deluxe",
+      "suite": "Suite",
+      "studio": "Studio"
+    }
+  },
+
+  "rental": {
+    "request": {
+      "title": "Ajukan Sewa",
+      "startDateLabel": "Tanggal Mulai",
+      "durationLabel": "Durasi Sewa",
+      "durationMonths": "{{count}} Bulan",
+      "monthlyRateLabel": "Harga per Bulan",
+      "ktpPhotoLabel": "Foto KTP",
+      "ktpPhotoHint": "Upload foto KTP yang jelas dan terbaca",
+      "messageLabel": "Pesan untuk Pemilik (opsional)",
+      "messagePlaceholder": "Perkenalkan diri dan sampaikan kebutuhan Anda...",
+      "submitButton": "Kirim Pengajuan",
+      "totalCost": "Total Estimasi",
+      "expiresIn": "Pengajuan berlaku {{days}} hari kerja"
+    },
+    "review": {
+      "title": "Tinjau Pengajuan",
+      "tenantInfo": "Data Calon Penghuni",
+      "approveButton": "Setujui",
+      "rejectButton": "Tolak",
+      "rejectionReasonLabel": "Alasan Penolakan",
+      "rejectionReasonPlaceholder": "Tuliskan alasan penolakan...",
+      "confirmApprove": "Yakin menyetujui pengajuan ini? Kontrak akan dibuat otomatis.",
+      "confirmReject": "Yakin menolak pengajuan ini?"
+    },
+    "list": {
+      "title": "Daftar Pengajuan",
+      "ownerTitle": "Pengajuan Masuk",
+      "tenantTitle": "Pengajuan Saya",
+      "emptyTitle": "Tidak Ada Pengajuan",
+      "emptySubtitle": "Belum ada pengajuan sewa"
+    },
+    "status": {
+      "pending": "Menunggu Konfirmasi",
+      "approved": "Disetujui",
+      "rejected": "Ditolak",
+      "expired": "Kedaluwarsa",
+      "cancelled": "Dibatalkan"
+    }
+  },
+
+  "billing": {
+    "list": {
+      "title": "Tagihan",
+      "ownerTitle": "Kelola Tagihan",
+      "tenantTitle": "Tagihan Saya",
+      "emptyTitle": "Tidak Ada Tagihan",
+      "period": "Periode {{month}} {{year}}"
+    },
+    "detail": {
+      "title": "Detail Tagihan",
+      "invoiceNumber": "No. Tagihan",
+      "billingPeriod": "Periode",
+      "dueDate": "Jatuh Tempo",
+      "items": "Rincian Tagihan",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "paidAmount": "Sudah Dibayar",
+      "remainingAmount": "Sisa Tagihan",
+      "payButton": "Bayar Sekarang",
+      "addItemButton": "Tambah Item Tagihan",
+      "itemNameLabel": "Nama Item",
+      "itemAmountLabel": "Jumlah"
+    },
+    "status": {
+      "unpaid": "Belum Dibayar",
+      "paid": "Lunas",
+      "overdue": "Jatuh Tempo",
+      "partial": "Bayar Sebagian",
+      "cancelled": "Dibatalkan"
+    }
+  },
+
+  "payment": {
+    "title": "Pembayaran",
+    "selectMethod": "Pilih Metode Pembayaran",
+    "bankTransfer": "Transfer Bank",
+    "gopay": "GoPay",
+    "ovo": "OVO",
+    "dana": "DANA",
+    "qris": "QRIS",
+    "creditCard": "Kartu Kredit",
+    "amount": "Jumlah Pembayaran",
+    "payButton": "Bayar {{amount}}",
+    "processingMessage": "Memproses pembayaran...",
+    "successTitle": "Pembayaran Berhasil!",
+    "successMessage": "Terima kasih. Pembayaran Anda telah berhasil diproses.",
+    "failedTitle": "Pembayaran Gagal",
+    "failedMessage": "Pembayaran tidak berhasil. Silakan coba lagi.",
+    "expiredTitle": "Pembayaran Kedaluwarsa",
+    "expiredMessage": "Waktu pembayaran habis. Silakan buat pembayaran baru.",
+    "status": {
+      "pending": "Menunggu Pembayaran",
+      "success": "Berhasil",
+      "failed": "Gagal",
+      "expired": "Kedaluwarsa",
+      "refunded": "Dikembalikan"
+    }
+  },
+
+  "contract": {
+    "list": {
+      "title": "Kontrak Hunian",
+      "tenantTitle": "Kontrak Saya"
+    },
+    "detail": {
+      "title": "Detail Kontrak",
+      "roomInfo": "Informasi Kamar",
+      "tenantInfo": "Informasi Penghuni",
+      "startDate": "Mulai Kontrak",
+      "endDate": "Akhir Kontrak",
+      "monthlyRate": "Harga Sewa",
+      "deposit": "Deposit",
+      "duration": "Durasi"
+    },
+    "termination": {
+      "title": "Akhiri Kontrak",
+      "naturalExpiryTitle": "Kontrak Selesai",
+      "earlyExitTitle": "Keluar Lebih Awal",
+      "terminatedTitle": "Akhiri Kontrak (Owner)",
+      "tenantRequestButton": "Ajukan Keluar Lebih Awal",
+      "ownerTerminateButton": "Akhiri Kontrak",
+      "reasonLabel": "Alasan",
+      "reasonPlaceholder": "Tuliskan alasan...",
+      "confirmEarlyExit": "Yakin ingin mengajukan keluar lebih awal?",
+      "confirmTerminate": "Yakin mengakhiri kontrak penghuni ini?"
+    },
+    "status": {
+      "active": "Aktif",
+      "ended": "Selesai",
+      "terminated": "Diakhiri",
+      "earlyExit": "Keluar Lebih Awal"
+    }
+  },
+
+  "report": {
+    "dashboard": {
+      "title": "Dashboard",
+      "greeting": "Halo, {{name}}!",
+      "totalRevenue": "Total Pendapatan",
+      "occupancyRate": "Tingkat Hunian",
+      "activeContracts": "Kontrak Aktif",
+      "unpaidInvoices": "Tagihan Belum Bayar",
+      "overdueInvoices": "Tagihan Jatuh Tempo",
+      "revenueChart": "Grafik Pendapatan 12 Bulan",
+      "recentActivity": "Aktivitas Terkini"
+    },
+    "financial": {
+      "title": "Laporan Keuangan",
+      "selectProperty": "Pilih Properti",
+      "allProperties": "Semua Properti",
+      "startDateLabel": "Dari Tanggal",
+      "endDateLabel": "Sampai Tanggal",
+      "generateButton": "Buat Laporan",
+      "exportPdf": "Ekspor PDF",
+      "exportExcel": "Ekspor Excel",
+      "summaryTitle": "Ringkasan",
+      "detailTitle": "Detail Transaksi"
+    }
+  },
+
+  "search": {
+    "title": "Cari Kosan",
+    "placeholder": "Cari nama kosan atau lokasi...",
+    "filterButton": "Filter",
+    "resetFilter": "Reset Filter",
+    "applyFilter": "Terapkan Filter",
+    "nearbyTitle": "Kosan Terdekat",
+    "allResultsTitle": "Hasil Pencarian",
+    "emptyTitle": "Kosan Tidak Ditemukan",
+    "emptySubtitle": "Coba ubah filter atau area pencarian",
+    "useLocation": "Gunakan Lokasi Saya",
+    "locationRadius": "Radius {{km}} km",
+    "priceFilter": "Harga",
+    "priceMin": "Harga Min",
+    "priceMax": "Harga Max",
+    "typeFilter": "Tipe Kamar",
+    "genderFilter": "Kebijakan Gender",
+    "facilityFilter": "Fasilitas",
+    "distanceUnit": "{{distance}} km",
+    "availableRooms": "{{count}} kamar tersedia"
+  },
+
+  "favorites": {
+    "title": "Favorit",
+    "emptyTitle": "Belum Ada Favorit",
+    "emptySubtitle": "Simpan kosan favorit Anda di sini",
+    "addedMessage": "Ditambahkan ke favorit",
+    "removedMessage": "Dihapus dari favorit"
+  },
+
+  "myRent": {
+    "title": "Sewa Saya",
+    "currentRent": "Hunian Saat Ini",
+    "rentalHistory": "Riwayat Sewa",
+    "noActiveRent": "Belum Ada Hunian Aktif",
+    "noActiveRentSubtitle": "Cari dan ajukan sewa kosan sekarang"
+  },
+
+  "notification": {
+    "title": "Notifikasi",
+    "emptyTitle": "Tidak Ada Notifikasi",
+    "markAllRead": "Tandai Semua Dibaca",
+    "types": {
+      "rentalRequest": "Pengajuan Sewa",
+      "invoiceGenerated": "Tagihan Baru",
+      "paymentReceived": "Pembayaran Diterima",
+      "invoiceOverdue": "Tagihan Jatuh Tempo",
+      "contractEnded": "Kontrak Berakhir",
+      "requestApproved": "Pengajuan Disetujui",
+      "requestRejected": "Pengajuan Ditolak"
+    }
+  },
+
+  "profile": {
+    "title": "Profil",
+    "editTitle": "Edit Profil",
+    "fullNameLabel": "Nama Lengkap",
+    "emailLabel": "Email",
+    "phoneLabel": "Nomor Telepon",
+    "changeAvatarButton": "Ganti Foto",
+    "saveButton": "Simpan Perubahan",
+    "changePasswordButton": "Ganti Kata Sandi",
+    "logoutButton": "Keluar",
+    "confirmLogout": "Yakin ingin keluar?"
+  },
+
+  "settings": {
+    "title": "Pengaturan",
+    "languageLabel": "Bahasa",
+    "languageId": "Bahasa Indonesia",
+    "languageEn": "English",
+    "themeLabel": "Tema",
+    "notificationLabel": "Notifikasi",
+    "notificationEnabled": "Aktif",
+    "notificationDisabled": "Nonaktif",
+    "aboutLabel": "Tentang Aplikasi",
+    "versionLabel": "Versi"
+  },
+
+  "navigation": {
+    "owner": {
+      "dashboard": "Dashboard",
+      "properties": "Properti",
+      "invoices": "Tagihan",
+      "notifications": "Notifikasi",
+      "tenants": "Penghuni",
+      "reports": "Laporan",
+      "settings": "Pengaturan",
+      "profile": "Profil"
+    },
+    "tenant": {
+      "search": "Cari Kosan",
+      "favorites": "Favorit",
+      "myRent": "Sewa Saya",
+      "notifications": "Notifikasi",
+      "profile": "Profil",
+      "settings": "Pengaturan"
+    }
+  },
+
+  "common": {
+    "buttons": {
+      "save": "Simpan",
+      "cancel": "Batal",
+      "confirm": "Konfirmasi",
+      "delete": "Hapus",
+      "edit": "Edit",
+      "view": "Lihat",
+      "close": "Tutup",
+      "back": "Kembali",
+      "next": "Lanjut",
+      "retry": "Coba Lagi",
+      "yes": "Ya",
+      "no": "Tidak",
+      "upload": "Unggah",
+      "download": "Unduh"
+    },
+    "errors": {
+      "generic": "Terjadi kesalahan. Silakan coba lagi.",
+      "network": "Koneksi bermasalah. Periksa internet Anda.",
+      "unauthorized": "Sesi habis. Silakan masuk kembali.",
+      "notFound": "Data tidak ditemukan.",
+      "serverError": "Server sedang bermasalah.",
+      "required": "Field ini wajib diisi."
+    },
+    "loading": "Memuat...",
+    "refreshing": "Memperbarui...",
+    "noData": "Tidak ada data",
+    "currency": "Rp",
+    "months": {
+      "1": "Januari",
+      "2": "Februari",
+      "3": "Maret",
+      "4": "April",
+      "5": "Mei",
+      "6": "Juni",
+      "7": "Juli",
+      "8": "Agustus",
+      "9": "September",
+      "10": "Oktober",
+      "11": "November",
+      "12": "Desember"
+    }
+  }
+}

@@ -1,24 +1,67 @@
 {
   "expo": {
     "name": "KosanKu",
-    "slug": "KosanKu",
+    "slug": "kosanku",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1A7F6E"
+    },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.kosanku.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "KosanKu membutuhkan akses lokasi untuk mencari kosan terdekat.",
+        "NSLocationAlwaysUsageDescription": "KosanKu membutuhkan akses lokasi untuk mencari kosan terdekat.",
+        "NSCameraUsageDescription": "KosanKu membutuhkan akses kamera untuk foto profil, kamar, dan KTP.",
+        "NSPhotoLibraryUsageDescription": "KosanKu membutuhkan akses galeri foto untuk upload foto."
+      }
     },
     "android": {
+      "package": "com.kosanku.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A7F6E"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-location",
+      "expo-image-picker",
+      "expo-camera",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1A7F6E",
+          "sounds": []
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
     }
   }
 }

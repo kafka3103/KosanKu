@@ -1,0 +1,469 @@
+{
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your KosanKu account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email",
+      "phoneLabel": "Phone Number",
+      "phonePlaceholder": "+628123456789",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "loginButton": "Sign In",
+      "registerLink": "Don't have an account? Sign Up",
+      "forgotPassword": "Forgot password?",
+      "orContinueWith": "or continue with",
+      "loginWithPhone": "Sign In with Phone Number",
+      "loginWithEmail": "Sign In with Email"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join KosanKu today",
+      "fullNameLabel": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email",
+      "phoneLabel": "Phone Number",
+      "phonePlaceholder": "+628123456789",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat your password",
+      "roleLabel": "I am a",
+      "roleOwner": "Property Owner",
+      "roleTenant": "Room Seeker",
+      "registerButton": "Sign Up",
+      "loginLink": "Already have an account? Sign In",
+      "termsText": "By signing up, you agree to our",
+      "termsLink": "Terms & Conditions"
+    },
+    "otp": {
+      "title": "OTP Verification",
+      "subtitleEmail": "OTP code has been sent to",
+      "subtitlePhone": "OTP code has been sent to",
+      "otpLabel": "OTP Code",
+      "otpPlaceholder": "Enter 6-digit code",
+      "verifyButton": "Verify",
+      "resendCode": "Resend code",
+      "resendCountdown": "Resend in {{seconds}} seconds",
+      "expiredMessage": "OTP code has expired. Click resend.",
+      "invalidCode": "Invalid OTP code. Please try again."
+    },
+    "profileSetup": {
+      "title": "Complete Your Profile",
+      "subtitle": "Fill in your details to get started",
+      "avatarLabel": "Profile Photo",
+      "changeAvatar": "Change Photo",
+      "saveButton": "Save & Start",
+      "skipButton": "Skip for now"
+    },
+    "errors": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format",
+      "phoneRequired": "Phone number is required",
+      "phoneInvalid": "Invalid phone number format",
+      "passwordRequired": "Password is required",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordMismatch": "Passwords do not match",
+      "emailAlreadyUsed": "Email is already registered",
+      "loginFailed": "Incorrect email or password",
+      "otpInvalid": "Invalid OTP code",
+      "otpExpired": "OTP code has expired",
+      "networkError": "Please check your internet connection"
+    }
+  },
+
+  "property": {
+    "list": {
+      "title": "My Properties",
+      "emptyTitle": "No Properties Yet",
+      "emptySubtitle": "Add your first property",
+      "addButton": "Add Property",
+      "totalRooms": "{{count}} Rooms",
+      "activeRooms": "{{count}} Occupied"
+    },
+    "form": {
+      "addTitle": "Add Property",
+      "editTitle": "Edit Property",
+      "nameLabel": "Property Name",
+      "namePlaceholder": "e.g. Putra Sejahtera Boarding House",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Tell us about your property...",
+      "addressLabel": "Full Address",
+      "addressPlaceholder": "Jl. Example No. 1, RT 01/RW 02",
+      "cityLabel": "City",
+      "cityPlaceholder": "Select city",
+      "districtLabel": "District",
+      "districtPlaceholder": "Enter district",
+      "locationLabel": "Location on Map",
+      "locationHint": "Drag the pin to set the exact location",
+      "genderPolicyLabel": "Gender Policy",
+      "genderMale": "Male Only",
+      "genderFemale": "Female Only",
+      "genderMixed": "Mixed",
+      "facilitiesLabel": "General Facilities",
+      "rulesLabel": "House Rules",
+      "rulesPlaceholder": "Write house rules...",
+      "photoLabel": "Property Photos",
+      "addPhotoButton": "Add Photo",
+      "billingDayLabel": "Invoice Generation Day",
+      "billingDueDaysLabel": "Due Days (after generation)",
+      "saveButton": "Save Property",
+      "updateButton": "Update Property"
+    },
+    "detail": {
+      "roomsTab": "Rooms",
+      "infoTab": "Information",
+      "facilityTab": "Facilities",
+      "rulesTab": "Rules",
+      "contactOwner": "Contact Owner",
+      "viewOnMap": "View on Map"
+    }
+  },
+
+  "room": {
+    "list": {
+      "title": "Rooms",
+      "addButton": "Add Room",
+      "filterAll": "All",
+      "filterAvailable": "Available",
+      "filterOccupied": "Occupied"
+    },
+    "form": {
+      "addTitle": "Add Room",
+      "editTitle": "Edit Room",
+      "roomNumberLabel": "Room Number/Code",
+      "roomNumberPlaceholder": "e.g. A1, 101",
+      "roomTypeLabel": "Room Type",
+      "floorNumberLabel": "Floor",
+      "sizeLabel": "Size (m²)",
+      "sizePlaceholder": "e.g. 12",
+      "priceLabel": "Monthly Rent (IDR)",
+      "pricePlaceholder": "e.g. 1200000",
+      "descriptionLabel": "Room Description",
+      "facilitiesLabel": "Room Facilities",
+      "facilitiesHint": "Toggle facilities on/off per room",
+      "additionalCostLabel": "Additional Cost (IDR)",
+      "photoLabel": "Room Photos",
+      "saveButton": "Save Room"
+    },
+    "status": {
+      "available": "Available",
+      "pending": "Pending",
+      "occupied": "Occupied",
+      "maintenance": "Maintenance"
+    },
+    "type": {
+      "standard": "Standard",
+      "deluxe": "Deluxe",
+      "suite": "Suite",
+      "studio": "Studio"
+    }
+  },
+
+  "rental": {
+    "request": {
+      "title": "Request to Rent",
+      "startDateLabel": "Start Date",
+      "durationLabel": "Rental Duration",
+      "durationMonths": "{{count}} Month(s)",
+      "monthlyRateLabel": "Monthly Rate",
+      "ktpPhotoLabel": "ID Card (KTP) Photo",
+      "ktpPhotoHint": "Upload a clear and readable photo of your ID",
+      "messageLabel": "Message to Owner (optional)",
+      "messagePlaceholder": "Introduce yourself and share your needs...",
+      "submitButton": "Submit Request",
+      "totalCost": "Estimated Total",
+      "expiresIn": "Request valid for {{days}} business days"
+    },
+    "review": {
+      "title": "Review Request",
+      "tenantInfo": "Applicant Information",
+      "approveButton": "Approve",
+      "rejectButton": "Reject",
+      "rejectionReasonLabel": "Rejection Reason",
+      "rejectionReasonPlaceholder": "Write the reason for rejection...",
+      "confirmApprove": "Approve this request? A contract will be created automatically.",
+      "confirmReject": "Reject this request?"
+    },
+    "list": {
+      "title": "Requests",
+      "ownerTitle": "Incoming Requests",
+      "tenantTitle": "My Requests",
+      "emptyTitle": "No Requests",
+      "emptySubtitle": "No rental requests yet"
+    },
+    "status": {
+      "pending": "Awaiting Confirmation",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    }
+  },
+
+  "billing": {
+    "list": {
+      "title": "Invoices",
+      "ownerTitle": "Manage Invoices",
+      "tenantTitle": "My Invoices",
+      "emptyTitle": "No Invoices",
+      "period": "Period {{month}} {{year}}"
+    },
+    "detail": {
+      "title": "Invoice Detail",
+      "invoiceNumber": "Invoice No.",
+      "billingPeriod": "Period",
+      "dueDate": "Due Date",
+      "items": "Invoice Items",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "paidAmount": "Paid",
+      "remainingAmount": "Remaining",
+      "payButton": "Pay Now",
+      "addItemButton": "Add Invoice Item",
+      "itemNameLabel": "Item Name",
+      "itemAmountLabel": "Amount"
+    },
+    "status": {
+      "unpaid": "Unpaid",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "partial": "Partial Payment",
+      "cancelled": "Cancelled"
+    }
+  },
+
+  "payment": {
+    "title": "Payment",
+    "selectMethod": "Select Payment Method",
+    "bankTransfer": "Bank Transfer",
+    "gopay": "GoPay",
+    "ovo": "OVO",
+    "dana": "DANA",
+    "qris": "QRIS",
+    "creditCard": "Credit Card",
+    "amount": "Payment Amount",
+    "payButton": "Pay {{amount}}",
+    "processingMessage": "Processing payment...",
+    "successTitle": "Payment Successful!",
+    "successMessage": "Thank you. Your payment has been processed successfully.",
+    "failedTitle": "Payment Failed",
+    "failedMessage": "Payment was not successful. Please try again.",
+    "expiredTitle": "Payment Expired",
+    "expiredMessage": "Payment time has expired. Please create a new payment.",
+    "status": {
+      "pending": "Awaiting Payment",
+      "success": "Successful",
+      "failed": "Failed",
+      "expired": "Expired",
+      "refunded": "Refunded"
+    }
+  },
+
+  "contract": {
+    "list": {
+      "title": "Contracts",
+      "tenantTitle": "My Contract"
+    },
+    "detail": {
+      "title": "Contract Detail",
+      "roomInfo": "Room Information",
+      "tenantInfo": "Tenant Information",
+      "startDate": "Contract Start",
+      "endDate": "Contract End",
+      "monthlyRate": "Monthly Rent",
+      "deposit": "Deposit",
+      "duration": "Duration"
+    },
+    "termination": {
+      "title": "End Contract",
+      "naturalExpiryTitle": "Contract Completed",
+      "earlyExitTitle": "Early Exit",
+      "terminatedTitle": "Terminate Contract (Owner)",
+      "tenantRequestButton": "Request Early Exit",
+      "ownerTerminateButton": "Terminate Contract",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Write your reason...",
+      "confirmEarlyExit": "Are you sure you want to request early exit?",
+      "confirmTerminate": "Are you sure you want to terminate this tenant's contract?"
+    },
+    "status": {
+      "active": "Active",
+      "ended": "Ended",
+      "terminated": "Terminated",
+      "earlyExit": "Early Exit"
+    }
+  },
+
+  "report": {
+    "dashboard": {
+      "title": "Dashboard",
+      "greeting": "Hello, {{name}}!",
+      "totalRevenue": "Total Revenue",
+      "occupancyRate": "Occupancy Rate",
+      "activeContracts": "Active Contracts",
+      "unpaidInvoices": "Unpaid Invoices",
+      "overdueInvoices": "Overdue Invoices",
+      "revenueChart": "12-Month Revenue Chart",
+      "recentActivity": "Recent Activity"
+    },
+    "financial": {
+      "title": "Financial Report",
+      "selectProperty": "Select Property",
+      "allProperties": "All Properties",
+      "startDateLabel": "From Date",
+      "endDateLabel": "To Date",
+      "generateButton": "Generate Report",
+      "exportPdf": "Export PDF",
+      "exportExcel": "Export Excel",
+      "summaryTitle": "Summary",
+      "detailTitle": "Transaction Details"
+    }
+  },
+
+  "search": {
+    "title": "Search Boarding Houses",
+    "placeholder": "Search name or location...",
+    "filterButton": "Filter",
+    "resetFilter": "Reset Filters",
+    "applyFilter": "Apply Filters",
+    "nearbyTitle": "Nearby Boarding Houses",
+    "allResultsTitle": "Search Results",
+    "emptyTitle": "No Results Found",
+    "emptySubtitle": "Try changing your filters or search area",
+    "useLocation": "Use My Location",
+    "locationRadius": "{{km}} km radius",
+    "priceFilter": "Price",
+    "priceMin": "Min Price",
+    "priceMax": "Max Price",
+    "typeFilter": "Room Type",
+    "genderFilter": "Gender Policy",
+    "facilityFilter": "Facilities",
+    "distanceUnit": "{{distance}} km",
+    "availableRooms": "{{count}} room(s) available"
+  },
+
+  "favorites": {
+    "title": "Favorites",
+    "emptyTitle": "No Favorites Yet",
+    "emptySubtitle": "Save your favorite boarding houses here",
+    "addedMessage": "Added to favorites",
+    "removedMessage": "Removed from favorites"
+  },
+
+  "myRent": {
+    "title": "My Rent",
+    "currentRent": "Current Rental",
+    "rentalHistory": "Rental History",
+    "noActiveRent": "No Active Rental",
+    "noActiveRentSubtitle": "Find and apply for a room now"
+  },
+
+  "notification": {
+    "title": "Notifications",
+    "emptyTitle": "No Notifications",
+    "markAllRead": "Mark All as Read",
+    "types": {
+      "rentalRequest": "Rental Request",
+      "invoiceGenerated": "New Invoice",
+      "paymentReceived": "Payment Received",
+      "invoiceOverdue": "Invoice Overdue",
+      "contractEnded": "Contract Ended",
+      "requestApproved": "Request Approved",
+      "requestRejected": "Request Rejected"
+    }
+  },
+
+  "profile": {
+    "title": "Profile",
+    "editTitle": "Edit Profile",
+    "fullNameLabel": "Full Name",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone Number",
+    "changeAvatarButton": "Change Photo",
+    "saveButton": "Save Changes",
+    "changePasswordButton": "Change Password",
+    "logoutButton": "Sign Out",
+    "confirmLogout": "Are you sure you want to sign out?"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "languageLabel": "Language",
+    "languageId": "Bahasa Indonesia",
+    "languageEn": "English",
+    "themeLabel": "Theme",
+    "notificationLabel": "Notifications",
+    "notificationEnabled": "Enabled",
+    "notificationDisabled": "Disabled",
+    "aboutLabel": "About App",
+    "versionLabel": "Version"
+  },
+
+  "navigation": {
+    "owner": {
+      "dashboard": "Dashboard",
+      "properties": "Properties",
+      "invoices": "Invoices",
+      "notifications": "Notifications",
+      "tenants": "Tenants",
+      "reports": "Reports",
+      "settings": "Settings",
+      "profile": "Profile"
+    },
+    "tenant": {
+      "search": "Search",
+      "favorites": "Favorites",
+      "myRent": "My Rent",
+      "notifications": "Notifications",
+      "profile": "Profile",
+      "settings": "Settings"
+    }
+  },
+
+  "common": {
+    "buttons": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "delete": "Delete",
+      "edit": "Edit",
+      "view": "View",
+      "close": "Close",
+      "back": "Back",
+      "next": "Next",
+      "retry": "Retry",
+      "yes": "Yes",
+      "no": "No",
+      "upload": "Upload",
+      "download": "Download"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Connection issue. Please check your internet.",
+      "unauthorized": "Session expired. Please sign in again.",
+      "notFound": "Data not found.",
+      "serverError": "Server is currently unavailable.",
+      "required": "This field is required."
+    },
+    "loading": "Loading...",
+    "refreshing": "Refreshing...",
+    "noData": "No data available",
+    "currency": "IDR",
+    "months": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    }
+  }
+}
