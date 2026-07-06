@@ -23,7 +23,7 @@
       "package": "com.kosanku.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1A7F6E"
       },
       "permissions": [
@@ -52,7 +52,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/icon.png",
           "color": "#1A7F6E",
           "sounds": []
         }
