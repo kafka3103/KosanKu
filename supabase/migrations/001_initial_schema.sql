@@ -234,7 +234,7 @@ INSERT INTO public.facility_master (name, icon_name, category) VALUES
   ('Kulkas', 'refrigerator', 'electronics'),
   ('TV', 'television', 'electronics'),
   ('Mesin Cuci', 'washing-machine', 'electronics'),
-  ('Dapur Bersama', 'kitchen', 'shared'),
+  ('Dapur Bersama', 'kitchen', 'shared'),3
   ('Balkon', 'balcony', 'space'),
   ('Jendela', 'window', 'space');
 

@@ -21,6 +21,7 @@
     "expo-status-bar": "~57.0.0",
     "i18next": "^26.3.4",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-i18next": "^17.0.8",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "^3.0.2",
@@ -31,6 +32,7 @@
     "react-native-screens": "^4.25.2",
     "react-native-svg": "^15.15.5",
     "react-native-vector-icons": "^10.3.0",
+    "react-native-web": "^0.21.2",
     "zustand": "^5.0.14"
   },
   "scripts": {
@@ -39,5 +41,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
 }

@@ -234,6 +234,12 @@
     }
   },
 
+  "invoice": {
+    "detail": {
+      "payButton": "Pay Now"
+    }
+  },
+
   "payment": {
     "title": "Payment",
     "selectMethod": "Select Payment Method",
@@ -377,6 +383,7 @@
 
   "profile": {
     "title": "Profile",
+    "editButton": "Account Information",
     "editTitle": "Edit Profile",
     "fullNameLabel": "Full Name",
     "emailLabel": "Email",
@@ -398,7 +405,23 @@
     "notificationEnabled": "Enabled",
     "notificationDisabled": "Disabled",
     "aboutLabel": "About App",
-    "versionLabel": "Version"
+    "versionLabel": "Version",
+    "notifications": {
+      "title": "Notifications",
+      "push": "Push Notifications",
+      "email": "Email Notifications"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "language": "Language",
+      "theme": "Theme"
+    },
+    "account": {
+      "title": "Security",
+      "changePassword": "Change Password",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service"
+    }
   },
 
   "navigation": {

@@ -101,15 +101,19 @@ serve(async (req: Request) => {
 
       // Kirim notifikasi ke tenant jika ada invoice baru
       if (invoicesCreated > 0) {
-        // Ambil invoice yang baru dibuat untuk properti ini
-        const billingPeriod = new Date(today.getFullYear(), today.getMonth(), 1)
-          .toISOString()
-          .split('T')[0];
+        const billingPeriod = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
 
+        // Ambil invoice baru melalui rooms.property_id
         const { data: newInvoices } = await supabaseAdmin
           .from('invoices')
-          .select('id, tenant_id, total_amount, due_date')
-          .eq('owner_id', property.id) // Tidak benar — harus join dulu
+          .select(`
+            id,
+            tenant_id,
+            total_amount,
+            due_date,
+            rooms!inner(property_id)
+          `)
+          .eq('rooms.property_id', property.id)
           .eq('billing_period', billingPeriod)
           .eq('status', 'unpaid');
 
@@ -118,7 +122,7 @@ serve(async (req: Request) => {
             await supabaseAdmin.from('notifications').insert({
               user_id: invoice.tenant_id,
               title: 'Tagihan Baru Tersedia',
-              body: `Tagihan bulan ini sebesar Rp ${invoice.total_amount.toLocaleString('id-ID')} telah tersedia. Jatuh tempo: ${new Date(invoice.due_date).toLocaleDateString('id-ID')}`,
+              body: `Tagihan bulan ini sebesar Rp ${Number(invoice.total_amount).toLocaleString('id-ID')} telah tersedia. Jatuh tempo: ${new Date(invoice.due_date).toLocaleDateString('id-ID')}`,
               type: 'invoice_generated',
               reference_id: invoice.id,
               reference_type: 'invoice',
