@@ -225,12 +225,23 @@
       "itemNameLabel": "Nama Item",
       "itemAmountLabel": "Jumlah"
     },
+    "invoice": {
+      "detail": {
+        "payButton": "Bayar Sekarang"
+      }
+    },
     "status": {
       "unpaid": "Belum Dibayar",
       "paid": "Lunas",
       "overdue": "Jatuh Tempo",
       "partial": "Bayar Sebagian",
       "cancelled": "Dibatalkan"
+    }
+  },
+
+  "invoice": {
+    "detail": {
+      "payButton": "Bayar Sekarang"
     }
   },
 
@@ -297,6 +308,7 @@
   },
 
   "report": {
+    "title": "Laporan",
     "dashboard": {
       "title": "Dashboard",
       "greeting": "Halo, {{name}}!",
@@ -377,6 +389,7 @@
 
   "profile": {
     "title": "Profil",
+    "editButton": "Informasi Akun",
     "editTitle": "Edit Profil",
     "fullNameLabel": "Nama Lengkap",
     "emailLabel": "Email",
@@ -398,7 +411,23 @@
     "notificationEnabled": "Aktif",
     "notificationDisabled": "Nonaktif",
     "aboutLabel": "Tentang Aplikasi",
-    "versionLabel": "Versi"
+    "versionLabel": "Versi",
+    "notifications": {
+      "title": "Notifikasi",
+      "push": "Push Notification",
+      "email": "Notifikasi Email"
+    },
+    "preferences": {
+      "title": "Preferensi",
+      "language": "Bahasa",
+      "theme": "Tema"
+    },
+    "account": {
+      "title": "Keamanan",
+      "changePassword": "Ubah Password",
+      "privacyPolicy": "Kebijakan Privasi",
+      "termsOfService": "Syarat & Ketentuan"
+    }
   },
 
   "navigation": {
