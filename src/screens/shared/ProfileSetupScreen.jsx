@@ -86,8 +86,13 @@ const ProfileSetupScreen = () => {
         }
       }
 
+      // Ambil email dari sesi yang login
+      const email = currentSession?.user?.email ?? null;
+
       // Update profil dasar
       const { data: updatedProfile, error } = await updateUserProfile(userId, {
+        role: userRole || 'tenant', // Default ke tenant jika null
+        email: email,
         full_name: fullName.trim(),
         phone_number: phoneNumber.trim() || null,
         avatar_url: avatarUrl,

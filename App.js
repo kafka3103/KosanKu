@@ -13,7 +13,13 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
+
+// Abaikan warning bawaan yang tidak berbahaya dari React Native / Library pihak ketiga
+LogBox.ignoreLogs([
+  'Require cycle:', 
+  'InteractionManager has been deprecated'
+]);
 
 import { initializeI18n } from './src/localization/i18n';
 import AppNavigator from './src/navigation/AppNavigator';

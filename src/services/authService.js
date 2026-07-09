@@ -185,8 +185,7 @@ export const getUserProfile = async (userId) => {
 export const updateUserProfile = async ({ userId, profileData }) => {
   const { data, error } = await supabaseClient
     .from('users')
-    .update({ ...profileData, updated_at: new Date().toISOString() })
-    .eq('id', userId)
+    .upsert({ id: userId, ...profileData, updated_at: new Date().toISOString() })
     .select()
     .single();
 
