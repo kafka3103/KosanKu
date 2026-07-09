@@ -16,6 +16,7 @@ import COLORS from '../constants/colors';
 import AuthNavigator from './AuthNavigator';
 import OwnerNavigator from './OwnerNavigator';
 import TenantNavigator from './TenantNavigator';
+import ProfileSetupScreen from '../screens/shared/ProfileSetupScreen';
 import USER_ROLE from '../constants/userRole';
 
 const RootStack = createStackNavigator();
@@ -86,8 +87,15 @@ const AppNavigator = () => {
    * 4. Authenticated, role tenant → TenantNavigator
    */
   const renderNavigator = () => {
-    if (!isAuthenticated || !isProfileComplete) {
+    if (!isAuthenticated) {
       return <AuthNavigator />;
+    }
+    if (!isProfileComplete) {
+      return (
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
+        </RootStack.Navigator>
+      );
     }
     if (userRole === USER_ROLE.OWNER) {
       return <OwnerNavigator />;
