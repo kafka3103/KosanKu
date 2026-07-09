@@ -45,6 +45,7 @@ import ContractScreen from '../screens/owner/ContractScreen';
 import NotificationScreen from '../screens/shared/NotificationScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
+import CustomTabBar from '../components/navigation/CustomTabBar';
 
 const OwnerDrawer = createDrawerNavigator();
 const OwnerBottomTab = createBottomTabNavigator();
@@ -91,22 +92,6 @@ const PropertyStackNavigator = () => {
 };
 
 /**
- * Tab icon renderer — gunakan teks sementara, ganti dengan ikon library nanti
- */
-const TabIcon = ({ label, isFocused, badgeCount }) => (
-  <View style={styles.tabIconContainer}>
-    <Text style={[styles.tabIconText, isFocused && styles.tabIconFocused]}>
-      {label}
-    </Text>
-    {badgeCount > 0 && (
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{badgeCount > 99 ? '99+' : badgeCount}</Text>
-      </View>
-    )}
-  </View>
-);
-
-/**
  * Bottom Tab Navigator untuk Owner
  */
 const OwnerBottomTabNavigator = () => {
@@ -114,54 +99,26 @@ const OwnerBottomTabNavigator = () => {
 
   return (
     <OwnerBottomTab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.grey400,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarHideOnKeyboard: true,
       }}
     >
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.DASHBOARD}
         component={DashboardScreen}
-        options={{
-          tabBarLabel: t('navigation.owner.dashboard'),
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="📊" isFocused={focused} />
-          ),
-        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.PROPERTY_STACK}
         component={PropertyStackNavigator}
-        options={{
-          tabBarLabel: t('navigation.owner.properties'),
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="🏠" isFocused={focused} />
-          ),
-        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.INVOICE_LIST}
         component={InvoiceListScreen}
-        options={{
-          tabBarLabel: t('navigation.owner.invoices'),
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="📄" isFocused={focused} />
-          ),
-        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.NOTIFICATIONS}
         component={NotificationScreen}
-        options={{
-          tabBarLabel: t('navigation.owner.notifications'),
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label="🔔" isFocused={focused} />
-          ),
-        }}
       />
     </OwnerBottomTab.Navigator>
   );
@@ -266,45 +223,6 @@ const OwnerNavigator = () => {
 };
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.white,
-    borderTopColor: COLORS.border,
-    borderTopWidth: 1,
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 4,
-  },
-  tabLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  tabIconContainer: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  tabIconText: {
-    fontSize: 20,
-  },
-  tabIconFocused: {
-    // Tambahkan highlight saat focused
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -8,
-    backgroundColor: COLORS.error,
-    borderRadius: 10,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: {
-    color: COLORS.white,
-    fontSize: 9,
-    fontWeight: FONT_WEIGHT.bold,
-  },
   drawer: {
     width: 280,
     backgroundColor: COLORS.white,

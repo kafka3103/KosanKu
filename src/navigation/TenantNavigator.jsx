@@ -33,6 +33,7 @@ import PaymentScreen from '../screens/tenant/PaymentScreen';
 import NotificationScreen from '../screens/shared/NotificationScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
+import CustomTabBar from '../components/navigation/CustomTabBar';
 
 const TenantDrawer = createDrawerNavigator();
 const TenantBottomTab = createBottomTabNavigator();
@@ -95,46 +96,26 @@ const TenantBottomTabNavigator = () => {
 
   return (
     <TenantBottomTab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.grey400,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarHideOnKeyboard: true,
       }}
     >
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.SEARCH_STACK}
         component={SearchStackNavigator}
-        options={{
-          tabBarLabel: t('navigation.tenant.search'),
-          tabBarIcon: () => <Text style={styles.tabIcon}>🔍</Text>,
-        }}
       />
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.FAVORITES}
         component={FavoriteScreen}
-        options={{
-          tabBarLabel: t('navigation.tenant.favorites'),
-          tabBarIcon: () => <Text style={styles.tabIcon}>❤️</Text>,
-        }}
       />
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.MY_RENT_STACK}
         component={MyRentStackNavigator}
-        options={{
-          tabBarLabel: t('navigation.tenant.myRent'),
-          tabBarIcon: () => <Text style={styles.tabIcon}>🏠</Text>,
-        }}
       />
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.NOTIFICATIONS}
         component={NotificationScreen}
-        options={{
-          tabBarLabel: t('navigation.tenant.notifications'),
-          tabBarIcon: () => <Text style={styles.tabIcon}>🔔</Text>,
-        }}
       />
     </TenantBottomTab.Navigator>
   );
@@ -222,21 +203,6 @@ const TenantNavigator = () => {
 };
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.white,
-    borderTopColor: COLORS.border,
-    borderTopWidth: 1,
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 4,
-  },
-  tabLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  tabIcon: {
-    fontSize: 20,
-  },
   drawer: {
     width: 280,
     backgroundColor: COLORS.white,
