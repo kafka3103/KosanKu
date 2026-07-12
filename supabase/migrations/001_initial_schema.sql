@@ -14,6 +14,21 @@ CREATE EXTENSION IF NOT EXISTS "postgis";      -- Untuk pencarian berbasis koord
 -- ENUM TYPES
 -- ============================================================
 
+-- Hapus tabel users lama agar bisa di-recreate dengan struktur dan tipe data baru
+DROP TABLE IF EXISTS public.users CASCADE;
+
+DROP TYPE IF EXISTS user_role_enum CASCADE;
+DROP TYPE IF EXISTS room_status_enum CASCADE;
+DROP TYPE IF EXISTS rental_request_status_enum CASCADE;
+DROP TYPE IF EXISTS contract_status_enum CASCADE;
+DROP TYPE IF EXISTS invoice_status_enum CASCADE;
+DROP TYPE IF EXISTS payment_status_enum CASCADE;
+DROP TYPE IF EXISTS payment_method_enum CASCADE;
+DROP TYPE IF EXISTS room_type_enum CASCADE;
+DROP TYPE IF EXISTS gender_policy_enum CASCADE;
+DROP TYPE IF EXISTS contract_end_reason_enum CASCADE;
+
+
 CREATE TYPE user_role_enum AS ENUM ('owner', 'tenant');
 
 CREATE TYPE room_status_enum AS ENUM (
@@ -234,7 +249,7 @@ INSERT INTO public.facility_master (name, icon_name, category) VALUES
   ('Kulkas', 'refrigerator', 'electronics'),
   ('TV', 'television', 'electronics'),
   ('Mesin Cuci', 'washing-machine', 'electronics'),
-  ('Dapur Bersama', 'kitchen', 'shared'),3
+  ('Dapur Bersama', 'kitchen', 'shared'),
   ('Balkon', 'balcony', 'space'),
   ('Jendela', 'window', 'space');
 
