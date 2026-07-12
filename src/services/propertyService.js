@@ -9,6 +9,8 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 const PROPERTY_PHOTOS_BUCKET = 'property-photos';
 const ROOM_PHOTOS_BUCKET = 'room-photos';
@@ -132,9 +134,8 @@ export const uploadPropertyPhoto = async (propertyId, localUri, fileName) => {
     const path = `${propertyId}/${fileName}.${ext}`;
     const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-    const response = await fetch(localUri);
-    const blob = await response.blob();
-    const arrayBuffer = await new Response(blob).arrayBuffer();
+    const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+    const arrayBuffer = decode(base64);
 
     const { error: uploadError } = await supabaseClient.storage
       .from(PROPERTY_PHOTOS_BUCKET)
@@ -282,9 +283,8 @@ export const uploadRoomPhoto = async (roomId, localUri, fileName) => {
     const path = `${roomId}/${fileName}.${ext}`;
     const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-    const response = await fetch(localUri);
-    const blob = await response.blob();
-    const arrayBuffer = await new Response(blob).arrayBuffer();
+    const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+    const arrayBuffer = decode(base64);
 
     const { error: uploadError } = await supabaseClient.storage
       .from(ROOM_PHOTOS_BUCKET)
