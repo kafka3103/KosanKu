@@ -9,7 +9,7 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 
 const PROPERTY_PHOTOS_BUCKET = 'property-photos';
