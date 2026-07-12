@@ -57,7 +57,25 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const endDate = addMonths(startDate, durationMonths);
   const totalCost = (room?.base_price ?? 0) * durationMonths;
 
-  const handlePickKtp = async () => {
+  const pickFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto KTP.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.9,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setKtpUri(result.assets[0].uri);
+    }
+  };
+
+  const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan untuk upload KTP.');
@@ -73,6 +91,19 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
     if (!result.canceled && result.assets?.[0]?.uri) {
       setKtpUri(result.assets[0].uri);
     }
+  };
+
+  const handlePickKtp = () => {
+    Alert.alert(
+      'Upload Foto KTP',
+      'Pilih sumber foto KTP Anda',
+      [
+        { text: 'Kamera', onPress: pickFromCamera },
+        { text: 'Galeri', onPress: pickFromGallery },
+        { text: 'Batal', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleSubmit = async () => {
@@ -258,7 +289,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
             ) : (
               <View style={styles.ktpPlaceholder}>
                 <Ionicons name="camera-outline" size={40} color={COLORS.textTertiary} />
-                <Text style={styles.ktpPlaceholderText}>Ketuk untuk pilih foto KTP</Text>
+                <Text style={styles.ktpPlaceholderText}>Ketuk untuk ambil / pilih foto KTP</Text>
               </View>
             )}
           </TouchableOpacity>

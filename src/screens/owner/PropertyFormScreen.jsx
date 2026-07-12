@@ -81,7 +81,26 @@ const PropertyFormScreen = ({ navigation, route }) => {
     );
   };
 
-  const handlePickCoverPhoto = async () => {
+  const pickCoverFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setCoverPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const pickCoverFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan.');
@@ -98,6 +117,19 @@ const PropertyFormScreen = ({ navigation, route }) => {
     if (!result.canceled && result.assets?.[0]?.uri) {
       setCoverPhotoUri(result.assets[0].uri);
     }
+  };
+
+  const handlePickCoverPhoto = () => {
+    Alert.alert(
+      'Foto Cover Properti',
+      'Pilih sumber foto cover properti',
+      [
+        { text: 'Kamera', onPress: pickCoverFromCamera },
+        { text: 'Galeri', onPress: pickCoverFromGallery },
+        { text: 'Batal', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleSave = async () => {

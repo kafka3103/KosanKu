@@ -90,7 +90,42 @@ const ProfileScreen = ({ navigation }) => {
     }, [loadProfile])
   );
 
-  const handlePickAvatar = async () => {
+  const processAvatarUri = async (uri) => {
+    if (!uri) return;
+    setIsUploadingAvatar(true);
+    const { url, error: uploadError } = await uploadAvatar(currentUser.id, uri);
+    if (!uploadError && url) {
+      const { data } = await updateUserProfile(currentUser.id, { avatar_url: url });
+      if (data) {
+        setProfile(data);
+        setAuthenticatedUser(currentSession, data);
+      }
+    } else {
+      Alert.alert('Gagal', 'Tidak bisa upload foto profil');
+    }
+    setIsUploadingAvatar(false);
+  };
+
+  const pickAvatarFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto profil.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      await processAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  const pickAvatarFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan.');
@@ -104,20 +139,22 @@ const ProfileScreen = ({ navigation }) => {
       quality: 0.8,
     });
 
-    if (result.canceled || !result.assets?.[0]?.uri) return;
-
-    setIsUploadingAvatar(true);
-    const { url, error: uploadError } = await uploadAvatar(currentUser.id, result.assets[0].uri);
-    if (!uploadError && url) {
-      const { data } = await updateUserProfile(currentUser.id, { avatar_url: url });
-      if (data) {
-        setProfile(data);
-        setAuthenticatedUser(currentSession, data);
-      }
-    } else {
-      Alert.alert('Gagal', 'Tidak bisa upload foto profil');
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      await processAvatarUri(result.assets[0].uri);
     }
-    setIsUploadingAvatar(false);
+  };
+
+  const handlePickAvatar = () => {
+    Alert.alert(
+      'Foto Profil',
+      'Pilih sumber foto profil Anda',
+      [
+        { text: 'Kamera', onPress: pickAvatarFromCamera },
+        { text: 'Galeri', onPress: pickAvatarFromGallery },
+        { text: 'Batal', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleLogout = () => {
