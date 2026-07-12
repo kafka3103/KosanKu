@@ -30,6 +30,33 @@ import { getUserProfile, updateUserProfile, uploadAvatar } from '../../services/
 import { logout, deleteAccount } from '../../services/authService';
 import { USER_ROLE } from '../../constants/userRole';
 
+const InfoRow = ({ label, value, icon, iconColor = COLORS.textSecondary }) => (
+  <View style={styles.infoRow}>
+    <Ionicons name={icon} size={20} color={iconColor} style={styles.infoIcon} />
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value ?? '—'}</Text>
+    </View>
+  </View>
+);
+
+const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default' }) => (
+  <View style={styles.infoRow}>
+    <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.infoIcon} />
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <TextInput
+        style={styles.infoInput}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        placeholderTextColor={COLORS.textTertiary}
+      />
+    </View>
+  </View>
+);
+
 const ProfileScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -163,32 +190,7 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const InfoRow = ({ label, value, icon, iconColor = COLORS.textSecondary }) => (
-    <View style={styles.infoRow}>
-      <Ionicons name={icon} size={20} color={iconColor} style={styles.infoIcon} />
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value ?? '—'}</Text>
-      </View>
-    </View>
-  );
 
-  const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default' }) => (
-    <View style={styles.infoRow}>
-      <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.infoIcon} />
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <TextInput
-          style={styles.infoInput}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          keyboardType={keyboardType}
-          placeholderTextColor={COLORS.textTertiary}
-        />
-      </View>
-    </View>
-  );
 
   return (
     <ScrollView
@@ -477,6 +479,23 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.medium,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING[2],
+    paddingVertical: SPACING[4],
+    marginTop: SPACING[2],
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.white,
+  },
+  deleteBtnText: {
+    color: COLORS.error,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
   },
   deleteBtn: {
     flexDirection: 'row',
