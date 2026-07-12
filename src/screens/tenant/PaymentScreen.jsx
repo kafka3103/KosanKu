@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -33,19 +34,19 @@ const PAYMENT_METHODS = [
   {
     id: 'bank_transfer',
     name: 'Transfer Bank',
-    emoji: '🏦',
+    icon: 'business',
     options: ['BCA', 'BRI', 'BNI', 'Mandiri'],
   },
   {
     id: 'e_wallet',
     name: 'Dompet Digital',
-    emoji: '📱',
+    icon: 'phone-portrait',
     options: ['GoPay', 'OVO', 'DANA', 'ShopeePay'],
   },
   {
     id: 'cash',
     name: 'Tunai',
-    emoji: '💵',
+    icon: 'cash',
     options: ['Bayar Langsung ke Pemilik'],
   },
 ];
@@ -95,7 +96,7 @@ const PaymentScreen = ({ navigation, route }) => {
             }
 
             Alert.alert(
-              'Pembayaran Berhasil! ✅',
+              'Pembayaran Berhasil!',
               'Tagihan Anda berhasil dibayarkan.',
               [
                 {
@@ -116,7 +117,10 @@ const PaymentScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Pembayaran</Text>
         </View>
@@ -144,7 +148,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.methodEmoji}>{method.emoji}</Text>
+                  <Ionicons name={method.icon} size={24} color={isMethodSelected ? COLORS.primary : COLORS.textTertiary} style={{ marginRight: 8 }} />
                   <Text style={[styles.methodName, isMethodSelected && styles.methodNameSelected]}>
                     {method.name}
                   </Text>
@@ -184,7 +188,10 @@ const PaymentScreen = ({ navigation, route }) => {
 
           {/* Demo Note */}
           <View style={styles.demoNote}>
-            <Text style={styles.demoNoteTitle}>ℹ️ Mode Demo</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[1] }}>
+              <Ionicons name="information-circle" size={16} color={COLORS.warning} style={{ marginRight: 4 }} />
+              <Text style={[styles.demoNoteTitle, { marginBottom: 0 }]}>Mode Demo</Text>
+            </View>
             <Text style={styles.demoNoteText}>
               Pembayaran ini adalah simulasi. Dalam versi produksi, akan terintegrasi dengan payment gateway seperti Midtrans.
             </Text>
@@ -270,7 +277,6 @@ const styles = StyleSheet.create({
     gap: SPACING[3],
   },
   methodHeaderSelected: { backgroundColor: COLORS.primarySurface },
-  methodEmoji: { fontSize: 24 },
   methodName: {
     flex: 1,
     fontSize: FONT_SIZE.base,
@@ -349,7 +355,7 @@ const styles = StyleSheet.create({
     ...SHADOW.xl,
   },
   payBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING[4],
     alignItems: 'center',

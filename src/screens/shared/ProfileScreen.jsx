@@ -12,9 +12,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
@@ -35,13 +35,21 @@ const ProfileScreen = ({ navigation }) => {
   const [profile, setProfile] = useState(currentUser);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const isOwner = userRole === USER_ROLE.OWNER;
 
   const loadProfile = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
     const { data, error } = await getUserProfile(currentUser.id, userRole);
-    if (!error && data) setProfile(data);
+    if (!error && data) {
+      setProfile(data);
+      setFullName(data.full_name || '');
+      setPhoneNumber(data.phone_number || '');
+    }
     if (!silent) setIsRefreshing(false);
   }, [currentUser?.id, userRole]);
 
@@ -99,12 +107,51 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
+  const handleSaveProfile = async () => {
+    if (!fullName.trim()) {
+      Alert.alert('Error', 'Nama Lengkap wajib diisi');
+      return;
+    }
+    setIsSaving(true);
+    const { data, error } = await updateUserProfile(currentUser.id, {
+      full_name: fullName.trim(),
+      phone_number: phoneNumber.trim() || null,
+      is_profile_complete: true,
+    });
+    setIsSaving(false);
+
+    if (error) {
+      Alert.alert('Gagal', error.message);
+    } else if (data) {
+      Alert.alert('Berhasil', 'Profil berhasil diperbarui');
+      setProfile(data);
+      setAuthenticatedUser(currentSession, data);
+    }
+  };
+
   const InfoRow = ({ label, value, emoji }) => (
     <View style={styles.infoRow}>
       <Text style={styles.infoEmoji}>{emoji}</Text>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
         <Text style={styles.infoValue}>{value ?? '—'}</Text>
+      </View>
+    </View>
+  );
+
+  const EditableInfoRow = ({ label, value, onChangeText, emoji, placeholder, keyboardType = 'default' }) => (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoEmoji}>{emoji}</Text>
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <TextInput
+          style={styles.infoInput}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          keyboardType={keyboardType}
+          placeholderTextColor={COLORS.textTertiary}
+        />
       </View>
     </View>
   );
@@ -164,7 +211,7 @@ const ProfileScreen = ({ navigation }) => {
         {/* Role Badge */}
         <View style={[styles.roleBadge, isOwner ? styles.roleBadgeOwner : styles.roleBadgeTenant]}>
           <Text style={styles.roleBadgeText}>
-            {isOwner ? '🏠 Pemilik Kosan' : '🔍 Pencari Kosan'}
+            {isOwner ? 'Pemilik Kosan' : 'Pencari Kosan'}
           </Text>
         </View>
       </View>
@@ -172,16 +219,36 @@ const ProfileScreen = ({ navigation }) => {
       {/* Profile Info */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('profile.editButton')}</Text>
+          <Text style={styles.sectionTitle}>{t('profile.editButton') || 'Informasi Akun'}</Text>
         </View>
-        <InfoRow label="Nama Lengkap" value={profile?.full_name} emoji="👤" />
+        <EditableInfoRow 
+          label="Nama Lengkap" 
+          value={fullName} 
+          onChangeText={setFullName}
+          emoji="👤" 
+          placeholder="Masukkan nama lengkap"
+        />
         <InfoRow label="Email" value={profile?.email ?? currentUser?.email} emoji="📧" />
-        <InfoRow label="Nomor Telepon" value={profile?.phone_number} emoji="📱" />
+        <EditableInfoRow 
+          label="Nomor Telepon" 
+          value={phoneNumber} 
+          onChangeText={setPhoneNumber}
+          emoji="📱" 
+          placeholder="Contoh: +628123456789"
+          keyboardType="phone-pad"
+        />
         <InfoRow
           label="Status Profil"
           value={profile?.is_profile_complete ? 'Lengkap' : 'Belum Lengkap'}
           emoji={profile?.is_profile_complete ? '✅' : '⚠️'}
         />
+        <TouchableOpacity
+          style={[styles.saveProfileBtn, isSaving && { opacity: 0.7 }]}
+          onPress={handleSaveProfile}
+          disabled={isSaving}
+        >
+          {isSaving ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveProfileBtnText}>{t('profile.saveButton') || 'Simpan Perubahan'}</Text>}
+        </TouchableOpacity>
       </View>
 
       {/* About App */}
@@ -324,6 +391,28 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontWeight: FONT_WEIGHT.medium,
     marginTop: 2,
+  },
+  infoInput: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
+    fontWeight: FONT_WEIGHT.medium,
+    paddingVertical: 0,
+    marginTop: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingBottom: SPACING[1],
+  },
+  saveProfileBtn: {
+    backgroundColor: COLORS.primaryDark,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING[3],
+    alignItems: 'center',
+    marginTop: SPACING[4],
+  },
+  saveProfileBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semiBold,
   },
   aboutRow: {
     flexDirection: 'row',

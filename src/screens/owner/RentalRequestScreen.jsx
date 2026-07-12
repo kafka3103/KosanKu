@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -84,18 +85,30 @@ const RequestCard = ({ request, onApprove, onReject }) => {
 
       {/* Room Info */}
       <View style={styles.roomInfoBox}>
-        <Text style={styles.infoRow}>
-          🏠 <Text style={styles.infoBold}>{property?.name}</Text> · Kamar {room?.room_number}
-        </Text>
-        <Text style={styles.infoRow}>
-          📅 Mulai: <Text style={styles.infoBold}>{formatDate(request.requested_start_date)}</Text>
-        </Text>
-        <Text style={styles.infoRow}>
-          ⏱️ Durasi: <Text style={styles.infoBold}>{request.duration_months} bulan</Text>
-        </Text>
-        <Text style={styles.infoRow}>
-          💰 <Text style={styles.infoBold}>{formatCurrency(request.monthly_rate)}/bln</Text>
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="home" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>
+            <Text style={styles.infoBold}>{property?.name}</Text> · Kamar {room?.room_number}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+          <Ionicons name="calendar" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>
+            Mulai: <Text style={styles.infoBold}>{formatDate(request.requested_start_date)}</Text>
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+          <Ionicons name="time" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>
+            Durasi: <Text style={styles.infoBold}>{request.duration_months} bulan</Text>
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+          <Ionicons name="wallet" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>
+            <Text style={styles.infoBold}>{formatCurrency(request.monthly_rate)}/bln</Text>
+          </Text>
+        </View>
         {request.tenant_message && (
           <View style={styles.messageBox}>
             <Text style={styles.messageLabel}>Pesan Tenant:</Text>
@@ -112,14 +125,20 @@ const RequestCard = ({ request, onApprove, onReject }) => {
             onPress={() => onReject(request)}
             activeOpacity={0.7}
           >
-            <Text style={styles.rejectBtnText}>❌ Tolak</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
+              <Text style={styles.rejectBtnText}>Tolak</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.approveBtn}
             onPress={() => onApprove(request)}
             activeOpacity={0.7}
           >
-            <Text style={styles.approveBtnText}>✅ Setujui</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="checkmark" size={16} color={COLORS.white} style={{ marginRight: 4 }} />
+              <Text style={styles.approveBtnText}>Setujui</Text>
+            </View>
           </TouchableOpacity>
         </View>
       )}
@@ -261,7 +280,10 @@ const RentalRequestScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+            <Text style={styles.backBtnText}>Kembali</Text>
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('rental.list.ownerTitle')}</Text>
         {pendingCount > 0 && (
@@ -304,7 +326,7 @@ const RentalRequestScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>📭</Text>
+            <Ionicons name="mail-open-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>{t('rental.list.emptyTitle')}</Text>
             <Text style={styles.emptySubtitle}>{t('rental.list.emptySubtitle')}</Text>
           </View>
@@ -525,7 +547,7 @@ const styles = StyleSheet.create({
   },
   rejectionText: { fontSize: FONT_SIZE.sm, color: COLORS.error },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyEmoji: { fontSize: 56, marginBottom: SPACING[3] },
+  emptyIcon: { marginBottom: SPACING[3] },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,

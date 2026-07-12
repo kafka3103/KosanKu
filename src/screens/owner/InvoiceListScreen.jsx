@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -76,15 +77,18 @@ const InvoiceCard = ({ invoice }) => {
 
       {/* Tenant & Room */}
       <View style={styles.infoSection}>
-        <Text style={styles.infoRow}>
-          👤 {tenant?.full_name ?? '—'}
-        </Text>
-        <Text style={styles.infoRow}>
-          🛏️ {room?.properties?.name} · Kamar {room?.room_number}
-        </Text>
-        <Text style={styles.infoRow}>
-          📅 Jatuh tempo: {formatDate(invoice.due_date)}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+          <Ionicons name="person-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>{tenant?.full_name ?? '—'}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+          <Ionicons name="bed-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>{room?.properties?.name} · Kamar {room?.room_number}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+          <Text style={styles.infoRow}>Jatuh tempo: {formatDate(invoice.due_date)}</Text>
+        </View>
       </View>
 
       {/* Amount */}
@@ -206,7 +210,7 @@ const InvoiceListScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>📋</Text>
+            <Ionicons name="document-text-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Tidak Ada Tagihan</Text>
             <Text style={styles.emptySubtitle}>
               Tagihan akan dibuat otomatis setiap bulan untuk penghuni aktif
@@ -327,7 +331,7 @@ const styles = StyleSheet.create({
     color: COLORS.success,
   },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyEmoji: { fontSize: 56, marginBottom: SPACING[3] },
+  emptyIcon: { marginBottom: SPACING[3] },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,

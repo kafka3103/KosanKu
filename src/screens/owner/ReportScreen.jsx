@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -91,7 +92,8 @@ const ReportScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+          <Text style={styles.backBtnText}>Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('report.title')}</Text>
         <Text style={styles.headerSubtitle}>12 bulan terakhir</Text>
@@ -116,7 +118,10 @@ const ReportScreen = ({ navigation }) => {
       {/* Property Stats */}
       {stats && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Statistik Properti</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
+            <Ionicons name="stats-chart" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Statistik Properti</Text>
+          </View>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.totalProperties}</Text>
@@ -162,7 +167,10 @@ const ReportScreen = ({ navigation }) => {
 
       {/* Revenue Chart */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💰 Pendapatan per Bulan</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
+          <Ionicons name="cash-outline" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Pendapatan per Bulan</Text>
+        </View>
         {revenueData.length === 0 ? (
           <View style={styles.emptyChart}>
             <Text style={styles.emptyChartText}>Belum ada data pendapatan</Text>
@@ -221,7 +229,10 @@ const ReportScreen = ({ navigation }) => {
 
       {/* Monthly Breakdown */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📋 Rincian Bulanan</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
+          <Ionicons name="list" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Rincian Bulanan</Text>
+        </View>
         {revenueData.length === 0 ? (
           <Text style={styles.emptyChartText}>Belum ada data</Text>
         ) : (
@@ -267,7 +278,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[2] },
+  backBtn: { marginBottom: SPACING[2], flexDirection: 'row', alignItems: 'center' },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],

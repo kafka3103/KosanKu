@@ -1,9 +1,3 @@
-/**
- * screens/shared/RegisterScreen.jsx
- * Registrasi user baru dengan email + password
- * Pilihan role: Owner (Pemilik Kosan) atau Tenant (Pencari Kosan)
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -16,12 +10,14 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS } from '../../constants/spacing';
-import { registerWithEmail } from '../../services/authService';
+import { registerWithEmail, signInWithGoogle } from '../../services/authService';
 import { AUTH_SCREENS } from '../../navigation/AuthNavigator';
 import { USER_ROLE } from '../../constants/userRole';
 
@@ -34,31 +30,27 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState(USER_ROLE.TENANT);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
 
   const validate = () => {
-    const newErrors = {};
-
-    if (!fullName.trim()) {
-      newErrors.fullName = 'Nama lengkap wajib diisi';
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      Alert.alert('Error', t('common.errors.required'));
+      return false;
     }
-    if (!email.trim()) {
-      newErrors.email = t('auth.errors.emailRequired');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = t('auth.errors.emailInvalid');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert('Error', t('auth.errors.emailInvalid'));
+      return false;
     }
-    if (!password) {
-      newErrors.password = t('auth.errors.passwordRequired');
-    } else if (password.length < 8) {
-      newErrors.password = t('auth.errors.passwordTooShort');
+    if (password.length < 8) {
+      Alert.alert('Error', t('auth.errors.passwordTooShort'));
+      return false;
     }
     if (password !== confirmPassword) {
-      newErrors.confirmPassword = t('auth.errors.passwordMismatch');
+      Alert.alert('Error', t('auth.errors.passwordMismatch') || 'Password mismatch');
+      return false;
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleRegister = async () => {
@@ -80,16 +72,24 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    // Registrasi berhasil — arahkan ke ProfileSetup
-    // AppNavigator akan otomatis handle routing setelah auth state berubah
     Alert.alert(
       'Registrasi Berhasil! 🎉',
-      'Akun Anda berhasil dibuat. Silakan lengkapi profil Anda.',
-      [{ text: 'Lanjutkan', onPress: () => navigation.navigate(AUTH_SCREENS.PROFILE_SETUP) }]
+      'Akun Anda berhasil dibuat. Anda sekarang masuk.',
+      [{ text: 'Lanjutkan', onPress: () => {} }] // AppNavigator will auto route on auth state change
     );
   };
 
-  const RoleCard = ({ role, label, emoji, description }) => {
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const { error } = await signInWithGoogle(selectedRole);
+    setIsLoading(false);
+    
+    if (error) {
+      Alert.alert(t('common.errors.error') || 'Error', error.message);
+    }
+  };
+
+  const RoleCard = ({ role, label, description }) => {
     const isSelected = selectedRole === role;
     return (
       <TouchableOpacity
@@ -97,18 +97,11 @@ const RegisterScreen = ({ navigation }) => {
         onPress={() => setSelectedRole(role)}
         activeOpacity={0.7}
       >
-        <View style={styles.roleCardHeader}>
-          <Text style={styles.roleEmoji}>{emoji}</Text>
-          <Text style={[styles.roleLabel, isSelected && styles.roleLabelSelected]}>
-            {label}
-          </Text>
-        </View>
-        <Text style={[styles.roleDescription, isSelected && styles.roleDescriptionSelected]}>
-          {description}
-        </Text>
+        <Text style={[styles.roleLabel, isSelected && styles.roleLabelSelected]}>{label}</Text>
+        <Text style={[styles.roleDescription, isSelected && styles.roleDescriptionSelected]}>{description}</Text>
         {isSelected && (
           <View style={styles.roleCheckBadge}>
-            <Text style={styles.roleCheckText}>✓</Text>
+            <Ionicons name="checkmark" size={12} color={COLORS.white} />
           </View>
         )}
       </TouchableOpacity>
@@ -126,97 +119,95 @@ const RegisterScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backBtnText}>← Kembali</Text>
-          </TouchableOpacity>
-          <Text style={styles.appName}>KosanKu</Text>
-          <Text style={styles.title}>{t('auth.register.title')}</Text>
-          <Text style={styles.subtitle}>{t('auth.register.subtitle')}</Text>
+        <View style={styles.headerContainer}>
+          <Image 
+            source={require('../../../assets/logo.png')} 
+            style={styles.logoImage} 
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>{t('auth.register.title') || 'Create Account'}</Text>
+          <Text style={styles.subtitle}>{t('auth.register.subtitle') || 'Sign up and explore KosanKu'}</Text>
         </View>
 
-        {/* Role Selector */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('auth.register.roleLabel')}</Text>
+        <View style={styles.formContainer}>
+          {/* Role Selector */}
           <View style={styles.roleRow}>
             <RoleCard
-              role={USER_ROLE.OWNER}
-              label={t('auth.register.roleOwner')}
-              emoji="🏠"
-              description="Daftarkan dan kelola properti kos Anda"
+              role={USER_ROLE.TENANT}
+              label={t('auth.register.roleTenant') || 'Pencari Kosan'}
+              description="Cari & sewa kos"
             />
             <RoleCard
-              role={USER_ROLE.TENANT}
-              label={t('auth.register.roleTenant')}
-              emoji="🔍"
-              description="Cari dan sewa kos impian Anda"
+              role={USER_ROLE.OWNER}
+              label={t('auth.register.roleOwner') || 'Pemilik Kosan'}
+              description="Kelola properti kos"
             />
           </View>
-        </View>
 
-        {/* Form */}
-        <View style={styles.form}>
           {/* Nama Lengkap */}
-          <Text style={styles.label}>{t('auth.register.fullNameLabel')}</Text>
-          <TextInput
-            style={[styles.input, errors.fullName && styles.inputError]}
-            placeholder={t('auth.register.fullNamePlaceholder')}
-            value={fullName}
-            onChangeText={(v) => { setFullName(v); setErrors((e) => ({ ...e, fullName: undefined })); }}
-            autoCapitalize="words"
-            placeholderTextColor={COLORS.textTertiary}
-          />
-          {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+          <Text style={styles.label}>{t('auth.register.fullNameLabel') || 'Nama Lengkap'}</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder={t('auth.register.fullNamePlaceholder') || 'Enter your name'}
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+              placeholderTextColor={COLORS.textTertiary}
+            />
+          </View>
 
           {/* Email */}
-          <Text style={styles.label}>{t('auth.register.emailLabel')}</Text>
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder={t('auth.register.emailPlaceholder')}
-            value={email}
-            onChangeText={(v) => { setEmail(v); setErrors((e) => ({ ...e, email: undefined })); }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor={COLORS.textTertiary}
-          />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          <Text style={styles.label}>{t('auth.register.emailLabel') || 'Email'}</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder={t('auth.register.emailPlaceholder') || 'Enter your email'}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor={COLORS.textTertiary}
+            />
+          </View>
 
           {/* Password */}
-          <Text style={styles.label}>{t('auth.register.passwordLabel')}</Text>
-          <View style={styles.passwordContainer}>
+          <Text style={styles.label}>{t('auth.register.passwordLabel') || 'Password'}</Text>
+          <View style={styles.inputWrapper}>
             <TextInput
-              style={[styles.passwordInput, errors.password && styles.inputError]}
-              placeholder={t('auth.register.passwordPlaceholder')}
+              style={[styles.input, { paddingRight: 50 }]}
+              placeholder={t('auth.register.passwordPlaceholder') || 'Enter your password'}
               value={password}
-              onChangeText={(v) => { setPassword(v); setErrors((e) => ({ ...e, password: undefined })); }}
+              onChangeText={setPassword}
               secureTextEntry={!showPassword}
               placeholderTextColor={COLORS.textTertiary}
             />
             <TouchableOpacity
-              style={styles.eyeButton}
+              style={styles.eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
             >
-              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
           </View>
-          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
           {/* Confirm Password */}
-          <Text style={styles.label}>{t('auth.register.confirmPasswordLabel')}</Text>
-          <TextInput
-            style={[styles.input, errors.confirmPassword && styles.inputError]}
-            placeholder={t('auth.register.confirmPasswordPlaceholder')}
-            value={confirmPassword}
-            onChangeText={(v) => { setConfirmPassword(v); setErrors((e) => ({ ...e, confirmPassword: undefined })); }}
-            secureTextEntry={!showPassword}
-            placeholderTextColor={COLORS.textTertiary}
-          />
-          {errors.confirmPassword && (
-            <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-          )}
+          <Text style={styles.label}>{t('auth.register.confirmPasswordLabel') || 'Confirm Password'}</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={[styles.input, { paddingRight: 50 }]}
+              placeholder={t('auth.register.confirmPasswordPlaceholder') || 'Confirm your password'}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              placeholderTextColor={COLORS.textTertiary}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={24} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          </View>
 
           {/* Register Button */}
           <TouchableOpacity
@@ -228,17 +219,33 @@ const RegisterScreen = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
-              <Text style={styles.registerBtnText}>{t('auth.register.registerButton')}</Text>
+              <Text style={styles.registerBtnText}>{t('auth.register.registerButton') || 'Create Account'}</Text>
             )}
           </TouchableOpacity>
 
-          {/* Login Link */}
-          <TouchableOpacity
-            style={styles.loginLink}
-            onPress={() => navigation.navigate(AUTH_SCREENS.LOGIN)}
-          >
-            <Text style={styles.loginLinkText}>{t('auth.register.loginLink')}</Text>
-          </TouchableOpacity>
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('auth.login.or') || 'OR'}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.socialLoginContainer}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
+              <Image 
+                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
+                style={styles.socialIcon} 
+              />
+              <Text style={styles.socialButtonText}>Sign up with Google</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.footerContainer}>
+            <Text style={styles.footerText}>{t('auth.register.alreadyHaveAccount', 'Already have an account?')} </Text>
+            <TouchableOpacity onPress={() => navigation.navigate(AUTH_SCREENS.LOGIN)}>
+              <Text style={styles.footerLink}>Login</Text>
+            </TouchableOpacity>
+          </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -248,33 +255,24 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#EDF4F7',
   },
   container: {
     flexGrow: 1,
-    padding: SPACING[5],
-    paddingBottom: SPACING[10],
+    padding: SPACING[6],
+    paddingBottom: 80,
   },
-  header: {
-    marginTop: SPACING[8],
+  headerContainer: {
+    alignItems: 'center',
+    marginTop: SPACING[10],
     marginBottom: SPACING[6],
   },
-  backBtn: {
-    marginBottom: SPACING[4],
-  },
-  backBtnText: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  appName: {
-    fontSize: FONT_SIZE['3xl'],
-    fontWeight: FONT_WEIGHT.extraBold,
-    color: COLORS.primary,
-    marginBottom: SPACING[1],
+  logoImage: { 
+    width: 200, 
+    height: 120
   },
   title: {
-    fontSize: FONT_SIZE['2xl'],
+    fontSize: 28,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
   },
@@ -283,46 +281,35 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: SPACING[1],
   },
-  section: {
-    marginBottom: SPACING[5],
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING[3],
+  formContainer: {
+    paddingHorizontal: SPACING[2],
   },
   roleRow: {
     flexDirection: 'row',
     gap: SPACING[3],
+    marginBottom: SPACING[4],
   },
   roleCard: {
     flex: 1,
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
-    borderWidth: 2,
-    borderColor: COLORS.border,
+    borderRadius: 20,
+    padding: SPACING[3],
+    borderWidth: 1,
+    borderColor: 'transparent',
     position: 'relative',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+      android: { elevation: 1 },
+    }),
   },
   roleCardSelected: {
-    borderColor: COLORS.primary,
+    borderColor: COLORS.primaryDark,
     backgroundColor: COLORS.primarySurface,
-  },
-  roleCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING[2],
-    gap: SPACING[2],
-  },
-  roleEmoji: {
-    fontSize: 22,
   },
   roleLabel: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
-    flex: 1,
   },
   roleLabelSelected: {
     color: COLORS.primaryDark,
@@ -330,100 +317,124 @@ const styles = StyleSheet.create({
   roleDescription: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textSecondary,
-    lineHeight: 16,
+    marginTop: 2,
   },
   roleDescriptionSelected: {
-    color: COLORS.primary,
+    color: COLORS.primaryDark,
   },
   roleCheckBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary,
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  roleCheckText: {
-    color: COLORS.white,
-    fontSize: 11,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  form: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[6],
   },
   label: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: COLORS.textPrimary,
     marginBottom: SPACING[1],
     marginTop: SPACING[4],
   },
+  inputWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING[3],
+    borderColor: 'transparent',
+    borderRadius: 30,
+    padding: SPACING[4],
     fontSize: FONT_SIZE.base,
     color: COLORS.textPrimary,
-    backgroundColor: COLORS.grey50,
+    backgroundColor: COLORS.white,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+      android: { elevation: 1 },
+    }),
   },
-  inputError: {
-    borderColor: COLORS.error,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: FONT_SIZE.xs,
-    marginTop: 4,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.grey50,
-  },
-  passwordInput: {
-    flex: 1,
-    padding: SPACING[3],
-    fontSize: FONT_SIZE.base,
-    color: COLORS.textPrimary,
-    borderWidth: 0,
-  },
-  eyeButton: {
-    padding: SPACING[3],
-  },
-  eyeText: {
-    fontSize: 18,
+  eyeIcon: {
+    position: 'absolute',
+    right: SPACING[4],
   },
   registerBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primaryDark,
+    borderRadius: 30,
     padding: SPACING[4],
     alignItems: 'center',
-    marginTop: SPACING[6],
+    marginTop: SPACING[8],
   },
   registerBtnDisabled: {
     opacity: 0.7,
   },
   registerBtnText: {
     color: COLORS.white,
-    fontSize: FONT_SIZE.base,
+    fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.semiBold,
   },
-  loginLink: {
+  dividerContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING[4],
-    paddingVertical: SPACING[2],
+    marginVertical: SPACING[6],
   },
-  loginLinkText: {
-    color: COLORS.primary,
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.grey300,
+  },
+  dividerText: {
+    marginHorizontal: SPACING[3],
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.sm,
+  },
+  socialLoginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING[4],
+  },
+  socialButton: {
+    flexDirection: 'row',
+    height: 50,
+    width: '100%',
+    borderRadius: 25,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.grey200,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+      android: { elevation: 1 },
+    }),
+  },
+  socialIcon: {
+    width: 24,
+    height: 24,
+    marginRight: SPACING[3],
+  },
+  socialButtonText: {
     fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textPrimary,
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: SPACING[8],
+  },
+  footerText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
+  },
+  footerLink: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.primaryDark,
+    fontWeight: FONT_WEIGHT.semiBold,
   },
 });
 

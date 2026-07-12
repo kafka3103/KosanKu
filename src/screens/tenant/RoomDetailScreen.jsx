@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -23,20 +24,20 @@ import { getTenantActiveContract } from '../../services/invoiceService';
 import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
 
 const FACILITY_ICON_MAP = {
-  'air-conditioner': '❄️',
-  wifi: '📶',
-  shower: '🚿',
-  'water-heater': '🔥',
-  bed: '🛏️',
-  wardrobe: '🚪',
-  desk: '📚',
-  chair: '🪑',
-  refrigerator: '🧊',
-  television: '📺',
-  'washing-machine': '👕',
-  kitchen: '🍳',
-  balcony: '🌅',
-  window: '🪟',
+  'air-conditioner': 'snow',
+  wifi: 'wifi',
+  shower: 'water',
+  'water-heater': 'flame',
+  bed: 'bed',
+  wardrobe: 'file-tray',
+  desk: 'desktop',
+  chair: 'chair', // doesn't exist, will fallback
+  refrigerator: 'snow-outline',
+  television: 'tv',
+  'washing-machine': 'shirt',
+  kitchen: 'restaurant',
+  balcony: 'partly-sunny',
+  window: 'scan-outline',
 };
 
 const formatCurrency = (amount) =>
@@ -67,13 +68,13 @@ const RoomDetailScreen = ({ navigation, route }) => {
   }, {});
 
   const categoryLabels = {
-    electronics: '🔌 Elektronik',
-    furniture: '🪑 Furnitur',
-    bathroom: '🚿 Kamar Mandi',
-    connectivity: '📶 Konektivitas',
-    shared: '🤝 Bersama',
-    space: '🌅 Ruang',
-    other: '📦 Lainnya',
+    electronics: { text: 'Elektronik', icon: 'hardware-chip-outline' },
+    furniture: { text: 'Furnitur', icon: 'bed-outline' },
+    bathroom: { text: 'Kamar Mandi', icon: 'water-outline' },
+    connectivity: { text: 'Konektivitas', icon: 'wifi-outline' },
+    shared: { text: 'Bersama', icon: 'people-outline' },
+    space: { text: 'Ruang', icon: 'expand-outline' },
+    other: { text: 'Lainnya', icon: 'cube-outline' },
   };
 
   const handleRequestRent = async () => {
@@ -115,7 +116,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </ScrollView>
           ) : (
             <View style={styles.galleryPlaceholder}>
-              <Text style={styles.galleryPlaceholderText}>🛏️</Text>
+              <Ionicons name="bed-outline" size={64} color={COLORS.textTertiary} />
             </View>
           )}
 
@@ -126,9 +127,12 @@ const RoomDetailScreen = ({ navigation, route }) => {
 
           {/* Status Badge */}
           <View style={styles.statusOverlay}>
-            <Text style={styles.statusText}>
-              {room?.status === 'available' ? '✅ Tersedia' : '🔴 Tidak Tersedia'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name={room?.status === 'available' ? 'checkmark-circle' : 'close-circle'} size={14} color={COLORS.white} style={{ marginRight: 4 }} />
+              <Text style={styles.statusText}>
+                {room?.status === 'available' ? 'Tersedia' : 'Tidak Tersedia'}
+              </Text>
+            </View>
           </View>
 
           {/* Indicators */}
@@ -161,8 +165,14 @@ const RoomDetailScreen = ({ navigation, route }) => {
 
           {room?.size_sqm && (
             <View style={styles.metaRow}>
-              <Text style={styles.metaItem}>📐 {room.size_sqm} m²</Text>
-              <Text style={styles.metaItem}>🏠 {property?.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+                <Text style={styles.metaItem}>{room.size_sqm} m²</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="business" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+                <Text style={styles.metaItem}>{property?.name}</Text>
+              </View>
             </View>
           )}
 
@@ -179,15 +189,21 @@ const RoomDetailScreen = ({ navigation, route }) => {
             <Text style={styles.sectionTitle}>Fasilitas Kamar</Text>
             {Object.entries(groupedFacilities).map(([cat, facs]) => (
               <View key={cat} style={styles.facilityGroup}>
-                <Text style={styles.facilityGroupLabel}>
-                  {categoryLabels[cat] ?? cat}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+                  <Ionicons name={categoryLabels[cat]?.icon ?? 'cube-outline'} size={16} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.facilityGroupLabel, { marginBottom: 0 }]}>
+                    {categoryLabels[cat]?.text ?? cat}
+                  </Text>
+                </View>
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
                     <View key={fac.id} style={styles.facilityItem}>
-                      <Text style={styles.facilityEmoji}>
-                        {FACILITY_ICON_MAP[fac.icon_name] ?? '🔷'}
-                      </Text>
+                      <Ionicons
+                        name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
+                        size={20}
+                        color={COLORS.primary}
+                        style={{ marginRight: 4 }}
+                      />
                       <View>
                         <Text style={styles.facilityName}>{fac.name}</Text>
                         {fac.additional_cost && (
@@ -207,7 +223,10 @@ const RoomDetailScreen = ({ navigation, route }) => {
         {/* Property Rules */}
         {property?.rules && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📜 Peraturan Kosan</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
+              <Ionicons name="document-text" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Peraturan Kosan</Text>
+            </View>
             <View style={styles.rulesCard}>
               <Text style={styles.rulesText}>{property.rules}</Text>
             </View>
@@ -249,7 +268,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  galleryPlaceholderText: { fontSize: 80 },
   backBtn: {
     position: 'absolute',
     top: SPACING[12],
@@ -261,7 +279,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backBtnText: { color: COLORS.white, fontSize: 20, lineHeight: 24 },
+  backBtnText: { color: COLORS.white, fontSize: 20, lineHeight: 24, paddingBottom: 2 },
   statusOverlay: {
     position: 'absolute',
     bottom: SPACING[3],
@@ -351,7 +369,6 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING[2],
   },
-  facilityEmoji: { fontSize: 20 },
   facilityName: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary },
   additionalCost: {
     fontSize: FONT_SIZE.xs,
@@ -386,7 +403,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   rentBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
     paddingHorizontal: SPACING[8],
     paddingVertical: SPACING[4],
     borderRadius: BORDER_RADIUS.md,

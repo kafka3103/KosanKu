@@ -5,6 +5,13 @@
  */
 
 import supabaseClient from './supabaseClient';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
+// Konfigurasi Google Sign-In awal
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID || 'ISI_WEB_CLIENT_ID_DISINI.apps.googleusercontent.com',
+  offlineAccess: true,
+});
 
 /**
  * Registrasi user baru dengan email dan password
@@ -66,6 +73,73 @@ export const loginWithEmail = async ({ email, password }) => {
 };
 
 /**
+ * Login / Sign Up menggunakan Google
+ *
+ * @param {string} role - 'owner' | 'tenant' (Hanya digunakan saat Sign Up pertama kali)
+ * @returns {Promise<{data, error}>}
+ */
+export const signInWithGoogle = async (role = null) => {
+  try {
+    await GoogleSignin.hasPlayServices();
+
+    // SignOut dari Google terlebih dahulu agar dialog pilih akun selalu muncul
+    try { await GoogleSignin.signOut(); } catch (_) {}
+
+    const userInfo = await GoogleSignin.signIn();
+    
+    // Mendukung versi v16+ maupun versi lama dari GoogleSignin
+    const idToken = userInfo?.data?.idToken || userInfo?.idToken;
+    const googleName = userInfo?.data?.user?.name || userInfo?.user?.name || null;
+
+    if (idToken) {
+      const { data, error } = await supabaseClient.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (!error && data?.session) {
+        const userId = data.session.user.id;
+
+        // Cek apakah profil user sudah ada di public.users
+        const { data: existingUser } = await supabaseClient
+          .from('users')
+          .select('role, full_name')
+          .eq('id', userId)
+          .single();
+
+        // Siapkan data yang akan di-upsert
+        const upsertData = {
+          id: userId,
+          updated_at: new Date().toISOString(),
+        };
+
+        // Set role jika ini user baru
+        if (!existingUser?.role && role) {
+          upsertData.role = role;
+        }
+
+        // Isi nama dari Google jika user belum punya nama
+        if (!existingUser?.full_name && googleName) {
+          upsertData.full_name = googleName;
+        }
+
+        // Hanya upsert jika ada sesuatu yang perlu diperbarui
+        if (upsertData.role || upsertData.full_name) {
+          await supabaseClient.from('users').upsert(upsertData);
+        }
+      }
+
+      return { data, error };
+    } else {
+      throw new Error('No ID token present!');
+    }
+  } catch (error) {
+    console.error('Error signing in with Google:', error);
+    return { error };
+  }
+};
+
+/**
  * Login via OTP (email atau phone)
  *
  * @param {Object} params
@@ -110,6 +184,20 @@ export const verifyOtp = async ({ email, phoneNumber, otpCode }) => {
     email,
     token: otpCode,
     type: 'email',
+  });
+  return { data, error };
+};
+
+export const sendPasswordResetEmail = async ({ email }) => {
+  const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
+  return { data, error };
+};
+
+export const verifyPasswordResetOtp = async ({ email, otpCode }) => {
+  const { data, error } = await supabaseClient.auth.verifyOtp({
+    email,
+    token: otpCode,
+    type: 'recovery',
   });
   return { data, error };
 };

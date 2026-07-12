@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -56,14 +57,16 @@ const TenantCard = ({ contract, onCall }) => {
       {/* Expiry warning */}
       {isExpiringSoon && (
         <View style={styles.expiryWarning}>
+          <Ionicons name="warning" size={16} color={COLORS.warning} style={{ marginRight: 4 }} />
           <Text style={styles.expiryWarningText}>
-            ⚠️ Kontrak berakhir {daysLeft === 0 ? 'hari ini' : `dalam ${daysLeft} hari`}
+            Kontrak berakhir {daysLeft === 0 ? 'hari ini' : `dalam ${daysLeft} hari`}
           </Text>
         </View>
       )}
       {isExpired && (
         <View style={[styles.expiryWarning, styles.expiryExpired]}>
-          <Text style={styles.expiryWarningText}>🔴 Kontrak sudah berakhir</Text>
+          <Ionicons name="close-circle" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
+          <Text style={[styles.expiryWarningText, { color: COLORS.error }]}>Kontrak sudah berakhir</Text>
         </View>
       )}
 
@@ -84,7 +87,7 @@ const TenantCard = ({ contract, onCall }) => {
             onPress={() => onCall(tenant.phone_number)}
             activeOpacity={0.7}
           >
-            <Text style={styles.callBtnText}>📞</Text>
+            <Ionicons name="call" size={18} color={COLORS.success} />
           </TouchableOpacity>
         )}
       </View>
@@ -92,19 +95,31 @@ const TenantCard = ({ contract, onCall }) => {
       {/* Contract Details */}
       <View style={styles.contractDetails}>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>🏠 Properti</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="business-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+            <Text style={styles.detailLabel}>Properti</Text>
+          </View>
           <Text style={styles.detailValue}>{property?.name}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>🛏️ Kamar</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="bed-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+            <Text style={styles.detailLabel}>Kamar</Text>
+          </View>
           <Text style={styles.detailValue}>{room?.room_number}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>📅 Mulai</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+            <Text style={styles.detailLabel}>Mulai</Text>
+          </View>
           <Text style={styles.detailValue}>{formatDate(contract.start_date)}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>📅 Selesai</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+            <Text style={styles.detailLabel}>Selesai</Text>
+          </View>
           <Text style={[styles.detailValue, isExpiringSoon && { color: COLORS.warning }]}>
             {formatDate(contract.end_date)}
             {daysLeft != null && daysLeft >= 0 && (
@@ -159,7 +174,8 @@ const TenantListScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+          <Text style={styles.backBtnText}>Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daftar Penghuni</Text>
         <Text style={styles.headerSubtitle}>
@@ -182,7 +198,7 @@ const TenantListScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>👥</Text>
+            <Ionicons name="people-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Belum Ada Penghuni</Text>
             <Text style={styles.emptySubtitle}>
               Penghuni aktif akan muncul setelah Anda menyetujui pengajuan sewa.
@@ -211,7 +227,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3] },
+  backBtn: { marginBottom: SPACING[3], flexDirection: 'row', alignItems: 'center' },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
@@ -234,6 +250,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.warningLight,
     padding: SPACING[2],
     paddingHorizontal: SPACING[4],
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   expiryExpired: { backgroundColor: COLORS.errorLight },
   expiryWarningText: {
@@ -276,7 +294,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  callBtnText: { fontSize: 18 },
   contractDetails: {
     paddingHorizontal: SPACING[4],
     paddingBottom: SPACING[4],
@@ -302,7 +319,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.regular,
   },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyEmoji: { fontSize: 56, marginBottom: SPACING[3] },
+  emptyIcon: { marginBottom: SPACING[3] },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,

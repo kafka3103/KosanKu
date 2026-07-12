@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { format, addMonths } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -156,7 +157,10 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('rental.request.title')}</Text>
         </View>
@@ -164,7 +168,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
         {/* Room Summary */}
         <View style={styles.roomSummary}>
           <View style={styles.roomSummaryIcon}>
-            <Text style={styles.roomSummaryIconText}>🛏️</Text>
+            <Ionicons name="bed-outline" size={28} color={COLORS.primary} />
           </View>
           <View style={styles.roomSummaryInfo}>
             <Text style={styles.roomSummaryName}>{property?.name}</Text>
@@ -177,7 +181,10 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
         {/* Durasi Sewa */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⏱️ {t('rental.request.durationLabel')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+            <Ionicons name="time-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.durationLabel')}</Text>
+          </View>
           <View style={styles.durationRow}>
             {DURATION_OPTIONS.map((months) => (
               <TouchableOpacity
@@ -220,7 +227,10 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
         {/* Tanggal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📅 Periode Sewa</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+            <Ionicons name="calendar-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Periode Sewa</Text>
+          </View>
           <View style={styles.dateRow}>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>Mulai</Text>
@@ -236,7 +246,10 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
         {/* KTP Upload */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🪪 {t('rental.request.ktpPhotoLabel')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+            <Ionicons name="id-card-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.ktpPhotoLabel')}</Text>
+          </View>
           <Text style={styles.sectionSubtitle}>{t('rental.request.ktpPhotoHint')}</Text>
 
           <TouchableOpacity style={styles.ktpUpload} onPress={handlePickKtp} activeOpacity={0.7}>
@@ -244,21 +257,27 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
               <Image source={{ uri: ktpUri }} style={styles.ktpPreview} />
             ) : (
               <View style={styles.ktpPlaceholder}>
-                <Text style={styles.ktpPlaceholderEmoji}>📷</Text>
+                <Ionicons name="camera-outline" size={40} color={COLORS.textTertiary} />
                 <Text style={styles.ktpPlaceholderText}>Ketuk untuk pilih foto KTP</Text>
               </View>
             )}
           </TouchableOpacity>
           {ktpUri && (
             <TouchableOpacity onPress={() => setKtpUri(null)} style={styles.removeKtp}>
-              <Text style={styles.removeKtpText}>✕ Hapus Foto</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
+                <Text style={styles.removeKtpText}>Hapus Foto</Text>
+              </View>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Pesan ke Owner */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💬 {t('rental.request.messageLabel')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.messageLabel')}</Text>
+          </View>
           <TextInput
             style={styles.messageInput}
             placeholder={t('rental.request.messagePlaceholder')}
@@ -342,7 +361,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  roomSummaryIconText: { fontSize: 28 },
   roomSummaryInfo: { flex: 1 },
   roomSummaryName: {
     fontSize: FONT_SIZE.base,
@@ -444,7 +462,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING[2],
   },
-  ktpPlaceholderEmoji: { fontSize: 40 },
   ktpPlaceholderText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   removeKtp: {
     alignSelf: 'center',
@@ -506,7 +523,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   submitBtn: {
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.accent,
     marginHorizontal: SPACING[4],
     marginTop: SPACING[5],
     borderRadius: BORDER_RADIUS.md,

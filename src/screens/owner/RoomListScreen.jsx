@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -24,10 +25,10 @@ import { getPropertyRooms, deleteRoom } from '../../services/propertyService';
 import { OWNER_SCREENS } from '../../navigation/OwnerNavigator';
 
 const STATUS_CONFIG = {
-  available: { color: COLORS.success, bg: COLORS.successLight, label: 'Tersedia', emoji: '✅' },
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Diproses', emoji: '⏳' },
-  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terisi', emoji: '🔴' },
-  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Perawatan', emoji: '🔧' },
+  available: { color: COLORS.success, bg: COLORS.successLight, label: 'Tersedia', icon: 'checkmark-circle' },
+  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Diproses', icon: 'time' },
+  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terisi', icon: 'close-circle' },
+  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Perawatan', icon: 'build' },
 };
 
 const formatCurrency = (amount) =>
@@ -53,7 +54,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
           <Text style={styles.roomType}>{room.room_type} · Lantai {room.floor_number ?? '-'}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-          <Text style={styles.statusEmoji}>{statusCfg.emoji}</Text>
+          <Ionicons name={statusCfg.icon} size={14} color={statusCfg.color} />
           <Text style={[styles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
         </View>
       </View>
@@ -62,7 +63,10 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
       <View style={styles.roomMeta}>
         <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
         {room.size_sqm && (
-          <Text style={styles.roomSize}>📐 {room.size_sqm} m²</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+            <Text style={styles.roomSize}>{room.size_sqm} m²</Text>
+          </View>
         )}
       </View>
 
@@ -85,7 +89,10 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
       {/* Actions */}
       <View style={styles.roomActions}>
         <TouchableOpacity style={styles.actionBtn} onPress={onEdit} activeOpacity={0.7}>
-          <Text style={styles.actionBtnText}>✏️ Edit</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="pencil" size={14} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={styles.actionBtnText}>Edit</Text>
+          </View>
         </TouchableOpacity>
         {room.status === 'pending' && (
           <TouchableOpacity
@@ -93,7 +100,10 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
             onPress={onViewRequest}
             activeOpacity={0.7}
           >
-            <Text style={[styles.actionBtnText, { color: COLORS.warning }]}>📋 Tinjau</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="clipboard" size={14} color={COLORS.warning} style={{ marginRight: 6 }} />
+              <Text style={[styles.actionBtnText, { color: COLORS.warning }]}>Tinjau</Text>
+            </View>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -101,7 +111,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
           onPress={onDelete}
           activeOpacity={0.7}
         >
-          <Text style={[styles.actionBtnText, { color: COLORS.error }]}>🗑️</Text>
+          <Ionicons name="trash" size={16} color={COLORS.error} />
         </TouchableOpacity>
       </View>
     </View>
@@ -189,7 +199,10 @@ const RoomListScreen = ({ navigation, route }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+            <Text style={styles.backBtnText}>Kembali</Text>
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{property?.name ?? 'Kamar'}</Text>
         <Text style={styles.headerSubtitle}>{rooms.length} kamar · {t('room.list.title')}</Text>
@@ -229,7 +242,7 @@ const RoomListScreen = ({ navigation, route }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🛏️</Text>
+            <Ionicons name="bed-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Tidak Ada Kamar</Text>
             <Text style={styles.emptySubtitle}>
               {activeFilter === 'all'
@@ -340,7 +353,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
   },
-  statusEmoji: { fontSize: 12 },
   statusText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semiBold },
   roomMeta: {
     flexDirection: 'row',
@@ -388,7 +400,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING[12],
   },
-  emptyEmoji: { fontSize: 56, marginBottom: SPACING[3] },
+  emptyIcon: { marginBottom: SPACING[3] },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,

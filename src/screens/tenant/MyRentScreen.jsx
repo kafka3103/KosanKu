@@ -18,9 +18,10 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { id as idLocale } from 'date-fns/locale';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -57,18 +58,18 @@ const formatPeriod = (dateStr) => {
 };
 
 const INVOICE_STATUS_CONFIG = {
-  unpaid: { color: COLORS.warning, label: 'Belum Bayar', emoji: '⏳' },
-  paid: { color: COLORS.success, label: 'Lunas', emoji: '✅' },
-  overdue: { color: COLORS.error, label: 'Terlambat', emoji: '🔴' },
-  partial: { color: COLORS.info, label: 'Sebagian', emoji: '🔵' },
+  unpaid: { color: COLORS.warning, label: 'Belum Bayar', icon: 'time' },
+  paid: { color: COLORS.success, label: 'Lunas', icon: 'checkmark-circle' },
+  overdue: { color: COLORS.error, label: 'Terlambat', icon: 'close-circle' },
+  partial: { color: COLORS.info, label: 'Sebagian', icon: 'pie-chart' },
 };
 
 const REQUEST_STATUS_CONFIG = {
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Menunggu Konfirmasi', emoji: '⏳' },
-  approved: { color: COLORS.success, bg: COLORS.successLight, label: 'Disetujui', emoji: '✅' },
-  rejected: { color: COLORS.error, bg: COLORS.errorLight, label: 'Ditolak', emoji: '❌' },
-  expired: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Kedaluwarsa', emoji: '⌛' },
-  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Dibatalkan', emoji: '🚫' },
+  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Menunggu Konfirmasi', icon: 'time' },
+  approved: { color: COLORS.success, bg: COLORS.successLight, label: 'Disetujui', icon: 'checkmark-circle' },
+  rejected: { color: COLORS.error, bg: COLORS.errorLight, label: 'Ditolak', icon: 'close-circle' },
+  expired: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Kedaluwarsa', icon: 'hourglass-outline' },
+  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Dibatalkan', icon: 'ban' },
 };
 
 const MyRentScreen = ({ navigation }) => {
@@ -142,7 +143,7 @@ const MyRentScreen = ({ navigation }) => {
           <Text style={styles.headerTitle}>Hunian Saya</Text>
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyEmoji}>🏠</Text>
+          <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>Belum Ada Hunian Aktif</Text>
           <Text style={styles.emptySubtitle}>
             Cari kosan dan ajukan sewa untuk mulai tinggal
@@ -151,7 +152,10 @@ const MyRentScreen = ({ navigation }) => {
             style={styles.searchBtn}
             onPress={() => navigation.navigate(TENANT_SCREENS.SEARCH_STACK)}
           >
-            <Text style={styles.searchBtnText}>🔍 Cari Kosan</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="search" size={16} color={COLORS.white} style={{ marginRight: 6 }} />
+              <Text style={styles.searchBtnText}>Cari Kosan</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -196,7 +200,7 @@ const MyRentScreen = ({ navigation }) => {
             return (
               <View key={req.id} style={[styles.requestCard, { borderLeftColor: status.color }]}>
                 <View style={[styles.requestStatusBadge, { backgroundColor: status.bg }]}>
-                  <Text style={styles.requestStatusEmoji}>{status.emoji}</Text>
+                  <Ionicons name={status.icon} size={14} color={status.color} />
                   <Text style={[styles.requestStatusText, { color: status.color }]}>
                     {status.label}
                   </Text>
@@ -233,15 +237,18 @@ const MyRentScreen = ({ navigation }) => {
                 />
               ) : (
                 <View style={styles.roomPhotoPlaceholder}>
-                  <Text style={styles.roomPhotoEmoji}>🛏️</Text>
+                  <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
                 </View>
               )}
               <View style={styles.roomInfo}>
                 <Text style={styles.roomPropertyName}>{property?.name}</Text>
                 <Text style={styles.roomNumber}>Kamar {room?.room_number}</Text>
-                <Text style={styles.roomAddress}>
-                  📍 {property?.address_line}, {property?.city}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
+                  <Text style={[styles.roomAddress, { marginTop: 0 }]}>
+                    {property?.address_line}, {property?.city}
+                  </Text>
+                </View>
                 <Text style={styles.roomPrice}>
                   {formatCurrency(contract.monthly_rate)}/bulan
                 </Text>
@@ -295,7 +302,8 @@ const MyRentScreen = ({ navigation }) => {
                     style={styles.callBtn}
                     onPress={() => handleCallOwner(owner.phone_number)}
                   >
-                    <Text style={styles.callBtnText}>📞 Hubungi</Text>
+                    <Ionicons name="call" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                    <Text style={styles.callBtnText}>Hubungi</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -325,7 +333,7 @@ const MyRentScreen = ({ navigation }) => {
                     activeOpacity={0.7}
                   >
                     <View style={styles.invoiceLeft}>
-                      <Text style={styles.invoiceEmoji}>{status.emoji}</Text>
+                      <Ionicons name={status.icon} size={24} color={status.color} />
                       <View>
                         <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
                         <Text style={[styles.invoiceStatus, { color: status.color }]}>
@@ -392,7 +400,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: SPACING[8],
   },
-  emptyEmoji: { fontSize: 64, marginBottom: SPACING[4] },
+  emptyIcon: { marginBottom: SPACING[4] },
   emptyTitle: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
@@ -431,7 +439,6 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.full,
     marginBottom: SPACING[2],
   },
-  requestStatusEmoji: { fontSize: 14 },
   requestStatusText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold },
   requestProperty: {
     fontSize: FONT_SIZE.base,
@@ -463,7 +470,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  roomPhotoEmoji: { fontSize: 56 },
   roomInfo: { padding: SPACING[4] },
   roomPropertyName: {
     fontSize: FONT_SIZE.lg,
@@ -546,6 +552,8 @@ const styles = StyleSheet.create({
   },
   ownerPhone: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   callBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.primarySurface,
     paddingHorizontal: SPACING[3],
     paddingVertical: SPACING[2],
@@ -564,7 +572,6 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   invoiceLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING[3] },
-  invoiceEmoji: { fontSize: 24 },
   invoicePeriod: {
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.semiBold,

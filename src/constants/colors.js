@@ -5,17 +5,23 @@
  */
 
 export const COLORS = {
-  // ── Brand Primary (Biru Teal — kepercayaan & profesional) ──
-  primary: '#1A7F6E',
-  primaryLight: '#26A98D',
-  primaryDark: '#125C50',
-  primarySurface: '#E8F5F2',
+  // ── Brand Primary (Teal — keberhasilan, profesional) ──
+  primary: '#14B8A6',
+  primaryLight: '#5EEAD4',
+  primaryDark: '#0F766E',
+  primarySurface: '#F0FDFA',
 
-  // ── Brand Secondary (Oranye Hangat — energi & aksi) ──
-  secondary: '#F4845F',
-  secondaryLight: '#F7A487',
-  secondaryDark: '#D96B44',
-  secondarySurface: '#FEF1EC',
+  // ── Brand Secondary (Navy — profesionalisme, keamanan) ──
+  secondary: '#1E293B',
+  secondaryLight: '#334155',
+  secondaryDark: '#0F172A',
+  secondarySurface: '#F8FAFC',
+
+  // ── Brand Accent (Vibrant Orange — CTA, notifikasi) ──
+  accent: '#EA580C',
+  accentLight: '#FB923C',
+  accentDark: '#C2410C',
+  accentSurface: '#FFF7ED',
 
   // ── Neutral ──
   white: '#FFFFFF',
@@ -32,38 +38,38 @@ export const COLORS = {
   grey900: '#111827',
 
   // ── Semantic ──
-  success: '#16A34A',
-  successLight: '#DCFCE7',
-  warning: '#D97706',
-  warningLight: '#FEF3C7',
+  success: '#14B8A6',
+  successLight: '#CCFBF1',
+  warning: '#EA580C',
+  warningLight: '#FFEDD5',
   error: '#DC2626',
   errorLight: '#FEE2E2',
-  info: '#2563EB',
+  info: '#3B82F6',
   infoLight: '#DBEAFE',
 
   // ── Room Status ──
-  statusAvailable: '#16A34A',
-  statusPending: '#D97706',
+  statusAvailable: '#14B8A6', // Teal
+  statusPending: '#EA580C', // Vibrant Orange
   statusOccupied: '#DC2626',
   statusMaintenance: '#6B7280',
 
   // ── Background & Surface ──
-  background: '#F5F7FA',
+  background: '#F8FAFC',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  border: '#E5E7EB',
-  divider: '#F3F4F6',
+  border: '#E2E8F0',
+  divider: '#F1F5F9',
 
   // ── Text ──
-  textPrimary: '#111827',
-  textSecondary: '#4B5563',
-  textTertiary: '#9CA3AF',
-  textDisabled: '#D1D5DB',
+  textPrimary: '#0F172A',
+  textSecondary: '#475569',
+  textTertiary: '#94A3B8',
+  textDisabled: '#CBD5E1',
   textInverse: '#FFFFFF',
 
   // ── Overlay ──
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.2)',
+  overlay: 'rgba(15, 23, 42, 0.5)',
+  overlayLight: 'rgba(15, 23, 42, 0.2)',
 };
 
 export default COLORS;

@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -44,7 +45,7 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
           <Image source={{ uri: coverPhoto }} style={styles.cardPhoto} />
         ) : (
           <View style={styles.cardPhotoPlaceholder}>
-            <Text style={styles.cardPhotoPlaceholderText}>🏘️</Text>
+            <Ionicons name="business-outline" size={48} color={COLORS.textTertiary} />
           </View>
         )}
         <StatusBadge isActive={property.is_active} />
@@ -55,9 +56,12 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
         <Text style={styles.propertyName} numberOfLines={1}>
           {property.name}
         </Text>
-        <Text style={styles.propertyAddress} numberOfLines={1}>
-          📍 {property.address_line}, {property.city}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+          <Ionicons name="location-outline" size={12} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+          <Text style={[styles.propertyAddress, { marginBottom: 0 }]} numberOfLines={1}>
+            {property.address_line}, {property.city}
+          </Text>
+        </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
@@ -81,13 +85,18 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
           </View>
         </View>
 
-        {/* Actions */}
         <View style={styles.cardActions}>
           <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
-            <Text style={styles.actionBtnText}>✏️ Edit</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="pencil" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.actionBtnText}>Edit</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDanger]} onPress={onDelete}>
-            <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>🗑️ Hapus</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="trash" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
+              <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>Hapus</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -183,7 +192,7 @@ const PropertyListScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🏘️</Text>
+            <Ionicons name="business-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>{t('property.list.emptyTitle')}</Text>
             <Text style={styles.emptySubtitle}>{t('property.list.emptySubtitle')}</Text>
             <TouchableOpacity style={styles.emptyAddBtn} onPress={handleAddProperty}>
@@ -264,9 +273,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primarySurface,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  cardPhotoPlaceholderText: {
-    fontSize: 64,
   },
   badge: {
     position: 'absolute',
@@ -358,8 +364,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING[16],
   },
-  emptyEmoji: {
-    fontSize: 64,
+  emptyIcon: {
     marginBottom: SPACING[4],
   },
   emptyTitle: {

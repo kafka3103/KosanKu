@@ -12,9 +12,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -32,19 +35,33 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-const StatCard = ({ label, value, emoji, color, onPress }) => (
-  <TouchableOpacity
-    style={[styles.statCard, onPress && styles.statCardPressable]}
-    onPress={onPress}
-    activeOpacity={onPress ? 0.7 : 1}
-  >
-    <View style={[styles.statIconBg, { backgroundColor: color + '20' }]}>
-      <Text style={styles.statEmoji}>{emoji}</Text>
-    </View>
-    <Text style={[styles.statValue, { color }]}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </TouchableOpacity>
-);
+const StatCard = ({ label, value, icon, color, onPress, isGradient }) => {
+  const CardContent = (
+    <>
+      <View style={[styles.statIconBg, { backgroundColor: isGradient ? 'rgba(255,255,255,0.2)' : color + '20' }]}>
+        <Ionicons name={icon} size={22} color={isGradient ? COLORS.white : color} />
+      </View>
+      <Text style={[styles.statValue, { color: isGradient ? COLORS.white : color }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: isGradient ? 'rgba(255,255,255,0.8)' : COLORS.textSecondary }]}>{label}</Text>
+    </>
+  );
+
+  if (isGradient) {
+    return (
+      <TouchableOpacity style={[styles.statCardContainer, onPress && styles.statCardPressable]} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
+        <LinearGradient colors={[COLORS.secondary, COLORS.primary]} style={styles.statCard}>
+          {CardContent}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity style={[styles.statCardContainer, styles.statCard, onPress && styles.statCardPressable]} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
+      {CardContent}
+    </TouchableOpacity>
+  );
+};
 
 const RequestCard = ({ request, onPress }) => {
   const tenantName = request.users?.full_name ?? 'Tenant';
@@ -138,6 +155,9 @@ const DashboardScreen = ({ navigation }) => {
     >
       {/* Header */}
       <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Image source={require('../../../assets/logo.png')} style={styles.headerLogo} resizeMode="contain" />
+        </View>
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greeting}>{greeting()},</Text>
@@ -170,29 +190,30 @@ const DashboardScreen = ({ navigation }) => {
         <StatCard
           label="Properti"
           value={stats?.totalProperties ?? 0}
-          emoji="🏘️"
+          icon="business-outline"
           color={COLORS.primary}
           onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_STACK)}
         />
         <StatCard
           label="Kamar Tersedia"
           value={stats?.availableRooms ?? 0}
-          emoji="🛏️"
+          icon="bed-outline"
           color={COLORS.success}
           onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_STACK)}
         />
         <StatCard
-          label="Tagihan Belum Lunas"
+          label="Tagihan Tertunda"
           value={stats?.unpaidInvoicesCount ?? 0}
-          emoji="📋"
+          icon="document-text-outline"
           color={COLORS.warning}
           onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
         />
         <StatCard
           label="Pendapatan Bulan Ini"
           value={formatCurrency(stats?.monthlyRevenue ?? 0)}
-          emoji="💰"
-          color={COLORS.secondary}
+          icon="wallet-outline"
+          color={COLORS.primary}
+          isGradient={true}
         />
       </View>
 
@@ -211,7 +232,7 @@ const DashboardScreen = ({ navigation }) => {
 
         {(stats?.pendingRequests?.length ?? 0) === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyEmoji}>📭</Text>
+            <Ionicons name="mail-open-outline" size={40} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Tidak Ada Pengajuan</Text>
             <Text style={styles.emptySubtitle}>Pengajuan sewa masuk akan muncul di sini</Text>
           </View>
@@ -239,7 +260,7 @@ const DashboardScreen = ({ navigation }) => {
             }
             activeOpacity={0.7}
           >
-            <Text style={styles.quickActionEmoji}>🏠</Text>
+            <Ionicons name="add-circle-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
             <Text style={styles.quickActionLabel}>Tambah Properti</Text>
           </TouchableOpacity>
 
@@ -248,7 +269,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate(OWNER_SCREENS.TENANT_LIST)}
             activeOpacity={0.7}
           >
-            <Text style={styles.quickActionEmoji}>👥</Text>
+            <Ionicons name="people-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
             <Text style={styles.quickActionLabel}>Daftar Penghuni</Text>
           </TouchableOpacity>
 
@@ -257,7 +278,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate(OWNER_SCREENS.REPORT)}
             activeOpacity={0.7}
           >
-            <Text style={styles.quickActionEmoji}>📈</Text>
+            <Ionicons name="stats-chart-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
             <Text style={styles.quickActionLabel}>Laporan</Text>
           </TouchableOpacity>
 
@@ -266,7 +287,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
             activeOpacity={0.7}
           >
-            <Text style={styles.quickActionEmoji}>💳</Text>
+            <Ionicons name="card-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
             <Text style={styles.quickActionLabel}>Tagihan</Text>
           </TouchableOpacity>
         </View>
@@ -291,11 +312,20 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    paddingTop: SPACING[10],
     paddingBottom: SPACING[6],
     paddingHorizontal: SPACING[5],
     borderBottomLeftRadius: BORDER_RADIUS['3xl'],
     borderBottomRightRadius: BORDER_RADIUS['3xl'],
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: SPACING[6],
+  },
+  headerLogo: {
+    width: 60,
+    height: 60,
+    tintColor: COLORS.white,
   },
   headerTop: {
     flexDirection: 'row',
@@ -366,13 +396,17 @@ const styles = StyleSheet.create({
     paddingTop: SPACING[5],
     gap: SPACING[3],
   },
-  statCard: {
+  statCardContainer: {
     width: '47%',
+    borderRadius: BORDER_RADIUS.xl,
+    ...SHADOW.sm,
+  },
+  statCard: {
+    width: '100%',
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING[4],
     alignItems: 'center',
-    ...SHADOW.sm,
   },
   statCardPressable: {
     ...SHADOW.md,
@@ -384,9 +418,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING[2],
-  },
-  statEmoji: {
-    fontSize: 22,
   },
   statValue: {
     fontSize: FONT_SIZE.xl,
@@ -425,8 +456,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...SHADOW.sm,
   },
-  emptyEmoji: {
-    fontSize: 40,
+  emptyIcon: {
     marginBottom: SPACING[3],
   },
   emptyTitle: {
@@ -500,9 +530,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...SHADOW.sm,
   },
-  quickActionEmoji: {
-    fontSize: 28,
-    marginBottom: SPACING[1],
+  quickActionIcon: {
+    marginBottom: SPACING[2],
   },
   quickActionLabel: {
     fontSize: FONT_SIZE.xs,

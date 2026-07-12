@@ -18,6 +18,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -67,17 +68,27 @@ const PropertyCard = ({ property, onPress }) => {
           <Image source={{ uri: property.cover_photo_url }} style={styles.cardImage} />
         ) : (
           <View style={styles.cardImagePlaceholder}>
-            <Text style={styles.cardImagePlaceholderText}>🏘️</Text>
+            <Ionicons name="home-outline" size={48} color={COLORS.textTertiary} />
           </View>
         )}
         <View style={styles.availableTag}>
           <Text style={styles.availableTagText}>{availableCount} tersedia</Text>
         </View>
         <View style={styles.genderTag}>
+          <Ionicons 
+            name={
+              property.gender_policy === 'male' ? 'man' 
+              : property.gender_policy === 'female' ? 'woman' 
+              : 'male-female'
+            } 
+            size={12} 
+            color={COLORS.white} 
+            style={{ marginRight: 4 }} 
+          />
           <Text style={styles.genderTagText}>
-            {property.gender_policy === 'male' ? '👨 Putra'
-              : property.gender_policy === 'female' ? '👩 Putri'
-              : '👫 Campur'}
+            {property.gender_policy === 'male' ? 'Putra'
+              : property.gender_policy === 'female' ? 'Putri'
+              : 'Campur'}
           </Text>
         </View>
       </View>
@@ -85,9 +96,12 @@ const PropertyCard = ({ property, onPress }) => {
       {/* Info */}
       <View style={styles.cardBody}>
         <Text style={styles.propertyName} numberOfLines={1}>{property.name}</Text>
-        <Text style={styles.propertyAddress} numberOfLines={1}>
-          📍 {property.address_line}, {property.city}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+          <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+          <Text style={styles.propertyAddress} numberOfLines={1}>
+            {property.address_line}, {property.city}
+          </Text>
+        </View>
 
         {/* Facilities */}
         {facilities.length > 0 && (
@@ -192,7 +206,7 @@ const SearchScreen = ({ navigation }) => {
 
         {/* Search Bar */}
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={20} color={COLORS.textTertiary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Cari nama kosan atau kota..."
@@ -204,7 +218,7 @@ const SearchScreen = ({ navigation }) => {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearIcon}>✕</Text>
+              <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
@@ -215,9 +229,10 @@ const SearchScreen = ({ navigation }) => {
           onPress={() => setShowFilter(true)}
           activeOpacity={0.7}
         >
-          <Text style={styles.filterBtnText}>
-            {hasActiveFilter ? '🔽 Filter Aktif' : '🔽 Filter'}
+          <Text style={[styles.filterBtnText, hasActiveFilter && { color: COLORS.accent }]}>
+            Filter {hasActiveFilter && 'Aktif'}
           </Text>
+          <Ionicons name="chevron-down" size={16} color={hasActiveFilter ? COLORS.accent : COLORS.white} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
 
@@ -257,7 +272,7 @@ const SearchScreen = ({ navigation }) => {
           }
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyEmoji}>🏘️</Text>
+              <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyEmoji} />
               <Text style={styles.emptyTitle}>Kosan Tidak Ditemukan</Text>
               <Text style={styles.emptySubtitle}>
                 Coba ubah kata kunci atau filter pencarian Anda
@@ -292,7 +307,7 @@ const SearchScreen = ({ navigation }) => {
             <View style={styles.filterModalHeader}>
               <Text style={styles.filterModalTitle}>Filter Pencarian</Text>
               <TouchableOpacity onPress={() => setShowFilter(false)}>
-                <Text style={styles.filterModalClose}>✕</Text>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -421,16 +436,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING[3],
     marginBottom: SPACING[3],
   },
-  searchIcon: { fontSize: 18, marginRight: SPACING[2] },
+  searchIcon: { marginRight: SPACING[2] },
   searchInput: {
     flex: 1,
     paddingVertical: SPACING[3],
     fontSize: FONT_SIZE.base,
     color: COLORS.textPrimary,
   },
-  clearIcon: { fontSize: 16, color: COLORS.textTertiary, padding: SPACING[2] },
   filterBtn: {
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: SPACING[4],
     paddingVertical: SPACING[2],
@@ -492,7 +508,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: SPACING[3],
     right: SPACING[3],
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING[2],
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
@@ -505,7 +523,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
-  propertyAddress: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[3] },
+  propertyAddress: { flex: 1, fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   facilitiesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -526,7 +544,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyEmoji: { fontSize: 56, marginBottom: SPACING[3] },
+  emptyEmoji: { marginBottom: SPACING[3] },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
@@ -570,7 +588,6 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
   },
-  filterModalClose: { fontSize: 20, color: COLORS.textSecondary },
   filterLabel: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.semiBold,
@@ -617,7 +634,7 @@ const styles = StyleSheet.create({
   resetFilterBtnText: { color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.semiBold },
   applyFilterBtn: {
     flex: 2,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING[4],
     alignItems: 'center',

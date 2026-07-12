@@ -15,6 +15,7 @@ import {
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -39,10 +40,10 @@ const formatDate = (dateStr) => {
 };
 
 const STATUS_CONFIG = {
-  unpaid: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Belum Dibayar', emoji: '⏳' },
-  paid: { color: COLORS.success, bg: COLORS.successLight, label: 'Lunas', emoji: '✅' },
-  overdue: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terlambat', emoji: '🔴' },
-  partial: { color: COLORS.info, bg: COLORS.infoLight, label: 'Sebagian', emoji: '🔵' },
+  unpaid: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Belum Dibayar', icon: 'time' },
+  paid: { color: COLORS.success, bg: COLORS.successLight, label: 'Lunas', icon: 'checkmark-circle' },
+  overdue: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terlambat', icon: 'close-circle' },
+  partial: { color: COLORS.info, bg: COLORS.infoLight, label: 'Sebagian', icon: 'pie-chart' },
 };
 
 const InvoiceDetailScreen = ({ navigation, route }) => {
@@ -83,7 +84,10 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Detail Tagihan</Text>
           <Text style={styles.invoiceNumber}>{invoice.invoice_number}</Text>
@@ -91,7 +95,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
 
         {/* Status Banner */}
         <View style={[styles.statusBanner, { backgroundColor: status.bg }]}>
-          <Text style={styles.statusEmoji}>{status.emoji}</Text>
+          <Ionicons name={status.icon} size={32} color={status.color} style={{ marginRight: 12 }} />
           <View>
             <Text style={[styles.statusLabel, { color: status.color }]}>{status.label}</Text>
             <Text style={styles.statusSubtitle}>
@@ -104,7 +108,10 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
 
         {/* Room Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🏠 Informasi Kamar</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+            <Ionicons name="home" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Informasi Kamar</Text>
+          </View>
           <Text style={styles.infoRow}>
             <Text style={styles.infoLabel}>Properti: </Text>
             <Text style={styles.infoValue}>{room?.properties?.name}</Text>
@@ -125,7 +132,10 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
 
         {/* Invoice Items */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Rincian Tagihan</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+            <Ionicons name="list" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Rincian Tagihan</Text>
+          </View>
           {items.length === 0 ? (
             <Text style={styles.noItemsText}>Tidak ada rincian item</Text>
           ) : (
@@ -229,7 +239,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING[5],
     marginBottom: SPACING[2],
   },
-  statusEmoji: { fontSize: 32 },
   statusLabel: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
   statusSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginTop: 2 },
   section: {
@@ -335,7 +344,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   payBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
     paddingHorizontal: SPACING[6],
     paddingVertical: SPACING[4],
     borderRadius: BORDER_RADIUS.md,

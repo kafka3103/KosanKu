@@ -9,8 +9,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import LoginScreen from '../screens/shared/LoginScreen';
 import RegisterScreen from '../screens/shared/RegisterScreen';
-import OtpScreen from '../screens/shared/OtpScreen';
-import ProfileSetupScreen from '../screens/shared/ProfileSetupScreen';
+import ForgotPasswordScreen from '../screens/shared/ForgotPasswordScreen';
+import OtpVerificationScreen from '../screens/shared/OtpVerificationScreen';
+import ResetPasswordScreen from '../screens/shared/ResetPasswordScreen';
 import COLORS from '../constants/colors';
 
 const AuthStack = createStackNavigator();
@@ -21,8 +22,9 @@ const AuthStack = createStackNavigator();
 export const AUTH_SCREENS = {
   LOGIN: 'Login',
   REGISTER: 'Register',
-  OTP: 'Otp',
-  PROFILE_SETUP: 'ProfileSetup',
+  FORGOT_PASSWORD: 'ForgotPassword',
+  OTP_VERIFICATION: 'OtpVerification',
+  RESET_PASSWORD: 'ResetPassword',
 };
 
 const AuthNavigator = () => {
@@ -49,16 +51,9 @@ const AuthNavigator = () => {
     >
       <AuthStack.Screen name={AUTH_SCREENS.LOGIN} component={LoginScreen} />
       <AuthStack.Screen name={AUTH_SCREENS.REGISTER} component={RegisterScreen} />
-      <AuthStack.Screen
-        name={AUTH_SCREENS.OTP}
-        component={OtpScreen}
-        options={{ gestureEnabled: false }} // Tidak bisa swipe back dari OTP
-      />
-      <AuthStack.Screen
-        name={AUTH_SCREENS.PROFILE_SETUP}
-        component={ProfileSetupScreen}
-        options={{ gestureEnabled: false }} // Tidak bisa swipe back dari profil setup
-      />
+      <AuthStack.Screen name={AUTH_SCREENS.FORGOT_PASSWORD} component={ForgotPasswordScreen} />
+      <AuthStack.Screen name={AUTH_SCREENS.OTP_VERIFICATION} component={OtpVerificationScreen} />
+      <AuthStack.Screen name={AUTH_SCREENS.RESET_PASSWORD} component={ResetPasswordScreen} options={{ gestureEnabled: false }} />
     </AuthStack.Navigator>
   );
 };

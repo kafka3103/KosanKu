@@ -60,6 +60,7 @@ export const OWNER_SCREENS = {
   PROPERTY_STACK: 'PropertyStack',
   INVOICE_LIST: 'OwnerInvoiceList',
   NOTIFICATIONS: 'OwnerNotifications',
+  PROFILE_TAB: 'OwnerProfileTab',
   // Stack di dalam Property
   PROPERTY_LIST: 'PropertyList',
   PROPERTY_FORM: 'PropertyForm',
@@ -119,6 +120,10 @@ const OwnerBottomTabNavigator = () => {
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.NOTIFICATIONS}
         component={NotificationScreen}
+      />
+      <OwnerBottomTab.Screen
+        name={OWNER_SCREENS.PROFILE_TAB}
+        component={ProfileScreen}
       />
     </OwnerBottomTab.Navigator>
   );

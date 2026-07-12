@@ -15,6 +15,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -98,7 +99,8 @@ const PropertyDetailScreen = ({ navigation, route }) => {
     <View style={styles.tabContent}>
       {availableRooms.length === 0 ? (
         <View style={styles.noRoomsContainer}>
-          <Text style={styles.noRoomsText}>😔 Tidak ada kamar tersedia saat ini</Text>
+          <Ionicons name="sad-outline" size={32} color={COLORS.textTertiary} style={{ marginBottom: 8 }} />
+          <Text style={styles.noRoomsText}>Tidak ada kamar tersedia saat ini</Text>
         </View>
       ) : (
         availableRooms.map((room) => {
@@ -137,8 +139,9 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               )}
               <View style={styles.roomPriceRow}>
                 <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
-                <View style={styles.detailBtn}>
-                  <Text style={styles.detailBtnText}>Detail →</Text>
+                <View style={[styles.detailBtn, { backgroundColor: COLORS.accent }]}>
+                  <Text style={styles.detailBtnText}>Detail</Text>
+                  <Ionicons name="arrow-forward" size={14} color={COLORS.white} style={{ marginLeft: 4 }} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -151,27 +154,47 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const renderInfo = () => (
     <View style={styles.tabContent}>
       <View style={styles.infoCard}>
-        <Text style={styles.infoCardTitle}>📍 Lokasi</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <Ionicons name="location" size={20} color={COLORS.accent} style={{ marginRight: 6 }} />
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Lokasi</Text>
+        </View>
         <Text style={styles.infoText}>{property?.address_line}</Text>
         <Text style={styles.infoText}>{property?.district ? `${property.district}, ` : ''}{property?.city}</Text>
         {property?.postal_code && <Text style={styles.infoText}>Kode Pos: {property.postal_code}</Text>}
       </View>
       <View style={styles.infoCard}>
-        <Text style={styles.infoCardTitle}>👤 Kebijakan Penghuni</Text>
-        <Text style={styles.infoText}>
-          {property?.gender_policy === 'male' ? '👨 Khusus Putra'
-            : property?.gender_policy === 'female' ? '👩 Khusus Putri'
-            : '👫 Campur (Putra & Putri)'}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <Ionicons name="people" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Kebijakan Penghuni</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons 
+            name={property?.gender_policy === 'male' ? 'man' : property?.gender_policy === 'female' ? 'woman' : 'male-female'} 
+            size={16} 
+            color={COLORS.textSecondary} 
+            style={{ marginRight: 6 }} 
+          />
+          <Text style={styles.infoText}>
+            {property?.gender_policy === 'male' ? 'Khusus Putra'
+              : property?.gender_policy === 'female' ? 'Khusus Putri'
+              : 'Campur (Putra & Putri)'}
+          </Text>
+        </View>
       </View>
       {property?.description && (
         <View style={styles.infoCard}>
-          <Text style={styles.infoCardTitle}>ℹ️ Tentang Kosan</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="information-circle" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Tentang Kosan</Text>
+          </View>
           <Text style={styles.infoText}>{property.description}</Text>
         </View>
       )}
       <View style={styles.infoCard}>
-        <Text style={styles.infoCardTitle}>👤 Pemilik</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <Ionicons name="person" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Pemilik</Text>
+        </View>
         <View style={styles.ownerRow}>
           <View style={styles.ownerAvatar}>
             <Text style={styles.ownerAvatarText}>
@@ -202,7 +225,10 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       )}
       {property?.rules && (
         <View style={styles.rulesCard}>
-          <Text style={styles.rulesTitle}>📜 Peraturan Kosan</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>Peraturan Kosan</Text>
+          </View>
           <Text style={styles.rulesText}>{property.rules}</Text>
         </View>
       )}
@@ -231,16 +257,16 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             </ScrollView>
           ) : (
             <View style={styles.galleryPlaceholder}>
-              <Text style={styles.galleryPlaceholderText}>🏘️</Text>
+              <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} />
             </View>
           )}
 
           {/* Back & Favorite */}
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.favoriteBtn} onPress={handleToggleFavorite}>
-            <Text style={styles.favoriteBtnText}>{isFavorite ? '❤️' : '🤍'}</Text>
+            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? COLORS.error : COLORS.white} />
           </TouchableOpacity>
 
           {/* Photo indicators */}
@@ -264,7 +290,10 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         {/* Property Name & Address */}
         <View style={styles.propertyHeader}>
           <Text style={styles.propertyName}>{property?.name}</Text>
-          <Text style={styles.propertyAddress}>📍 {property?.address_line}, {property?.city}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="location" size={16} color={COLORS.accent} style={{ marginRight: 4 }} />
+            <Text style={styles.propertyAddress}>{property?.address_line}, {property?.city}</Text>
+          </View>
         </View>
 
         {/* Tabs */}
@@ -309,7 +338,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  galleryPlaceholderText: { fontSize: 80 },
   backBtn: {
     position: 'absolute',
     top: SPACING[12],
@@ -333,7 +361,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  favoriteBtnText: { fontSize: 20 },
   photoIndicators: {
     position: 'absolute',
     bottom: SPACING[10],
@@ -448,6 +475,8 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   detailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING[3],
     paddingVertical: SPACING[2],

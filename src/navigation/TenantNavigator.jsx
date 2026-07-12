@@ -49,6 +49,7 @@ export const TENANT_SCREENS = {
   FAVORITES: 'Favorites',
   MY_RENT_STACK: 'MyRentStack',
   NOTIFICATIONS: 'TenantNotifications',
+  PROFILE_TAB: 'TenantProfileTab',
   // Stack di dalam Search
   SEARCH: 'Search',
   PROPERTY_DETAIL: 'PropertyDetail',
@@ -116,6 +117,10 @@ const TenantBottomTabNavigator = () => {
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.NOTIFICATIONS}
         component={NotificationScreen}
+      />
+      <TenantBottomTab.Screen
+        name={TENANT_SCREENS.PROFILE_TAB}
+        component={ProfileScreen}
       />
     </TenantBottomTab.Navigator>
   );
