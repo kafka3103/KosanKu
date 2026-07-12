@@ -13,6 +13,9 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
+  Image,
+  Linking,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +24,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { recordManualPayment } from '../../services/invoiceService';
+import { createPakKasirTransaction, checkPakKasirStatus } from '../../services/pakkasirService';
 import useAuthStore from '../../store/authStore';
 
 const formatCurrency = (amount) =>
@@ -32,22 +36,32 @@ const formatCurrency = (amount) =>
 
 const PAYMENT_METHODS = [
   {
-    id: 'bank_transfer',
-    name: 'Transfer Bank',
-    icon: 'business',
-    options: ['BCA', 'BRI', 'BNI', 'Mandiri'],
+    id: 'pakkasir_qris',
+    name: 'QRIS Otomatis (PakKasir)',
+    icon: 'qr-code',
+    options: ['QRIS (GoPay, OVO, DANA, BCA, ShopeePay)'],
+    isAuto: true,
   },
   {
-    id: 'e_wallet',
-    name: 'Dompet Digital',
-    icon: 'phone-portrait',
-    options: ['GoPay', 'OVO', 'DANA', 'ShopeePay'],
+    id: 'pakkasir_va',
+    name: 'Virtual Account Otomatis',
+    icon: 'card',
+    options: ['BCA Virtual Account', 'BRI Virtual Account', 'BNI Virtual Account', 'Mandiri Virtual Account'],
+    isAuto: true,
+  },
+  {
+    id: 'bank_transfer',
+    name: 'Transfer Bank Manual',
+    icon: 'business',
+    options: ['BCA Manual', 'BRI Manual', 'BNI Manual', 'Mandiri Manual'],
+    isAuto: false,
   },
   {
     id: 'cash',
-    name: 'Tunai',
+    name: 'Tunai / Langsung',
     icon: 'cash',
-    options: ['Bayar Langsung ke Pemilik'],
+    options: ['Bayar Langsung ke Pemilik Kos'],
+    isAuto: false,
   },
 ];
 
@@ -60,6 +74,10 @@ const PaymentScreen = ({ navigation, route }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // PakKasir automated payment result state
+  const [pakKasirResult, setPakKasirResult] = useState(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
   const unpaidAmount =
     parseFloat(invoice?.total_amount ?? 0) - parseFloat(invoice?.paid_amount ?? 0);
 
@@ -69,8 +87,47 @@ const PaymentScreen = ({ navigation, route }) => {
       return;
     }
 
+    if (selectedMethod.isAuto) {
+      // Proses pembayaran otomatis melalui PakKasir
+      Alert.alert(
+        'Pembayaran Otomatis PakKasir',
+        `Buat kode ${selectedOption ?? selectedMethod.name} senilai ${formatCurrency(unpaidAmount)}? Status tagihan akan lunas otomatis setelah Anda membayar.`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Buat Kode Bayar',
+            onPress: async () => {
+              setIsLoading(true);
+              const methodCode = selectedMethod.id === 'pakkasir_qris' 
+                ? 'qris' 
+                : (selectedOption ? selectedOption.split(' ')[0].toLowerCase() + '_va' : 'bca_va');
+
+              const result = await createPakKasirTransaction({
+                invoice,
+                tenant: currentUser,
+                paymentMethod: methodCode,
+              });
+              setIsLoading(false);
+
+              if (!result.success) {
+                Alert.alert(
+                  'Gagal Membuat Transaksi',
+                  result.error || 'Terjadi kesalahan saat menghubungi PakKasir. Pastikan koneksi internet lancar.'
+                );
+                return;
+              }
+
+              setPakKasirResult(result);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Proses pembayaran manual
     Alert.alert(
-      'Konfirmasi Pembayaran',
+      'Konfirmasi Pembayaran Manual',
       `Bayar ${formatCurrency(unpaidAmount)} via ${selectedOption ?? selectedMethod.name}?`,
       [
         { text: 'Batal', style: 'cancel' },
@@ -79,7 +136,6 @@ const PaymentScreen = ({ navigation, route }) => {
           onPress: async () => {
             setIsLoading(true);
 
-            // Dalam demo, langsung catat sebagai success
             const { error } = await recordManualPayment({
               invoice_id: invoice.id,
               tenant_id: currentUser.id,
@@ -91,13 +147,13 @@ const PaymentScreen = ({ navigation, route }) => {
             setIsLoading(false);
 
             if (error) {
-              Alert.alert('Gagal', 'Pembayaran gagal diproses, coba lagi.');
+              Alert.alert('Gagal', 'Pembayaran manual gagal diproses, coba lagi.');
               return;
             }
 
             Alert.alert(
-              'Pembayaran Berhasil!',
-              'Tagihan Anda berhasil dibayarkan.',
+              'Pembayaran Dicatat!',
+              'Pembayaran manual Anda sedang menunggu konfirmasi dari pemilik kos.',
               [
                 {
                   text: 'OK',
@@ -111,6 +167,21 @@ const PaymentScreen = ({ navigation, route }) => {
     );
   };
 
+  const handleCheckStatus = async () => {
+    if (!pakKasirResult?.transactionId) return;
+    setIsCheckingStatus(true);
+    const res = await checkPakKasirStatus(pakKasirResult.transactionId);
+    setIsCheckingStatus(false);
+
+    if (res.success && (res.status === 'completed' || res.status === 'success' || res.status === 'paid')) {
+      Alert.alert('Pembayaran Terverifikasi! 🎉', 'Tagihan Anda berhasil dibayarkan secara otomatis.', [
+        { text: 'OK', onPress: () => navigation.popToTop() },
+      ]);
+    } else {
+      Alert.alert('Belum Terbayar ⏳', 'Pembayaran belum masuk. Jika Anda baru saja membayar, tunggu sekitar 30 detik dan coba cek kembali.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -122,36 +193,45 @@ const PaymentScreen = ({ navigation, route }) => {
               <Text style={styles.backBtnText}>Kembali</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Pembayaran</Text>
+          <Text style={styles.headerTitle}>Pembayaran Tagihan</Text>
         </View>
 
         {/* Amount Banner */}
         <View style={styles.amountBanner}>
-          <Text style={styles.amountLabel}>Total Pembayaran</Text>
+          <Text style={styles.amountLabel}>Total yang Harus Dibayar</Text>
           <Text style={styles.amountValue}>{formatCurrency(unpaidAmount)}</Text>
           <Text style={styles.amountNote}>Invoice #{invoice?.invoice_number}</Text>
         </View>
 
         {/* Payment Methods */}
         <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Metode Pembayaran</Text>
+          <Text style={styles.sectionTitle}>Pilih Metode Pembayaran</Text>
           {PAYMENT_METHODS.map((method) => {
             const isMethodSelected = selectedMethod?.id === method.id;
             return (
-              <View key={method.id} style={styles.methodContainer}>
+              <View key={method.id} style={[styles.methodContainer, isMethodSelected && { borderColor: COLORS.primary, borderWidth: 1 }]}>
                 {/* Method Header */}
                 <TouchableOpacity
                   style={[styles.methodHeader, isMethodSelected && styles.methodHeaderSelected]}
                   onPress={() => {
                     setSelectedMethod(method);
-                    setSelectedOption(null);
+                    setSelectedOption(method.options[0]);
                   }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name={method.icon} size={24} color={isMethodSelected ? COLORS.primary : COLORS.textTertiary} style={{ marginRight: 8 }} />
-                  <Text style={[styles.methodName, isMethodSelected && styles.methodNameSelected]}>
-                    {method.name}
-                  </Text>
+                  <View style={[styles.iconWrapper, isMethodSelected && { backgroundColor: `${COLORS.primary}20` }]}>
+                    <Ionicons name={method.icon} size={22} color={isMethodSelected ? COLORS.primary : COLORS.textTertiary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.methodName, isMethodSelected && styles.methodNameSelected]}>
+                      {method.name}
+                    </Text>
+                    {method.isAuto && (
+                      <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.success, fontWeight: FONT_WEIGHT.semiBold }}>
+                        ⚡ Verifikasi Otomatis 24 Jam
+                      </Text>
+                    )}
+                  </View>
                   <View style={[styles.radioCircle, isMethodSelected && styles.radioCircleSelected]}>
                     {isMethodSelected && <View style={styles.radioDot} />}
                   </View>
@@ -186,14 +266,14 @@ const PaymentScreen = ({ navigation, route }) => {
             );
           })}
 
-          {/* Demo Note */}
+          {/* Info Banner */}
           <View style={styles.demoNote}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[1] }}>
-              <Ionicons name="information-circle" size={16} color={COLORS.warning} style={{ marginRight: 4 }} />
-              <Text style={[styles.demoNoteTitle, { marginBottom: 0 }]}>Mode Demo</Text>
+              <Ionicons name="shield-checkmark" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.demoNoteTitle}>Pembayaran Aman & Otomatis</Text>
             </View>
             <Text style={styles.demoNoteText}>
-              Pembayaran ini adalah simulasi. Dalam versi produksi, akan terintegrasi dengan payment gateway seperti Midtrans.
+              Dengan memilih metode otomatis PakKasir, status tagihan Anda akan berubah menjadi Lunas instan tepat setelah transfer selesai.
             </Text>
           </View>
 
@@ -218,6 +298,94 @@ const PaymentScreen = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* PakKasir Payment Modal */}
+      <Modal
+        visible={!!pakKasirResult}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPakKasirResult(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Pembayaran PakKasir</Text>
+              <TouchableOpacity onPress={() => setPakKasirResult(null)}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', paddingVertical: SPACING[3] }}>
+              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[2] }}>
+                Total Pembayaran
+              </Text>
+              <Text style={{ fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, color: COLORS.primary, marginBottom: SPACING[4] }}>
+                {formatCurrency(unpaidAmount)}
+              </Text>
+
+              {/* QRIS Image if available */}
+              {pakKasirResult?.qrisUrl ? (
+                <View style={styles.qrisBox}>
+                  <Image
+                    source={{ uri: pakKasirResult.qrisUrl }}
+                    style={{ width: 220, height: 220 }}
+                    resizeMode="contain"
+                  />
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: SPACING[2] }}>
+                    Scan menggunakan BCA, GoPay, OVO, atau DANA
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Virtual Account Number if available */}
+              {pakKasirResult?.vaNumber ? (
+                <View style={styles.vaBox}>
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary }}>Nomor Virtual Account:</Text>
+                  <Text style={{ fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginVertical: 4 }}>
+                    {pakKasirResult.vaNumber}
+                  </Text>
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.primary }}>
+                    Salin & bayar melalui m-Banking / ATM Anda
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Status polling note */}
+              <View style={styles.statusBox}>
+                <ActivityIndicator size="small" color={COLORS.primary} style={{ marginRight: 8 }} />
+                <Text style={{ flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textPrimary }}>
+                  Sistem mengecek status pembayaran secara otomatis via Webhook...
+                </Text>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={{ width: '100%', marginTop: SPACING[4], gap: SPACING[3] }}>
+                {pakKasirResult?.paymentUrl && (
+                  <TouchableOpacity
+                    style={styles.openUrlBtn}
+                    onPress={() => Linking.openURL(pakKasirResult.paymentUrl)}
+                  >
+                    <Ionicons name="open-outline" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+                    <Text style={styles.openUrlBtnText}>Buka Checkout di Browser</Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  style={styles.checkStatusBtn}
+                  onPress={handleCheckStatus}
+                  disabled={isCheckingStatus}
+                >
+                  {isCheckingStatus ? (
+                    <ActivityIndicator color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.checkStatusBtnText}>Cek Status Sekarang</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -268,6 +436,8 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xl,
     marginBottom: SPACING[3],
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
     ...SHADOW.sm,
   },
   methodHeader: {
@@ -276,9 +446,16 @@ const styles = StyleSheet.create({
     padding: SPACING[4],
     gap: SPACING[3],
   },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.grey100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   methodHeaderSelected: { backgroundColor: COLORS.primarySurface },
   methodName: {
-    flex: 1,
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.semiBold,
     color: COLORS.textPrimary,
@@ -326,29 +503,29 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: { color: COLORS.primary },
   demoNote: {
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: `${COLORS.primary}10`,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING[4],
     marginTop: SPACING[4],
+    borderWidth: 1,
+    borderColor: `${COLORS.primary}25`,
   },
   demoNoteTitle: {
     fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.warning,
-    marginBottom: SPACING[1],
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
   },
   demoNoteText: {
     fontSize: FONT_SIZE.sm,
-    color: COLORS.warning,
+    color: COLORS.textSecondary,
     lineHeight: 20,
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 96,
+    bottom: 80,
     left: 0,
     right: 0,
     padding: SPACING[4],
-    paddingBottom: SPACING[8],
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
@@ -362,6 +539,84 @@ const styles = StyleSheet.create({
   },
   payBtnDisabled: { opacity: 0.7 },
   payBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: SPACING[4],
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING[5],
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING[3],
+    paddingBottom: SPACING[2],
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  qrisBox: {
+    alignItems: 'center',
+    backgroundColor: COLORS.grey50,
+    padding: SPACING[4],
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SPACING[4],
+  },
+  vaBox: {
+    alignItems: 'center',
+    backgroundColor: COLORS.primarySurface,
+    padding: SPACING[4],
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    marginBottom: SPACING[4],
+    width: '100%',
+  },
+  statusBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.warningLight,
+    padding: SPACING[3],
+    borderRadius: BORDER_RADIUS.md,
+    width: '100%',
+  },
+  openUrlBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING[3],
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  openUrlBtnText: {
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semiBold,
+  },
+  checkStatusBtn: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING[3.5],
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+  },
+  checkStatusBtnText: {
     color: COLORS.white,
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.bold,
