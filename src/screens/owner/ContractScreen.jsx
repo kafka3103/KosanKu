@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   filterTabActive: { backgroundColor: COLORS.primary },
   filterText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary },
   filterTextActive: { color: COLORS.white, fontWeight: FONT_WEIGHT.semiBold },
-  list: { padding: SPACING[4], gap: SPACING[3], paddingBottom: SPACING[10] },
+  list: { padding: SPACING[4], gap: SPACING[3], paddingBottom: 100 },
   card: { backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], ...SHADOW.sm },
   cardActive: { borderLeftWidth: 3, borderLeftColor: COLORS.success },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: SPACING[3], paddingVertical: 4, borderRadius: BORDER_RADIUS.full, marginBottom: SPACING[3] },

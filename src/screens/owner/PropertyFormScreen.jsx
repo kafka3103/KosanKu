@@ -184,7 +184,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {isEdit ? t('property.form.editTitle') : t('property.form.addTitle')}
@@ -414,7 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   container: {
-    paddingBottom: SPACING[12],
+    paddingBottom: 100,
   },
   header: {
     backgroundColor: COLORS.primary,

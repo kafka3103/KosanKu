@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   filterBadgeActive: { backgroundColor: COLORS.white },
   filterBadgeText: { fontSize: 10, color: COLORS.white, fontWeight: FONT_WEIGHT.bold },
   filterBadgeTextActive: { color: COLORS.primary },
-  listContent: { padding: SPACING[4], gap: SPACING[3], paddingBottom: SPACING[10] },
+  listContent: { padding: SPACING[4], gap: SPACING[3], paddingBottom: 100 },
   card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,

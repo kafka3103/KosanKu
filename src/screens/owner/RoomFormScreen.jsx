@@ -190,7 +190,10 @@ const RoomFormScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {isEdit ? t('room.form.editTitle') : t('room.form.addTitle')}
@@ -364,7 +367,7 @@ const RoomFormScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
-  container: { paddingBottom: SPACING[12] },
+  container: { paddingBottom: 100 },
   header: {
     backgroundColor: COLORS.primary,
     paddingTop: SPACING[14],

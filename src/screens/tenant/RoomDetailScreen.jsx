@@ -122,7 +122,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
 
           {/* Back Button */}
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
           </TouchableOpacity>
 
           {/* Status Badge */}
@@ -234,7 +234,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Spacer for bottom button */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 180 }} />
       </ScrollView>
 
       {/* Bottom CTA */}
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   rulesText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, lineHeight: 22 },
   bottomBar: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 96,
     left: 0,
     right: 0,
     flexDirection: 'row',
