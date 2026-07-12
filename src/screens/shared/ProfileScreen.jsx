@@ -210,7 +210,10 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.header}>
         {navigation.canGoBack() && (
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
         )}
         <Text style={styles.headerTitle}>{t('profile.title')}</Text>

@@ -330,7 +330,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
-  container: { paddingBottom: SPACING[12] },
+  container: { paddingBottom: 100 },
   header: {
     backgroundColor: COLORS.primary,
     paddingTop: SPACING[14],

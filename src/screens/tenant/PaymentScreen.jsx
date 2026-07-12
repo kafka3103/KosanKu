@@ -197,7 +197,7 @@ const PaymentScreen = ({ navigation, route }) => {
             </Text>
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 180 }} />
         </View>
       </ScrollView>
 
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 96,
     left: 0,
     right: 0,
     padding: SPACING[4],

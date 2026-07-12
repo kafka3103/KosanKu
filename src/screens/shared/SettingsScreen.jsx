@@ -15,6 +15,7 @@ import {
   Linking,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -115,7 +116,10 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles.header}>
         {navigation?.canGoBack?.() && (
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
+              <Text style={styles.backBtnText}>Kembali</Text>
+            </View>
           </TouchableOpacity>
         )}
         <Text style={styles.headerTitle}>{t('settings.title')}</Text>
