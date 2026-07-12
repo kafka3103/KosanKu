@@ -18,6 +18,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
@@ -133,6 +134,7 @@ const PropertyCard = ({ property, onPress }) => {
 const SearchScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [properties, setProperties] = useState([]);
@@ -260,7 +262,7 @@ const SearchScreen = ({ navigation }) => {
         <FlatList
           data={properties}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -272,7 +274,7 @@ const SearchScreen = ({ navigation }) => {
           }
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyEmoji} />
+              <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
               <Text style={styles.emptyTitle}>Kosan Tidak Ditemukan</Text>
               <Text style={styles.emptySubtitle}>
                 Coba ubah kata kunci atau filter pencarian Anda
@@ -544,7 +546,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyEmoji: { marginBottom: SPACING[3] },
+  emptyIcon: { marginBottom: SPACING[3] },
   emptyTitle: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,

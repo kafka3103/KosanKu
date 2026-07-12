@@ -6,6 +6,7 @@
 
 import supabaseClient from './supabaseClient';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import useAuthStore from '../store/authStore';
 
 // Konfigurasi Google Sign-In awal
 GoogleSignin.configure({
@@ -110,12 +111,27 @@ export const signInWithGoogle = async (role = null) => {
         // Siapkan data yang akan di-upsert
         const upsertData = {
           id: userId,
+          email: data.session.user.email,
           updated_at: new Date().toISOString(),
         };
 
-        // Set role jika ini user baru
-        if (!existingUser?.role && role) {
-          upsertData.role = role;
+        // Jika user belum punya role, berarti belum terdaftar di KosanKu
+        if (!existingUser?.role) {
+          if (role) {
+            // Berasal dari RegisterScreen, kita set role-nya
+            upsertData.role = role;
+          } else {
+            // Berasal dari LoginScreen, tolak login dan paksa sign out dari sesi sementara ini
+            await supabaseClient.auth.signOut();
+            return { error: { code: 'NOT_REGISTERED', message: 'Akun Anda belum terdaftar. Silakan Sign Up terlebih dahulu.' } };
+          }
+        } else {
+          // User SUDAH punya role (sudah terdaftar sebelumnya)
+          if (role) {
+            // Berasal dari RegisterScreen tapi mencoba daftar ulang, tolak!
+            await supabaseClient.auth.signOut();
+            return { error: { code: 'ALREADY_REGISTERED', message: 'Akun Google ini sudah terdaftar. Silakan gunakan menu Login.' } };
+          }
         }
 
         // Isi nama dari Google jika user belum punya nama
@@ -125,7 +141,22 @@ export const signInWithGoogle = async (role = null) => {
 
         // Hanya upsert jika ada sesuatu yang perlu diperbarui
         if (upsertData.role || upsertData.full_name) {
-          await supabaseClient.from('users').upsert(upsertData);
+          const { error: upsertError } = await supabaseClient.from('users').upsert(upsertData);
+          
+          if (upsertError) {
+            console.error('UPSERT ERROR:', upsertError);
+            // Sign out karena proses registrasi profile gagal
+            await supabaseClient.auth.signOut();
+            return { error: { message: 'Gagal menyimpan profil: ' + upsertError.message } };
+          }
+
+          // Fix Race Condition: update store secara manual setelah pendaftaran selesai
+          const store = useAuthStore.getState();
+          store.setAuthenticatedUser(data.session, {
+            ...store.currentUser,
+            ...upsertData,
+            email: data.session.user.email,
+          });
         }
       }
 
@@ -208,8 +239,42 @@ export const verifyPasswordResetOtp = async ({ email, otpCode }) => {
  * @returns {Promise<{error}>}
  */
 export const logout = async () => {
-  const { error } = await supabaseClient.auth.signOut();
-  return { error };
+  try {
+    await supabaseClient.auth.signOut();
+    try { await GoogleSignin.signOut(); } catch (e) { }
+    const store = useAuthStore.getState();
+    store.clearAuthState();
+    return { error: null };
+  } catch (err) {
+    return { error: err };
+  }
+};
+
+/**
+ * Hapus Akun Permanen
+ * Memanggil RPC delete_user di backend yang akan menghapus data di auth.users
+ * dan memicu cascade delete ke public.users
+ */
+export const deleteAccount = async () => {
+  try {
+    // Panggil fungsi RPC delete_user di backend
+    const { error } = await supabaseClient.rpc('delete_user');
+    
+    if (error) {
+      console.error('Error deleting account:', error);
+      return { error };
+    }
+
+    // Jika berhasil, otomatis sign out dan bersihkan state
+    await supabaseClient.auth.signOut();
+    try { await GoogleSignin.signOut(); } catch (e) { }
+    const store = useAuthStore.getState();
+    store.clearAuthState();
+    
+    return { error: null };
+  } catch (err) {
+    return { error: err };
+  }
 };
 
 /**

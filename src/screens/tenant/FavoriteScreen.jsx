@@ -16,7 +16,9 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -89,6 +91,7 @@ const FavoriteCard = ({ favorite, onPress, onRemove }) => {
 
 const FavoriteScreen = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,7 +149,7 @@ const FavoriteScreen = ({ navigation }) => {
       <FlatList
         data={favorites}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -158,7 +161,7 @@ const FavoriteScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🤍</Text>
+            <Ionicons name="heart-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>{t('favorites.emptyTitle')}</Text>
             <Text style={styles.emptySubtitle}>{t('favorites.emptySubtitle')}</Text>
             <TouchableOpacity
@@ -278,7 +281,7 @@ const styles = StyleSheet.create({
   },
   noRoomText: { fontSize: FONT_SIZE.xs, color: COLORS.error },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[16] },
-  emptyEmoji: { fontSize: 64, marginBottom: SPACING[4] },
+  emptyIcon: { marginBottom: SPACING[4] },
   emptyTitle: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,

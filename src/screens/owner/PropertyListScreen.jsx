@@ -16,6 +16,7 @@ import {
   Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -106,6 +107,7 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
 
 const PropertyListScreen = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -180,7 +182,7 @@ const PropertyListScreen = ({ navigation }) => {
       <FlatList
         data={properties}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -211,7 +213,11 @@ const PropertyListScreen = ({ navigation }) => {
       />
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={handleAddProperty} activeOpacity={0.8}>
+      <TouchableOpacity 
+        style={[styles.fab, { bottom: insets.bottom + 100 }]} 
+        onPress={handleAddProperty} 
+        activeOpacity={0.8}
+      >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>

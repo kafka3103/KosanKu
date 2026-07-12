@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
@@ -44,14 +46,14 @@ const formatRelativeTime = (dateStr) => {
 };
 
 const NOTIF_TYPE_CONFIG = {
-  rental_request_new: { emoji: '📋', color: COLORS.info },
-  rental_request_approved: { emoji: '✅', color: COLORS.success },
-  rental_request_rejected: { emoji: '❌', color: COLORS.error },
-  invoice_generated: { emoji: '🧾', color: COLORS.warning },
-  invoice_overdue: { emoji: '🔴', color: COLORS.error },
-  payment_received: { emoji: '💰', color: COLORS.success },
-  contract_ending: { emoji: '📅', color: COLORS.warning },
-  system: { emoji: '🔔', color: COLORS.grey500 },
+  rental_request_new: { icon: 'document-text', color: COLORS.info },
+  rental_request_approved: { icon: 'checkmark-circle', color: COLORS.success },
+  rental_request_rejected: { icon: 'close-circle', color: COLORS.error },
+  invoice_generated: { icon: 'receipt', color: COLORS.warning },
+  invoice_overdue: { icon: 'alert-circle', color: COLORS.error },
+  payment_received: { icon: 'wallet', color: COLORS.success },
+  contract_ending: { icon: 'calendar', color: COLORS.warning },
+  system: { icon: 'notifications', color: COLORS.grey500 },
 };
 
 const NotifCard = ({ notif, onRead }) => {
@@ -64,7 +66,7 @@ const NotifCard = ({ notif, onRead }) => {
       activeOpacity={0.7}
     >
       <View style={[styles.notifIcon, { backgroundColor: `${config.color}22` }]}>
-        <Text style={styles.notifEmoji}>{config.emoji}</Text>
+        <Ionicons name={config.icon} size={20} color={config.color} />
       </View>
       <View style={styles.notifContent}>
         <Text style={[styles.notifTitle, !notif.is_read && styles.notifTitleUnread]}>
@@ -79,6 +81,7 @@ const NotifCard = ({ notif, onRead }) => {
 };
 
 const NotificationScreen = () => {
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -153,7 +156,7 @@ const NotificationScreen = () => {
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -165,7 +168,7 @@ const NotificationScreen = () => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🔔</Text>
+            <Ionicons name="notifications-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Belum Ada Notifikasi</Text>
             <Text style={styles.emptySubtitle}>
               Notifikasi tentang kamar, tagihan, dan pengajuan akan muncul di sini
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexShrink: 0,
   },
-  notifEmoji: { fontSize: 20 },
+  
   notifContent: { flex: 1 },
   notifTitle: {
     fontSize: FONT_SIZE.base,
@@ -267,7 +270,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[16] },
-  emptyEmoji: { fontSize: 64, marginBottom: SPACING[4] },
+  emptyIcon: { marginBottom: SPACING[4] },
   emptyTitle: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,

@@ -36,7 +36,21 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(false);
     
     if (error) {
-      Alert.alert(t('common.errors.error'), error.message);
+      if (error.code === 'NOT_REGISTERED') {
+        Alert.alert(
+          'Akun Belum Terdaftar',
+          error.message,
+          [
+            { text: 'Batal', style: 'cancel' },
+            { 
+              text: 'Daftar Sekarang', 
+              onPress: () => navigation.navigate(AUTH_SCREENS.REGISTER) 
+            }
+          ]
+        );
+      } else {
+        Alert.alert(t('common.errors.error'), error.message);
+      }
     }
     // Jika sukses, auth state listener akan otomatis memindahkan layar
   };

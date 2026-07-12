@@ -18,6 +18,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { id as idLocale } from 'date-fns/locale';
@@ -74,6 +75,7 @@ const REQUEST_STATUS_CONFIG = {
 
 const MyRentScreen = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
   const [contract, setContract] = useState(null);
@@ -130,7 +132,7 @@ const MyRentScreen = ({ navigation }) => {
     return (
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.emptyContent}
+        contentContainerStyle={[styles.emptyContent, { paddingBottom: insets.bottom + 100 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -170,7 +172,7 @@ const MyRentScreen = ({ navigation }) => {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl

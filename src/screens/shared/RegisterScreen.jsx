@@ -85,7 +85,21 @@ const RegisterScreen = ({ navigation }) => {
     setIsLoading(false);
     
     if (error) {
-      Alert.alert(t('common.errors.error') || 'Error', error.message);
+      if (error.code === 'ALREADY_REGISTERED') {
+        Alert.alert(
+          'Akun Sudah Terdaftar',
+          error.message,
+          [
+            { text: 'Batal', style: 'cancel' },
+            { 
+              text: 'Masuk (Login)', 
+              onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) 
+            }
+          ]
+        );
+      } else {
+        Alert.alert(t('common.errors.error') || 'Error', error.message);
+      }
     }
   };
 

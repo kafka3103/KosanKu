@@ -19,6 +19,7 @@ import {
   Switch,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -31,10 +32,10 @@ import {
 } from '../../services/propertyService';
 
 const ROOM_TYPES = [
-  { value: 'standard', label: 'Standard', emoji: '🛏️' },
-  { value: 'deluxe', label: 'Deluxe', emoji: '✨' },
-  { value: 'suite', label: 'Suite', emoji: '👑' },
-  { value: 'studio', label: 'Studio', emoji: '🏠' },
+  { value: 'standard', label: 'Standard', icon: 'bed-outline' },
+  { value: 'deluxe', label: 'Deluxe', icon: 'sparkles-outline' },
+  { value: 'suite', label: 'Suite', icon: 'diamond-outline' },
+  { value: 'studio', label: 'Studio', icon: 'home-outline' },
 ];
 
 const FACILITY_ICON_MAP = {
@@ -213,27 +214,32 @@ const RoomFormScreen = ({ navigation, route }) => {
           {/* Room Type */}
           <Text style={styles.label}>{t('room.form.roomTypeLabel')}</Text>
           <View style={styles.typeGrid}>
-            {ROOM_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type.value}
-                style={[
-                  styles.typeOption,
-                  roomType === type.value && styles.typeOptionSelected,
-                ]}
-                onPress={() => setRoomType(type.value)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.typeEmoji}>{type.emoji}</Text>
-                <Text
-                  style={[
-                    styles.typeLabel,
-                    roomType === type.value && styles.typeLabelSelected,
-                  ]}
+            {ROOM_TYPES.map((type) => {
+              const isSelected = roomType === type.value;
+              return (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[styles.typeCard, isSelected && styles.typeCardSelected]}
+                  onPress={() => setRoomType(type.value)}
+                  activeOpacity={0.8}
                 >
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Ionicons 
+                    name={type.icon} 
+                    size={24} 
+                    color={isSelected ? COLORS.primary : COLORS.textTertiary} 
+                    style={styles.typeIcon} 
+                  />
+                  <Text
+                    style={[
+                      styles.typeLabel,
+                      isSelected && styles.typeLabelSelected,
+                    ]}
+                  >
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Floor & Size */}
@@ -437,7 +443,7 @@ const styles = StyleSheet.create({
     gap: SPACING[2],
     marginTop: SPACING[1],
   },
-  typeOption: {
+  typeCard: {
     flex: 1,
     minWidth: '22%',
     backgroundColor: COLORS.grey50,
@@ -448,11 +454,11 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     gap: 4,
   },
-  typeOptionSelected: {
+  typeCardSelected: {
     borderColor: COLORS.primary,
     backgroundColor: COLORS.primarySurface,
   },
-  typeEmoji: { fontSize: 22 },
+  typeIcon: { marginBottom: SPACING[2] },
   typeLabel: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.medium,

@@ -51,6 +51,15 @@ const AppNavigator = () => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         try {
           const { data: userProfile } = await getUserProfile(session.user.id);
+          
+          // Mencegah race condition: jika authStore sudah keburu di-update oleh authService
+          // dengan role yang benar, jangan timpa dengan data usang (role null) dari fetch ini.
+          const currentRole = useAuthStore.getState().userRole;
+          if (currentRole && !userProfile?.role) {
+            console.log('AppNavigator: Mengabaikan data usang karena role sudah terupdate di store.');
+            return;
+          }
+
           if (userProfile) {
             setAuthenticatedUser(session, userProfile);
           } else {

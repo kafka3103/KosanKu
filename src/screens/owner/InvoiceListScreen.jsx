@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -119,6 +120,7 @@ const FilterTab = ({ label, isActive, onPress }) => (
 
 const InvoiceListScreen = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const [invoices, setInvoices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -198,7 +200,7 @@ const InvoiceListScreen = ({ navigation }) => {
       <FlatList
         data={filteredInvoices}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

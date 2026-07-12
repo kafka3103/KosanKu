@@ -15,6 +15,7 @@ import {
   Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,6 +89,7 @@ const RequestCard = ({ request, onPress }) => {
 
 const DashboardScreen = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -142,7 +144,7 @@ const DashboardScreen = ({ navigation }) => {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl

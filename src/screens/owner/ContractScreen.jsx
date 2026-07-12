@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
+import { Ionicons } from '@expo/vector-icons';
 import { id as idLocale } from 'date-fns/locale';
 
 import COLORS from '../../constants/colors';
@@ -41,10 +42,10 @@ const formatCurrency = (amount) =>
   }).format(amount ?? 0);
 
 const STATUS_CONFIG = {
-  active: { color: COLORS.success, bg: COLORS.successLight, label: 'Aktif', emoji: '✅' },
-  completed: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Selesai', emoji: '🏁' },
-  terminated: { color: COLORS.error, bg: COLORS.errorLight, label: 'Dihentikan', emoji: '🛑' },
-  early_exit: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Keluar Lebih Awal', emoji: '⚡' },
+  active: { color: COLORS.success, bg: COLORS.successLight, label: 'Aktif', icon: 'checkmark-circle' },
+  completed: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Selesai', icon: 'flag' },
+  terminated: { color: COLORS.error, bg: COLORS.errorLight, label: 'Dihentikan', icon: 'stop-circle' },
+  early_exit: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Keluar Lebih Awal', icon: 'flash' },
 };
 
 const ContractCard = ({ contract, onTerminate }) => {
@@ -56,7 +57,7 @@ const ContractCard = ({ contract, onTerminate }) => {
   return (
     <View style={[styles.card, contract.status === 'active' && styles.cardActive]}>
       <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-        <Text style={styles.statusEmoji}>{status.emoji}</Text>
+        <Ionicons name={status.icon} size={12} color={status.color} style={{ marginRight: 4 }} />
         <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
       </View>
       <View style={styles.infoRow}>
@@ -183,7 +184,7 @@ const ContractScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>📄</Text>
+            <Ionicons name="document-text-outline" size={56} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Tidak Ada Kontrak</Text>
           </View>
         )}
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], ...SHADOW.sm },
   cardActive: { borderLeftWidth: 3, borderLeftColor: COLORS.success },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: SPACING[3], paddingVertical: 4, borderRadius: BORDER_RADIUS.full, marginBottom: SPACING[3] },
-  statusEmoji: { fontSize: 12 },
+  
   statusText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3], gap: SPACING[3] },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primarySurface, justifyContent: 'center', alignItems: 'center' },
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
   terminateBtn: { backgroundColor: COLORS.errorLight, borderRadius: BORDER_RADIUS.md, padding: SPACING[2], alignItems: 'center' },
   terminateBtnText: { color: COLORS.error, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semiBold },
   emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyEmoji: { fontSize: 56, marginBottom: SPACING[3] },
+  emptyIcon: { marginBottom: SPACING[3] },
   emptyTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
 });
 

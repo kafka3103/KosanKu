@@ -18,6 +18,8 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import COLORS from '../../constants/colors';
@@ -25,11 +27,12 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getUserProfile, updateUserProfile, uploadAvatar } from '../../services/userService';
-import { logout } from '../../services/authService';
+import { logout, deleteAccount } from '../../services/authService';
 import { USER_ROLE } from '../../constants/userRole';
 
 const ProfileScreen = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { currentUser, currentSession, clearAuthState, setAuthenticatedUser, userRole } = useAuthStore();
 
   const [profile, setProfile] = useState(currentUser);
@@ -107,6 +110,37 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Hapus Akun',
+      'Apakah Anda yakin ingin menghapus akun ini secara permanen? Semua data Anda (termasuk properti/kamar yang Anda kelola atau sewa) akan ikut terhapus dan tidak dapat dikembalikan.',
+      [
+        { text: 'Batal', style: 'cancel' },
+        { 
+          text: 'Ya, Hapus Permanen', 
+          style: 'destructive',
+          onPress: async () => {
+            setIsSaving(true);
+            const { error } = await deleteAccount();
+            setIsSaving(false);
+            if (error) {
+              Alert.alert('Gagal Menghapus Akun', error.message || 'Terjadi kesalahan saat menghapus akun.');
+            } else {
+              Alert.alert(
+                'Akun Berhasil Dihapus',
+                'Akun beserta seluruh data Anda telah dihapus secara permanen dari sistem.',
+                [
+                  { text: 'Tutup', onPress: () => useAuthStore.getState().clearAuthState() }
+                ],
+                { cancelable: false }
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
       Alert.alert('Error', 'Nama Lengkap wajib diisi');
@@ -129,9 +163,9 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const InfoRow = ({ label, value, emoji }) => (
+  const InfoRow = ({ label, value, icon, iconColor = COLORS.textSecondary }) => (
     <View style={styles.infoRow}>
-      <Text style={styles.infoEmoji}>{emoji}</Text>
+      <Ionicons name={icon} size={20} color={iconColor} style={styles.infoIcon} />
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
         <Text style={styles.infoValue}>{value ?? '—'}</Text>
@@ -139,9 +173,9 @@ const ProfileScreen = ({ navigation }) => {
     </View>
   );
 
-  const EditableInfoRow = ({ label, value, onChangeText, emoji, placeholder, keyboardType = 'default' }) => (
+  const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default' }) => (
     <View style={styles.infoRow}>
-      <Text style={styles.infoEmoji}>{emoji}</Text>
+      <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.infoIcon} />
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
         <TextInput
@@ -200,7 +234,7 @@ const ProfileScreen = ({ navigation }) => {
             {isUploadingAvatar ? (
               <ActivityIndicator size="small" color={COLORS.white} />
             ) : (
-              <Text style={styles.avatarEditText}>📷</Text>
+              <Ionicons name="camera" size={16} color={COLORS.white} />
             )}
           </View>
         </TouchableOpacity>
@@ -225,22 +259,22 @@ const ProfileScreen = ({ navigation }) => {
           label="Nama Lengkap" 
           value={fullName} 
           onChangeText={setFullName}
-          emoji="👤" 
+          icon="person-outline" 
           placeholder="Masukkan nama lengkap"
         />
-        <InfoRow label="Email" value={profile?.email ?? currentUser?.email} emoji="📧" />
+        <InfoRow label="Email" value={profile?.email ?? currentUser?.email} icon="mail-outline" />
         <EditableInfoRow 
           label="Nomor Telepon" 
           value={phoneNumber} 
           onChangeText={setPhoneNumber}
-          emoji="📱" 
+          icon="call-outline" 
           placeholder="Contoh: +628123456789"
           keyboardType="phone-pad"
         />
         <InfoRow
           label="Status Profil"
           value={profile?.is_profile_complete ? 'Lengkap' : 'Belum Lengkap'}
-          emoji={profile?.is_profile_complete ? '✅' : '⚠️'}
+          icon={profile?.is_profile_complete ? "checkmark-circle" : "warning"} iconColor={profile?.is_profile_complete ? COLORS.success : COLORS.warning}
         />
         <TouchableOpacity
           style={[styles.saveProfileBtn, isSaving && { opacity: 0.7 }]}
@@ -264,12 +298,19 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
-        <Text style={styles.logoutBtnText}>🚪 {t('profile.logoutButton')}</Text>
-      </TouchableOpacity>
+            <View style={styles.section}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
+          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+          <Text style={styles.logoutBtnText}>Keluar (Logout)</Text>
+        </TouchableOpacity>
 
-      <View style={{ height: SPACING[10] }} />
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
+          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+          <Text style={styles.deleteBtnText}>Hapus Akun Permanen</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ height: insets.bottom + 100 }} />
     </ScrollView>
   );
 };
@@ -383,7 +424,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.divider,
     gap: SPACING[3],
   },
-  infoEmoji: { fontSize: 20, width: 24, textAlign: 'center' },
+  infoIcon: { width: 24, textAlign: 'center', marginRight: SPACING[2] },
   infoContent: { flex: 1 },
   infoLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textTertiary },
   infoValue: {
@@ -424,17 +465,35 @@ const styles = StyleSheet.create({
   aboutLabel: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   aboutValue: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary },
   logoutBtn: {
-    marginHorizontal: SPACING[4],
-    marginTop: SPACING[5],
-    backgroundColor: COLORS.errorLight,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING[2],
+    backgroundColor: COLORS.errorLight,
+    padding: SPACING[4],
+    borderRadius: BORDER_RADIUS.lg,
   },
   logoutBtnText: {
     color: COLORS.error,
     fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semiBold,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING[2],
+    paddingVertical: SPACING[4],
+    marginTop: SPACING[2],
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.white,
+  },
+  deleteBtnText: {
+    color: COLORS.error,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });
 

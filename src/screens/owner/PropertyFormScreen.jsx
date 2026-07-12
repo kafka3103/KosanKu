@@ -32,20 +32,20 @@ import {
 } from '../../services/propertyService';
 
 const GENERAL_FACILITIES = [
-  { key: 'parking', label: 'Parkir', emoji: '🅿️' },
-  { key: 'cctv', label: 'CCTV', emoji: '📹' },
-  { key: 'security_24h', label: 'Security 24 Jam', emoji: '💂' },
-  { key: 'wifi_area', label: 'WiFi Area', emoji: '📶' },
-  { key: 'laundry', label: 'Laundry', emoji: '👕' },
-  { key: 'canteen', label: 'Kantin', emoji: '🍽️' },
-  { key: 'garden', label: 'Taman', emoji: '🌿' },
-  { key: 'gym', label: 'Gym', emoji: '💪' },
+  { key: 'parking', label: 'Parkir', icon: 'car-outline' },
+  { key: 'cctv', label: 'CCTV', icon: 'videocam-outline' },
+  { key: 'security_24h', label: 'Security 24 Jam', icon: 'shield-checkmark-outline' },
+  { key: 'wifi_area', label: 'WiFi Area', icon: 'wifi-outline' },
+  { key: 'laundry', label: 'Laundry', icon: 'shirt-outline' },
+  { key: 'canteen', label: 'Kantin', icon: 'restaurant-outline' },
+  { key: 'garden', label: 'Taman', icon: 'leaf-outline' },
+  { key: 'gym', label: 'Gym', icon: 'barbell-outline' },
 ];
 
 const GENDER_OPTIONS = [
-  { value: 'male', label: 'Putra', emoji: '👨' },
-  { value: 'female', label: 'Putri', emoji: '👩' },
-  { value: 'mixed', label: 'Campur', emoji: '👫' },
+  { value: 'male', label: 'Putra', icon: 'man-outline' },
+  { value: 'female', label: 'Putri', icon: 'woman-outline' },
+  { value: 'mixed', label: 'Campur', icon: 'people-outline' },
 ];
 
 const PropertyFormScreen = ({ navigation, route }) => {
@@ -201,7 +201,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
             <Image source={{ uri: coverPhotoUri }} style={styles.coverPhoto} />
           ) : (
             <View style={styles.coverPhotoPlaceholder}>
-              <Text style={styles.coverPhotoEmoji}>📸</Text>
+              <Ionicons name="camera-outline" size={32} color={COLORS.primary} style={styles.coverPhotoIcon} />
               <Text style={styles.coverPhotoHint}>{t('property.form.addPhotoButton')}</Text>
             </View>
           )}
@@ -298,7 +298,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 onPress={() => setGenderPolicy(opt.value)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.genderEmoji}>{opt.emoji}</Text>
+                <Ionicons name={opt.icon} size={24} color={value === opt.value ? COLORS.primary : COLORS.textTertiary} style={styles.genderIcon} />
                 <Text
                   style={[
                     styles.genderLabel,
@@ -326,7 +326,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                   onPress={() => toggleFacility(fac.key)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.facilityEmoji}>{fac.emoji}</Text>
+                  <Ionicons name={fac.icon} size={20} color={isSelected ? COLORS.primary : COLORS.textTertiary} style={styles.facilityIcon} />
                   <Text
                     style={[
                       styles.facilityLabel,
@@ -452,9 +452,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING[2],
   },
-  coverPhotoEmoji: {
-    fontSize: 48,
-  },
+  coverPhotoIcon: { marginBottom: SPACING[2] },
   coverPhotoHint: {
     fontSize: FONT_SIZE.base,
     color: COLORS.textSecondary,
@@ -544,9 +542,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     backgroundColor: COLORS.primarySurface,
   },
-  genderEmoji: {
-    fontSize: 24,
-  },
+  genderIcon: { marginBottom: SPACING[2] },
   genderLabel: {
     fontSize: FONT_SIZE.sm,
     fontWeight: FONT_WEIGHT.medium,
@@ -576,9 +572,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primarySurface,
     borderColor: COLORS.primary,
   },
-  facilityEmoji: {
-    fontSize: 14,
-  },
+  facilityIcon: { marginRight: SPACING[2] },
   facilityLabel: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
