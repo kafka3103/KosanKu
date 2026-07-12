@@ -15,6 +15,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
@@ -138,6 +139,7 @@ const TenantListScreen = ({ navigation }) => {
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const loadTenants = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
@@ -186,7 +188,7 @@ const TenantListScreen = ({ navigation }) => {
       <FlatList
         data={contracts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

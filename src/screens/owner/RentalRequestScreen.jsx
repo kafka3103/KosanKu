@@ -17,6 +17,7 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
@@ -179,6 +180,7 @@ const RentalRequestScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('pending');
+  const insets = useSafeAreaInsets();
 
   // Reject modal
   const [rejectModal, setRejectModal] = useState({ visible: false, request: null });
@@ -314,7 +316,7 @@ const RentalRequestScreen = ({ navigation }) => {
       <FlatList
         data={filteredRequests}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

@@ -17,7 +17,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -29,6 +32,9 @@ import {
   updateRoom,
   getFacilityMaster,
   setRoomFacilities,
+  createBulkRooms,
+  setBulkRoomFacilities,
+  uploadMultipleRoomPhotos,
 } from '../../services/propertyService';
 
 const ROOM_TYPES = [
@@ -70,8 +76,16 @@ const RoomFormScreen = ({ navigation, route }) => {
 
   const [allFacilities, setAllFacilities] = useState([]);
   const [selectedFacilities, setSelectedFacilities] = useState([]); // [{facility_id, additional_cost}]
+  const [roomPhotos, setRoomPhotos] = useState(existingRoom?.photo_urls ?? []);
+  
+  // Bulk generation state
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [bulkPrefix, setBulkPrefix] = useState('');
+  const [bulkCount, setBulkCount] = useState('1');
+
   const [isLoadingFacilities, setIsLoadingFacilities] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     loadFacilities();
@@ -107,9 +121,66 @@ const RoomFormScreen = ({ navigation, route }) => {
   const isFacilitySelected = (facilityId) =>
     selectedFacilities.some((f) => f.facility_id === facilityId);
 
+  const pickPhotosFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setRoomPhotos(prev => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const pickPhotosFromGallery = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses galeri diperlukan.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.length > 0) {
+      const uris = result.assets.map(a => a.uri);
+      setRoomPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
+    }
+  };
+
+  const handlePickPhotos = () => {
+    if (roomPhotos.length >= 5) {
+      Alert.alert('Batas Tercapai', 'Maksimal 5 foto kamar.');
+      return;
+    }
+    Alert.alert(
+      'Foto Kamar',
+      'Pilih sumber foto kamar',
+      [
+        { text: 'Kamera', onPress: pickPhotosFromCamera },
+        { text: 'Galeri', onPress: pickPhotosFromGallery },
+        { text: 'Batal', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const removePhoto = (indexToRemove) => {
+    setRoomPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleSave = async () => {
-    if (!roomNumber.trim()) {
+    if (!isBulkMode && !roomNumber.trim()) {
       Alert.alert('Error', 'Nomor kamar wajib diisi');
+      return;
+    }
+    if (isBulkMode && (!bulkPrefix.trim() || !bulkCount || parseInt(bulkCount, 10) < 1)) {
+      Alert.alert('Error', 'Awalan dan jumlah kamar wajib diisi');
       return;
     }
     if (!basePrice) {
@@ -120,31 +191,73 @@ const RoomFormScreen = ({ navigation, route }) => {
     setIsLoading(true);
 
     try {
-      const roomData = {
-        room_number: roomNumber.trim(),
+      // Upload photos first
+      const existingPhotos = roomPhotos.filter(p => p.startsWith('http'));
+      const newPhotos = roomPhotos.filter(p => !p.startsWith('http'));
+      let uploadedPhotos = [];
+      if (newPhotos.length > 0) {
+        // Use a temporary folder if creating new room(s)
+        const tempRoomId = isEdit ? existingRoom.id : `temp_${Date.now()}`;
+        const { urls } = await uploadMultipleRoomPhotos(tempRoomId, newPhotos);
+        uploadedPhotos = urls;
+      }
+      const finalPhotoUrls = [...existingPhotos, ...uploadedPhotos];
+
+      const roomDataTemplate = {
         room_type: roomType,
         floor_number: floorNumber ? parseInt(floorNumber, 10) : null,
         size_sqm: sizeSqm ? parseFloat(sizeSqm) : null,
         base_price: parseFloat(basePrice),
         description: description.trim() || null,
+        photo_urls: finalPhotoUrls,
       };
 
-      let roomId;
+      if (isBulkMode && !isEdit) {
+        // Bulk Create
+        const count = parseInt(bulkCount, 10);
+        const roomsToCreate = Array.from({ length: count }).map((_, i) => ({
+          ...roomDataTemplate,
+          room_number: `${bulkPrefix.trim()}${i + 1}`,
+        }));
 
-      if (isEdit) {
-        const { data, error } = await updateRoom(existingRoom.id, roomData);
+        const { data, error } = await createBulkRooms(propertyId, roomsToCreate);
         if (error) throw error;
-        roomId = existingRoom.id;
+        
+        // Set facilities for all created rooms
+        const roomIds = data.map(r => r.id);
+        const { error: facError } = await setBulkRoomFacilities(roomIds, selectedFacilities);
+        if (facError) console.warn('Gagal update fasilitas bulk:', facError.message);
+        
+        Alert.alert('Berhasil!', `${count} Kamar berhasil dibuat`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {
-        const { data, error } = await createRoom(propertyId, roomData);
-        if (error) throw error;
-        roomId = data.id;
-      }
+        // Single Create/Edit
+        const roomData = {
+          ...roomDataTemplate,
+          room_number: roomNumber.trim(),
+        };
 
-      // Update fasilitas
-      const { error: facError } = await setRoomFacilities(roomId, selectedFacilities);
-      if (facError) {
-        console.warn('Gagal update fasilitas:', facError.message);
+        let roomId;
+        if (isEdit) {
+          const { error } = await updateRoom(existingRoom.id, roomData);
+          if (error) throw error;
+          roomId = existingRoom.id;
+        } else {
+          const { data, error } = await createRoom(propertyId, roomData);
+          if (error) throw error;
+          roomId = data.id;
+        }
+
+        // Update fasilitas
+        const { error: facError } = await setRoomFacilities(roomId, selectedFacilities);
+        if (facError) {
+          console.warn('Gagal update fasilitas:', facError.message);
+        }
+
+        Alert.alert(
+          'Berhasil!',
+          isEdit ? 'Kamar berhasil diperbarui' : 'Kamar berhasil ditambahkan',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
       }
 
       Alert.alert(
@@ -183,7 +296,7 @@ const RoomFormScreen = ({ navigation, route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -200,19 +313,63 @@ const RoomFormScreen = ({ navigation, route }) => {
           </Text>
         </View>
 
+        {/* Toggle Bulk Mode (Hanya untuk Tambah Baru) */}
+        {!isEdit && (
+          <View style={[styles.section, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View>
+              <Text style={styles.sectionTitle}>⚡ Generate Banyak Kamar</Text>
+              <Text style={[styles.label, { marginTop: 0 }]}>Buat otomatis sekaligus</Text>
+            </View>
+            <Switch
+              value={isBulkMode}
+              onValueChange={setIsBulkMode}
+              trackColor={{ false: COLORS.grey300, true: COLORS.primaryLight }}
+              thumbColor={isBulkMode ? COLORS.primary : COLORS.white}
+            />
+          </View>
+        )}
+
         {/* Informasi Kamar */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📋 Informasi Kamar</Text>
 
-          <Text style={styles.label}>{t('room.form.roomNumberLabel')} *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t('room.form.roomNumberPlaceholder')}
-            value={roomNumber}
-            onChangeText={setRoomNumber}
-            autoCapitalize="characters"
-            placeholderTextColor={COLORS.textTertiary}
-          />
+          {isBulkMode ? (
+            <View style={styles.row}>
+              <View style={styles.rowItem}>
+                <Text style={styles.label}>Awalan Nomor *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mis: A, B, Lt1-"
+                  value={bulkPrefix}
+                  onChangeText={setBulkPrefix}
+                  placeholderTextColor={COLORS.textTertiary}
+                />
+              </View>
+              <View style={styles.rowItem}>
+                <Text style={styles.label}>Jumlah *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="10"
+                  value={bulkCount}
+                  onChangeText={setBulkCount}
+                  keyboardType="numeric"
+                  placeholderTextColor={COLORS.textTertiary}
+                />
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.label}>{t('room.form.roomNumberLabel')} *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t('room.form.roomNumberPlaceholder')}
+                value={roomNumber}
+                onChangeText={setRoomNumber}
+                autoCapitalize="characters"
+                placeholderTextColor={COLORS.textTertiary}
+              />
+            </>
+          )}
 
           {/* Room Type */}
           <Text style={styles.label}>{t('room.form.roomTypeLabel')}</Text>
@@ -297,6 +454,34 @@ const RoomFormScreen = ({ navigation, route }) => {
             textAlignVertical="top"
             placeholderTextColor={COLORS.textTertiary}
           />
+        </View>
+
+        {/* Room Photos */}
+        <View style={styles.section}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>📸 Foto Kamar ({roomPhotos.length}/5)</Text>
+            {roomPhotos.length < 5 && (
+              <TouchableOpacity onPress={handlePickPhotos}>
+                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>+ Tambah</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], paddingHorizontal: SPACING[5] }}>
+            {roomPhotos.map((photoUri, index) => (
+              <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
+                <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
+                <TouchableOpacity 
+                  style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
+                  onPress={() => removePhoto(index)}
+                >
+                  <Ionicons name="close" size={16} color="white" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {roomPhotos.length === 0 && (
+              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>Belum ada foto kamar. Ketuk "+ Tambah" untuk menambahkan.</Text>
+            )}
+          </ScrollView>
         </View>
 
         {/* Fasilitas */}
