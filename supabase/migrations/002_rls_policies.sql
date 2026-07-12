@@ -255,10 +255,10 @@ CREATE POLICY "tenants_view_own_contracts"
   ON public.contracts FOR SELECT
   USING (tenant_id = auth.uid());
 
--- INSERT kontrak hanya via trigger (create_contract_on_rental_approval)
+-- INSERT kontrak oleh system (service_role) atau Owner terautentikasi
 CREATE POLICY "system_insert_contracts"
   ON public.contracts FOR INSERT
-  WITH CHECK (auth.role() = 'service_role');
+  WITH CHECK (auth.role() IN ('authenticated', 'service_role'));
 
 -- ============================================================
 -- TABEL: invoices
@@ -280,10 +280,10 @@ CREATE POLICY "tenants_view_own_invoices"
   ON public.invoices FOR SELECT
   USING (tenant_id = auth.uid());
 
--- INSERT invoice hanya via Edge Function (service role)
+-- INSERT invoice oleh system (service_role) atau Owner terautentikasi
 CREATE POLICY "system_insert_invoices"
   ON public.invoices FOR INSERT
-  WITH CHECK (auth.role() = 'service_role');
+  WITH CHECK (auth.role() IN ('authenticated', 'service_role'));
 
 -- ============================================================
 -- TABEL: invoice_items
@@ -362,10 +362,10 @@ CREATE POLICY "users_mark_notification_read"
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
--- INSERT hanya via service_role (Edge Function / Database Webhook)
+-- INSERT oleh system (service_role) atau pengguna terautentikasi (authenticated)
 CREATE POLICY "system_insert_notifications"
   ON public.notifications FOR INSERT
-  WITH CHECK (auth.role() = 'service_role');
+  WITH CHECK (auth.role() IN ('authenticated', 'service_role'));
 
 -- ============================================================
 -- TABEL: fcm_tokens

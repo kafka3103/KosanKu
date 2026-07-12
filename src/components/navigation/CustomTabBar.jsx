@@ -1,8 +1,11 @@
 import React, { useRef, useEffect } from 'react';
-import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, TouchableOpacity, Animated, Dimensions, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../constants/colors';
+import useAuthStore from '../../store/authStore';
+import useNotificationStore from '../../store/notificationStore';
+import supabaseClient from '../../services/supabaseClient';
 
 const { width: windowWidth } = Dimensions.get('window');
 const TAB_BAR_MARGIN_LEFT = 24;
@@ -19,6 +22,8 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   const indicatorMargin = (tabWidth - INDICATOR_WIDTH) / 2;
 
   const bubbleX = useRef(new Animated.Value(state.index * tabWidth)).current;
+  const { currentUser } = useAuthStore();
+  const { unreadCount, setUnreadCount } = useNotificationStore();
 
   useEffect(() => {
     Animated.spring(bubbleX, {
@@ -28,6 +33,51 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
       tension: 40,
     }).start();
   }, [state.index, tabWidth]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUnreadCount = async () => {
+      if (!currentUser?.id) return;
+      let count = 0;
+
+      // 1. Unread di tabel notifications
+      const { data: dbNotifs } = await supabaseClient
+        .from('notifications')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('is_read', false);
+      if (dbNotifs) count += dbNotifs.length;
+
+      // 2. Unread virtual requests / invoices
+      if (currentUser.role === 'owner') {
+        const { data: pendingReqs } = await supabaseClient
+          .from('rental_requests')
+          .select('id')
+          .eq('owner_id', currentUser.id)
+          .eq('status', 'pending');
+        if (pendingReqs) count += pendingReqs.length;
+      } else if (currentUser.role === 'tenant') {
+        const { data: tenantReqs } = await supabaseClient
+          .from('rental_requests')
+          .select('id')
+          .eq('tenant_id', currentUser.id)
+          .in('status', ['approved', 'rejected']);
+        if (tenantReqs) count += tenantReqs.length;
+
+        const { data: tenantInvoices } = await supabaseClient
+          .from('invoices')
+          .select('id')
+          .eq('tenant_id', currentUser.id)
+          .eq('status', 'unpaid');
+        if (tenantInvoices) count += tenantInvoices.length;
+      }
+
+      if (isMounted) setUnreadCount(count);
+    };
+
+    fetchUnreadCount();
+    return () => { isMounted = false; };
+  }, [state.index, currentUser?.id, currentUser?.role]);
 
   return (
     <View
@@ -133,6 +183,28 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
                 color={isFocused ? COLORS.primary : COLORS.grey400}
                 size={22}
               />
+              {(route.name === 'OwnerNotifications' || route.name === 'TenantNotifications') && unreadCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -12,
+                    backgroundColor: COLORS.error,
+                    borderRadius: 10,
+                    minWidth: 18,
+                    height: 18,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 4,
+                    borderWidth: 1.5,
+                    borderColor: COLORS.white,
+                  }}
+                >
+                  <Text style={{ color: COLORS.white, fontSize: 10, fontWeight: 'bold' }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
             </Animated.View>
           </TouchableOpacity>
         );

@@ -8,6 +8,7 @@
  */
 
 import supabaseClient from './supabaseClient';
+import { sendNotification } from './notificationService';
 
 const PROPERTY_PHOTOS_BUCKET = 'property-photos';
 const ROOM_PHOTOS_BUCKET = 'room-photos';
@@ -424,12 +425,111 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
  * @param {string} requestId
  */
 export const approveRentalRequest = async (requestId) => {
+  // 1. Ambil info pengajuan sewa beserta kamar dan propertinya
+  const { data: request, error: reqError } = await supabaseClient
+    .from('rental_requests')
+    .select(`
+      *,
+      rooms(
+        room_number,
+        properties(name, billing_due_days)
+      )
+    `)
+    .eq('id', requestId)
+    .single();
+
+  if (reqError || !request) return { data: null, error: reqError || new Error('Pengajuan tidak ditemukan') };
+
+  // 2. Update status pengajuan sewa menjadi 'approved'
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .update({ status: 'approved', reviewed_at: new Date().toISOString() })
     .eq('id', requestId)
     .select()
     .single();
+
+  if (error) return { data: null, error };
+
+  try {
+    // 3. Cek apakah Kontrak aktif sudah dibuat otomatis oleh trigger database,
+    // atau buat manual jika trigger di database belum aktif
+    let { data: newContract } = await supabaseClient
+      .from('contracts')
+      .select('*')
+      .eq('rental_request_id', request.id)
+      .maybeSingle();
+
+    if (!newContract) {
+      const startDate = new Date(request.requested_start_date);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + (request.duration_months || 1));
+
+      const { data: insertedContract, error: contractError } = await supabaseClient
+        .from('contracts')
+        .insert({
+          rental_request_id: request.id,
+          room_id: request.room_id,
+          tenant_id: request.tenant_id,
+          owner_id: request.owner_id,
+          start_date: request.requested_start_date,
+          end_date: endDate.toISOString().split('T')[0],
+          monthly_rate: request.monthly_rate,
+          deposit_amount: 0,
+          status: 'active',
+        })
+        .select()
+        .single();
+
+      if (contractError) {
+        console.warn('Gagal buat manual kontrak:', contractError.message);
+      } else {
+        newContract = insertedContract;
+      }
+    }
+
+    // 4. Update status kamar menjadi 'pending' / dipesan
+    await supabaseClient
+      .from('rooms')
+      .update({ status: 'pending', updated_at: new Date().toISOString() })
+      .eq('id', request.room_id);
+
+    // 5. Buat invoice pertama agar tenant bisa langsung melakukan pembayaran ("dilanjutkan kedalam tahap pembayaran")
+    if (newContract) {
+      const now = new Date();
+      const invoiceNumber = `INV-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const dueDays = request.rooms?.properties?.billing_due_days || 7;
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + dueDays);
+
+      const { data: newInvoice } = await supabaseClient
+        .from('invoices')
+        .insert({
+          contract_id: newContract.id,
+          room_id: request.room_id,
+          tenant_id: request.tenant_id,
+          owner_id: request.owner_id,
+          invoice_number: invoiceNumber,
+          billing_period: request.requested_start_date,
+          due_date: dueDate.toISOString().split('T')[0],
+          total_amount: request.monthly_rate,
+          status: 'unpaid',
+        })
+        .select()
+        .single();
+
+      // 6. Kirim notifikasi ke penghuni (Tenant)
+      await sendNotification({
+        userId: request.tenant_id,
+        title: 'Pengajuan Sewa Disetujui! 🎉',
+        body: `Selamat! Pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`,
+        type: 'rental_request_approved',
+        referenceId: newInvoice?.id ?? request.id,
+        referenceType: newInvoice ? 'invoice' : 'rental_request',
+      });
+    }
+  } catch (err) {
+    console.warn('Error saat membuat kontrak/invoice otomatis:', err.message);
+  }
 
   return { data, error };
 };
@@ -441,6 +541,17 @@ export const approveRentalRequest = async (requestId) => {
  * @param {string} reason
  */
 export const rejectRentalRequest = async (requestId, reason) => {
+  // 1. Ambil info pengajuan sewa untuk tahu siapa tenant-nya
+  const { data: request } = await supabaseClient
+    .from('rental_requests')
+    .select(`
+      tenant_id,
+      room_id,
+      rooms(room_number, properties(name))
+    `)
+    .eq('id', requestId)
+    .single();
+
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .update({
@@ -451,6 +562,26 @@ export const rejectRentalRequest = async (requestId, reason) => {
     .eq('id', requestId)
     .select()
     .single();
+
+  if (!error && request) {
+    // Kembalikan status kamar jika sebelumnya pending
+    await supabaseClient
+      .from('rooms')
+      .update({ status: 'available', updated_at: new Date().toISOString() })
+      .eq('id', request.room_id);
+
+    // Kirim notifikasi penolakan ke tenant
+    await sendNotification({
+      userId: request.tenant_id,
+      title: 'Pengajuan Sewa Ditolak ❌',
+      body: reason
+        ? `Mohon maaf, pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} belum dapat disetujui. Alasan: ${reason}`
+        : `Mohon maaf, pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} belum dapat disetujui oleh pemilik kos.`,
+      type: 'rental_request_rejected',
+      referenceId: requestId,
+      referenceType: 'rental_request',
+    });
+  }
 
   return { data, error };
 };

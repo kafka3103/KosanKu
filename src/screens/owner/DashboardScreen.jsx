@@ -225,7 +225,11 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Pengajuan Masuk</Text>
           {(stats?.pendingRequests?.length ?? 0) > 0 && (
             <TouchableOpacity
-              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+              onPress={() =>
+                navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
+                  screen: OWNER_SCREENS.RENTAL_REQUEST,
+                })
+              }
             >
               <Text style={styles.seeAllText}>Lihat Semua</Text>
             </TouchableOpacity>
@@ -243,7 +247,11 @@ const DashboardScreen = ({ navigation }) => {
             <RequestCard
               key={req.id}
               request={req}
-              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+              onPress={() =>
+                navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
+                  screen: OWNER_SCREENS.RENTAL_REQUEST,
+                })
+              }
             />
           ))
         )}

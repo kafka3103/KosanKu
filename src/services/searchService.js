@@ -5,6 +5,7 @@
  */
 
 import supabaseClient from './supabaseClient';
+import { sendNotification } from './notificationService';
 
 /**
  * Cari properti & kamar yang tersedia berdasarkan filter
@@ -31,6 +32,10 @@ export const searchProperties = async (filters = {}) => {
     pageSize = 20,
   } = filters;
 
+  // Gunakan rooms!inner HANYA jika filter spesifik kamar (minPrice, maxPrice, atau roomType) sedang aktif digunakan
+  const hasRoomFilter = minPrice != null || maxPrice != null || Boolean(roomType);
+  const roomsRelation = hasRoomFilter ? 'rooms!inner' : 'rooms';
+
   let query = supabaseClient
     .from('properties')
     .select(`
@@ -47,7 +52,7 @@ export const searchProperties = async (filters = {}) => {
       cover_photo_url,
       photo_urls,
       rules,
-      rooms!inner(
+      ${roomsRelation}(
         id,
         room_number,
         room_type,
@@ -62,9 +67,13 @@ export const searchProperties = async (filters = {}) => {
       users!properties_owner_id_fkey(full_name, phone_number)
     `)
     .eq('is_active', true)
-    .eq('is_deleted', false)
-    .eq('rooms.is_deleted', false)
-    .eq('rooms.status', 'available');
+    .eq('is_deleted', false);
+
+  if (hasRoomFilter) {
+    query = query
+      .eq('rooms.is_deleted', false)
+      .eq('rooms.status', 'available');
+  }
 
   if (city) {
     query = query.ilike('city', `%${city}%`);
@@ -239,6 +248,17 @@ export const submitRentalRequest = async (requestData) => {
     })
     .select()
     .single();
+
+  if (!error && data && requestData.ownerId) {
+    await sendNotification({
+      userId: requestData.ownerId,
+      title: 'Pengajuan Sewa Baru 📋',
+      body: `Penghuni baru telah mengajukan sewa kamar untuk durasi ${requestData.durationMonths} bulan. Segera tinjau pengajuan di menu Pengajuan Sewa.`,
+      type: 'rental_request_new',
+      referenceId: data.id,
+      referenceType: 'rental_request',
+    });
+  }
 
   return { data, error };
 };

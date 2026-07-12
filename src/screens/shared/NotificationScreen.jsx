@@ -13,7 +13,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
@@ -23,6 +23,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
+import useNotificationStore from '../../store/notificationStore';
 import supabaseClient from '../../services/supabaseClient';
 
 const formatRelativeTime = (dateStr) => {
@@ -62,7 +63,7 @@ const NotifCard = ({ notif, onRead }) => {
   return (
     <TouchableOpacity
       style={[styles.card, !notif.is_read && styles.cardUnread]}
-      onPress={() => onRead(notif.id)}
+      onPress={() => onRead(notif)}
       activeOpacity={0.7}
     >
       <View style={[styles.notifIcon, { backgroundColor: `${config.color}22` }]}>
@@ -82,7 +83,9 @@ const NotifCard = ({ notif, onRead }) => {
 
 const NotificationScreen = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { currentUser } = useAuthStore();
+  const { setUnreadCount } = useNotificationStore();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -91,17 +94,189 @@ const NotificationScreen = () => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
 
-    const { data, error } = await supabaseClient
+    const { data: dbNotifs } = await supabaseClient
       .from('notifications')
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (!error && data) setNotifications(data);
+    let mergedList = dbNotifs ?? [];
+
+    // Jika Owner, ambil langsung pengajuan sewa pending
+    if (currentUser.role === 'owner') {
+      const { data: pendingReqs } = await supabaseClient
+        .from('rental_requests')
+        .select('*')
+        .eq('owner_id', currentUser.id)
+        .eq('status', 'pending');
+
+      if (pendingReqs && pendingReqs.length > 0) {
+        const roomIds = [...new Set(pendingReqs.map((r) => r.room_id).filter(Boolean))];
+        const tenantIds = [...new Set(pendingReqs.map((r) => r.tenant_id).filter(Boolean))];
+
+        let roomMap = {};
+        if (roomIds.length > 0) {
+          const { data: roomsData } = await supabaseClient
+            .from('rooms')
+            .select('id, room_number, properties(name)')
+            .in('id', roomIds);
+          roomMap = Object.fromEntries((roomsData || []).map((r) => [r.id, r]));
+        }
+
+        let userMap = {};
+        if (tenantIds.length > 0) {
+          const { data: usersData } = await supabaseClient
+            .from('users')
+            .select('id, full_name')
+            .in('id', tenantIds);
+          userMap = Object.fromEntries((usersData || []).map((u) => [u.id, u]));
+        }
+
+        const existingRefIds = new Set(mergedList.map((n) => n.reference_id));
+        const virtualNotifs = [];
+
+        for (const req of pendingReqs) {
+          if (!existingRefIds.has(req.id)) {
+            const rInfo = roomMap[req.room_id] || {};
+            const uInfo = userMap[req.tenant_id] || {};
+            virtualNotifs.push({
+              id: `req_${req.id}`,
+              user_id: currentUser.id,
+              title: 'Pengajuan Sewa Baru 📋',
+              body: `${uInfo.full_name ?? 'Penghuni baru'} mengajukan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} (${req.duration_months ?? 1} bulan). Tekan untuk meninjau/menyetujui.`,
+              type: 'rental_request_new',
+              reference_id: req.id,
+              reference_type: 'rental_request',
+              is_read: false,
+              created_at: req.created_at,
+              is_virtual_request: true,
+            });
+          }
+        }
+
+        mergedList = [...virtualNotifs, ...mergedList];
+      }
+    }
+
+    // Jika Tenant, ambil SEMUA pengajuan sewa (pending, approved, rejected) + tagihan unpaid
+    if (currentUser.role === 'tenant') {
+      const { data: tenantReqs } = await supabaseClient
+        .from('rental_requests')
+        .select('*')
+        .eq('tenant_id', currentUser.id)
+        .in('status', ['pending', 'approved', 'rejected']);
+
+      const { data: tenantInvoices } = await supabaseClient
+        .from('invoices')
+        .select('*')
+        .eq('tenant_id', currentUser.id)
+        .eq('status', 'unpaid');
+
+      // Kumpulkan semua room_id dari requests dan invoices untuk satu kali fetch info kamar
+      const reqRooms = (tenantReqs || []).map((r) => r.room_id).filter(Boolean);
+      const invRooms = (tenantInvoices || []).map((i) => i.room_id).filter(Boolean);
+      const allRoomIds = [...new Set([...reqRooms, ...invRooms])];
+
+      let roomMap = {};
+      if (allRoomIds.length > 0) {
+        const { data: roomsData } = await supabaseClient
+          .from('rooms')
+          .select('id, room_number, properties(name)')
+          .in('id', allRoomIds);
+        roomMap = Object.fromEntries((roomsData || []).map((r) => [r.id, r]));
+      }
+
+      if (tenantReqs && tenantReqs.length > 0) {
+        const existingRefIds = new Set(mergedList.map((n) => n.reference_id));
+        const virtualTenantNotifs = [];
+
+        for (const req of tenantReqs) {
+          if (!existingRefIds.has(req.id)) {
+            const rInfo = roomMap[req.room_id] || {};
+            const propName = rInfo.properties?.name || 'kos';
+            const roomNum = rInfo.room_number || '';
+
+            if (req.status === 'approved') {
+              virtualTenantNotifs.push({
+                id: `req_app_${req.id}`,
+                user_id: currentUser.id,
+                title: 'Pengajuan Sewa Disetujui! 🎉',
+                body: `Selamat! Pengajuan sewa kamar ${roomNum} di ${propName} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`,
+                type: 'rental_request_approved',
+                reference_id: req.id,
+                reference_type: 'rental_request',
+                is_read: false,
+                created_at: req.reviewed_at || req.created_at,
+                is_virtual_request: true,
+              });
+            } else if (req.status === 'rejected') {
+              virtualTenantNotifs.push({
+                id: `req_rej_${req.id}`,
+                user_id: currentUser.id,
+                title: 'Pengajuan Sewa Ditolak ❌',
+                body: `Mohon maaf, pengajuan sewa kamar ${roomNum} di ${propName} tidak dapat disetujui. ${req.rejection_reason ? 'Alasan: ' + req.rejection_reason : ''}`,
+                type: 'rental_request_rejected',
+                reference_id: req.id,
+                reference_type: 'rental_request',
+                is_read: false,
+                created_at: req.reviewed_at || req.created_at,
+                is_virtual_request: true,
+              });
+            } else if (req.status === 'pending') {
+              virtualTenantNotifs.push({
+                id: `req_pen_${req.id}`,
+                user_id: currentUser.id,
+                title: 'Pengajuan Sewa Dikirim ⏳',
+                body: `Pengajuan sewa kamar ${roomNum} di ${propName} telah dikirim dan sedang menunggu tinjauan dari pemilik kos.`,
+                type: 'rental_request_pending',
+                reference_id: req.id,
+                reference_type: 'rental_request',
+                is_read: false,
+                created_at: req.created_at,
+                is_virtual_request: true,
+              });
+            }
+          }
+        }
+
+        mergedList = [...virtualTenantNotifs, ...mergedList];
+      }
+
+      if (tenantInvoices && tenantInvoices.length > 0) {
+        const existingRefIds = new Set(mergedList.map((n) => n.reference_id));
+        const virtualInvoiceNotifs = [];
+
+        for (const inv of tenantInvoices) {
+          if (!existingRefIds.has(inv.id)) {
+            const rInfo = roomMap[inv.room_id] || {};
+            const propName = rInfo.properties?.name || 'kos';
+            const roomNum = rInfo.room_number || '';
+            virtualInvoiceNotifs.push({
+              id: `inv_${inv.id}`,
+              user_id: currentUser.id,
+              title: 'Tagihan Pembayaran Baru 📄',
+              body: `Tagihan kamar ${roomNum} di ${propName} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.total_amount || inv.amount || 0)} siap untuk dibayar.`,
+              type: 'invoice_new',
+              reference_id: inv.id,
+              reference_type: 'invoice',
+              is_read: false,
+              created_at: inv.created_at,
+              is_virtual_request: true,
+            });
+          }
+        }
+
+        mergedList = [...virtualInvoiceNotifs, ...mergedList];
+      }
+    }
+
+    mergedList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    setNotifications(mergedList);
+    setUnreadCount(mergedList.filter((n) => !n.is_read).length);
     setIsLoading(false);
     setIsRefreshing(false);
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.role]);
 
   useFocusEffect(
     useCallback(() => {
@@ -110,17 +285,48 @@ const NotificationScreen = () => {
   );
 
   const handleMarkRead = async (notifId) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notifId ? { ...n, is_read: true } : n))
-    );
-    await supabaseClient
-      .from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq('id', notifId);
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === notifId ? { ...n, is_read: true } : n));
+      setUnreadCount(updated.filter((n) => !n.is_read).length);
+      return updated;
+    });
+    if (!String(notifId).startsWith('req_') && !String(notifId).startsWith('inv_')) {
+      await supabaseClient
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('id', notifId);
+    }
+  };
+
+  const handleNotifPress = async (notif) => {
+    if (!notif.is_read) {
+      await handleMarkRead(notif.id);
+    }
+    if (currentUser?.role === 'owner') {
+      if (notif.type === 'rental_request_new' || notif.reference_type === 'rental_request') {
+        navigation.navigate('PropertyStack', { screen: 'RentalRequest' });
+      } else if (notif.reference_type === 'invoice') {
+        navigation.navigate('OwnerInvoiceList');
+      }
+    } else if (currentUser?.role === 'tenant') {
+      if (notif.type === 'rental_request_approved' || notif.reference_type === 'invoice') {
+        if (notif.reference_id && notif.reference_type === 'invoice') {
+          navigation.navigate('MyRentStack', {
+            screen: 'InvoiceDetail',
+            params: { invoiceId: notif.reference_id },
+          });
+        } else {
+          navigation.navigate('MyRentStack');
+        }
+      } else if (notif.type === 'rental_request_rejected' || notif.type === 'rental_request_pending') {
+        navigation.navigate('MyRentStack');
+      }
+    }
   };
 
   const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
     await supabaseClient
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
@@ -176,7 +382,7 @@ const NotificationScreen = () => {
           </View>
         )}
         renderItem={({ item }) => (
-          <NotifCard notif={item} onRead={handleMarkRead} />
+          <NotifCard notif={item} onRead={handleNotifPress} />
         )}
       />
     </View>

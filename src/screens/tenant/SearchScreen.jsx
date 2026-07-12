@@ -121,9 +121,13 @@ const PropertyCard = ({ property, onPress }) => {
         )}
 
         {/* Price */}
-        {minPrice != null && (
+        {minPrice != null ? (
           <Text style={styles.priceText}>
             Mulai <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>/bln
+          </Text>
+        ) : (
+          <Text style={[styles.priceText, { color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium }]}>
+            {property.rooms?.length > 0 ? 'Kamar Penuh / Belum Tersedia' : 'Belum Ada Kamar Ditambahkan'}
           </Text>
         )}
       </View>

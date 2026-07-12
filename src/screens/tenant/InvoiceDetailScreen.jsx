@@ -157,24 +157,26 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
           {/* Divider */}
           <View style={styles.divider} />
 
-          {/* Total */}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalAmount}>{formatCurrency(invoice.total_amount)}</Text>
-          </View>
+          {/* Total Box */}
+          <View style={styles.totalContainer}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total Tagihan</Text>
+              <Text style={styles.totalAmount}>{formatCurrency(invoice.total_amount)}</Text>
+            </View>
 
-          {invoice.status === 'partial' && (
-            <>
-              <View style={styles.paidRow}>
-                <Text style={styles.paidLabel}>Sudah Dibayar</Text>
-                <Text style={styles.paidAmount}>{formatCurrency(invoice.paid_amount)}</Text>
-              </View>
-              <View style={styles.remainRow}>
-                <Text style={styles.remainLabel}>Sisa</Text>
-                <Text style={styles.remainAmount}>{formatCurrency(unpaidAmount)}</Text>
-              </View>
-            </>
-          )}
+            {invoice.status === 'partial' && (
+              <>
+                <View style={styles.paidRow}>
+                  <Text style={styles.paidLabel}>Sudah Dibayar</Text>
+                  <Text style={styles.paidAmount}>{formatCurrency(invoice.paid_amount)}</Text>
+                </View>
+                <View style={styles.remainRow}>
+                  <Text style={styles.remainLabel}>Sisa Tagihan</Text>
+                  <Text style={styles.remainAmount}>{formatCurrency(unpaidAmount)}</Text>
+                </View>
+              </>
+            )}
+          </View>
         </View>
 
         {/* Spacer */}
@@ -184,11 +186,11 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
       {/* Payment CTA */}
       {['unpaid', 'partial', 'overdue'].includes(invoice.status) && (
         <View style={styles.bottomBar}>
-          <View>
+          <View style={{ flex: 1, marginRight: SPACING[3] }}>
             <Text style={styles.bottomLabel}>
-              {invoice.status === 'partial' ? 'Sisa Tagihan' : 'Total Tagihan'}
+              {invoice.status === 'partial' ? 'Sisa Tagihan yang Harus Dibayar' : 'Total Tagihan Pembayaran'}
             </Text>
-            <Text style={styles.bottomAmount}>
+            <Text style={styles.bottomAmount} numberOfLines={1} adjustsFontSizeToFit>
               {formatCurrency(invoice.status === 'partial' ? unpaidAmount : invoice.total_amount)}
             </Text>
           </View>
@@ -197,6 +199,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
             onPress={() => navigation.navigate(TENANT_SCREENS.PAYMENT, { invoice })}
             activeOpacity={0.8}
           >
+            <Ionicons name="card" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
             <Text style={styles.payBtnText}>{t('invoice.detail.payButton')}</Text>
           </TouchableOpacity>
         </View>
@@ -277,6 +280,14 @@ const styles = StyleSheet.create({
     marginLeft: SPACING[4],
   },
   divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING[3] },
+  totalContainer: {
+    backgroundColor: `${COLORS.primary}0C`,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING[4],
+    marginTop: SPACING[3],
+    borderWidth: 1,
+    borderColor: `${COLORS.primary}20`,
+  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -290,7 +301,7 @@ const styles = StyleSheet.create({
   totalAmount: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
+    color: COLORS.primary,
   },
   paidRow: {
     flexDirection: 'row',
@@ -306,7 +317,7 @@ const styles = StyleSheet.create({
   remainRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: SPACING[1],
+    marginTop: SPACING[2],
     paddingTop: SPACING[2],
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
@@ -323,30 +334,32 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 96,
+    bottom: 80,
     left: 0,
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING[5],
     paddingVertical: SPACING[4],
-    paddingBottom: SPACING[8],
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     ...SHADOW.xl,
   },
-  bottomLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary },
+  bottomLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginBottom: 2 },
   bottomAmount: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
-    flex: 1,
   },
   payBtn: {
     backgroundColor: COLORS.accent,
-    paddingHorizontal: SPACING[6],
-    paddingVertical: SPACING[4],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING[5],
+    paddingVertical: SPACING[3],
     borderRadius: BORDER_RADIUS.md,
     ...SHADOW.md,
   },

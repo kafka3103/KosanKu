@@ -610,7 +610,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE TRIGGER trigger_create_contract_on_approval
   AFTER UPDATE ON public.rental_requests
