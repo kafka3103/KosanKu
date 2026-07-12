@@ -152,6 +152,27 @@ export const uploadPropertyPhoto = async (propertyId, localUri, fileName) => {
   }
 };
 
+/**
+ * Upload banyak foto properti sekaligus
+ *
+ * @param {string} propertyId
+ * @param {string[]} localUris
+ */
+export const uploadMultiplePropertyPhotos = async (propertyId, localUris) => {
+  try {
+    const uploadPromises = localUris.map((uri, index) => 
+      uploadPropertyPhoto(propertyId, uri, `photo_${Date.now()}_${index}`)
+    );
+    
+    const results = await Promise.all(uploadPromises);
+    const urls = results.filter(r => r.url).map(r => r.url);
+    
+    return { urls, error: null };
+  } catch (error) {
+    return { urls: [], error };
+  }
+};
+
 // ─── Rooms ────────────────────────────────────────────────────
 
 /**
@@ -281,6 +302,47 @@ export const uploadRoomPhoto = async (roomId, localUri, fileName) => {
   }
 };
 
+/**
+ * Upload banyak foto kamar sekaligus
+ *
+ * @param {string} roomId
+ * @param {string[]} localUris
+ */
+export const uploadMultipleRoomPhotos = async (roomId, localUris) => {
+  try {
+    const uploadPromises = localUris.map((uri, index) => 
+      uploadRoomPhoto(roomId, uri, `room_${Date.now()}_${index}`)
+    );
+    
+    const results = await Promise.all(uploadPromises);
+    const urls = results.filter(r => r.url).map(r => r.url);
+    
+    return { urls, error: null };
+  } catch (error) {
+    return { urls: [], error };
+  }
+};
+
+/**
+ * Buat banyak kamar sekaligus (Bulk Create)
+ *
+ * @param {string} propertyId
+ * @param {Object[]} roomDataArray
+ */
+export const createBulkRooms = async (propertyId, roomDataArray) => {
+  const inserts = roomDataArray.map(roomData => ({
+    property_id: propertyId,
+    ...roomData
+  }));
+
+  const { data, error } = await supabaseClient
+    .from('rooms')
+    .insert(inserts)
+    .select();
+
+  return { data, error };
+};
+
 // ─── Facility Master ──────────────────────────────────────────
 
 /**
@@ -322,6 +384,34 @@ export const setRoomFacilities = async (roomId, facilities) => {
     facility_id: f.facility_id,
     additional_cost: f.additional_cost ?? null,
   }));
+
+  const { data, error } = await supabaseClient
+    .from('room_facilities')
+    .insert(inserts)
+    .select();
+
+  return { data, error };
+};
+
+/**
+ * Set fasilitas untuk banyak kamar sekaligus (Bulk Insert Facilities)
+ *
+ * @param {string[]} roomIds
+ * @param {Array<{facility_id: string, additional_cost: number|null}>} facilities
+ */
+export const setBulkRoomFacilities = async (roomIds, facilities) => {
+  if (!facilities || facilities.length === 0) return { data: [], error: null };
+
+  const inserts = [];
+  roomIds.forEach(roomId => {
+    facilities.forEach(f => {
+      inserts.push({
+        room_id: roomId,
+        facility_id: f.facility_id,
+        additional_cost: f.additional_cost ?? null,
+      });
+    });
+  });
 
   const { data, error } = await supabaseClient
     .from('room_facilities')

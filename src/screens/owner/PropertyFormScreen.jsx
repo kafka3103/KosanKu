@@ -18,6 +18,7 @@ import {
   Switch,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +30,7 @@ import {
   createProperty,
   updateProperty,
   uploadPropertyPhoto,
+  uploadMultiplePropertyPhotos,
 } from '../../services/propertyService';
 
 const GENERAL_FACILITIES = [
@@ -53,6 +55,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const { currentUser } = useAuthStore();
   const existingProperty = route.params?.property ?? null;
   const isEdit = !!existingProperty;
+  const insets = useSafeAreaInsets();
 
   // Form state
   const [name, setName] = useState(existingProperty?.name ?? '');
@@ -73,6 +76,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
     existingProperty?.general_facilities ?? []
   );
   const [coverPhotoUri, setCoverPhotoUri] = useState(existingProperty?.cover_photo_url ?? null);
+  const [additionalPhotos, setAdditionalPhotos] = useState(existingProperty?.photo_urls ?? []);
   const [isLoading, setIsLoading] = useState(false);
 
   const toggleFacility = (key) => {
@@ -132,6 +136,59 @@ const PropertyFormScreen = ({ navigation, route }) => {
     );
   };
 
+  const pickAdditionalFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAdditionalPhotos(prev => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const pickAdditionalFromGallery = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Diperlukan', 'Akses galeri diperlukan.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.length > 0) {
+      const uris = result.assets.map(a => a.uri);
+      setAdditionalPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
+    }
+  };
+
+  const handlePickAdditionalPhotos = () => {
+    if (additionalPhotos.length >= 5) {
+      Alert.alert('Batas Tercapai', 'Maksimal 5 foto tambahan.');
+      return;
+    }
+    Alert.alert(
+      'Foto Tambahan',
+      'Pilih sumber foto tambahan',
+      [
+        { text: 'Kamera', onPress: pickAdditionalFromCamera },
+        { text: 'Galeri', onPress: pickAdditionalFromGallery },
+        { text: 'Batal', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const removeAdditionalPhoto = (indexToRemove) => {
+    setAdditionalPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Nama properti wajib diisi');
@@ -164,6 +221,18 @@ const PropertyFormScreen = ({ navigation, route }) => {
         }
       }
 
+      // Pisahkan foto lama (http) dan baru (file uri)
+      const existingAdditional = additionalPhotos.filter(p => p.startsWith('http'));
+      const newAdditional = additionalPhotos.filter(p => !p.startsWith('http'));
+      
+      let uploadedAdditional = [];
+      if (newAdditional.length > 0) {
+        const propertyId = existingProperty?.id ?? `temp_${Date.now()}`;
+        const { urls } = await uploadMultiplePropertyPhotos(propertyId, newAdditional);
+        uploadedAdditional = urls;
+      }
+      const finalPhotoUrls = [...existingAdditional, ...uploadedAdditional];
+
       const propertyData = {
         name: name.trim(),
         description: description.trim() || null,
@@ -177,6 +246,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
         billing_due_days: parseInt(billingDueDays, 10) || 10,
         general_facilities: selectedFacilities,
         cover_photo_url: coverPhotoUrl,
+        photo_urls: finalPhotoUrls,
       };
 
       let result;
@@ -209,7 +279,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -244,6 +314,34 @@ const PropertyFormScreen = ({ navigation, route }) => {
             <Text style={styles.coverPhotoOverlayText}>Ganti Foto Utama</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Additional Photos */}
+        <View style={styles.section}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>📸 Foto Tambahan ({additionalPhotos.length}/5)</Text>
+            {additionalPhotos.length < 5 && (
+              <TouchableOpacity onPress={handlePickAdditionalPhotos}>
+                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>+ Tambah</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], paddingHorizontal: SPACING[5] }}>
+            {additionalPhotos.map((photoUri, index) => (
+              <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
+                <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
+                <TouchableOpacity 
+                  style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
+                  onPress={() => removeAdditionalPhoto(index)}
+                >
+                  <Ionicons name="close" size={16} color="white" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {additionalPhotos.length === 0 && (
+              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.</Text>
+            )}
+          </ScrollView>
+        </View>
 
         {/* Informasi Dasar */}
         <View style={styles.section}>

@@ -13,6 +13,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -53,6 +54,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
   const room = route.params?.room;
   const property = route.params?.property;
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const photos = room?.photo_urls ?? [];
   const facilities = room?.room_facilities ?? [];
@@ -234,12 +236,12 @@ const RoomDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Spacer for bottom button */}
-        <View style={{ height: 180 }} />
+        <View style={{ height: 180 + insets.bottom }} />
       </ScrollView>
 
       {/* Bottom CTA */}
       {room?.status === 'available' && (
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
           <View style={styles.bottomPrice}>
             <Text style={styles.bottomPriceLabel}>Harga/bulan</Text>
             <Text style={styles.bottomPriceValue}>{formatCurrency(room?.base_price)}</Text>
@@ -389,8 +391,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING[5],
-    paddingVertical: SPACING[4],
-    paddingBottom: SPACING[8],
+    paddingTop: SPACING[4],
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     ...SHADOW.xl,

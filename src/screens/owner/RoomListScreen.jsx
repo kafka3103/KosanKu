@@ -14,6 +14,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -137,6 +138,7 @@ const RoomListScreen = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const insets = useSafeAreaInsets();
 
   const loadRooms = useCallback(async (silent = false) => {
     if (!property?.id) return;
@@ -230,7 +232,7 @@ const RoomListScreen = ({ navigation, route }) => {
       <FlatList
         data={filteredRooms}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -270,7 +272,7 @@ const RoomListScreen = ({ navigation, route }) => {
 
       {/* FAB */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 110 }]}
         onPress={() =>
           navigation.navigate(OWNER_SCREENS.ROOM_FORM, {
             room: null,

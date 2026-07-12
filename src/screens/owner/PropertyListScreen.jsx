@@ -182,7 +182,7 @@ const PropertyListScreen = ({ navigation }) => {
       <FlatList
         data={properties}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -214,7 +214,7 @@ const PropertyListScreen = ({ navigation }) => {
 
       {/* FAB */}
       <TouchableOpacity 
-        style={[styles.fab, { bottom: insets.bottom + 100 }]} 
+        style={[styles.fab, { bottom: insets.bottom + 110 }]} 
         onPress={handleAddProperty} 
         activeOpacity={0.8}
       >
