@@ -50,6 +50,7 @@ import CustomTabBar from '../components/navigation/CustomTabBar';
 const OwnerDrawer = createDrawerNavigator();
 const OwnerBottomTab = createBottomTabNavigator();
 const PropertyStack = createStackNavigator();
+const DashboardStack = createStackNavigator();
 
 /**
  * Screen name constants untuk mencegah typo
@@ -93,6 +94,20 @@ const PropertyStackNavigator = () => {
 };
 
 /**
+ * Stack navigator untuk alur Dashboard agar tidak melompat ke tab Properti:
+ * Dashboard → RentalRequest / PropertyForm
+ */
+const DashboardStackNavigator = () => {
+  return (
+    <DashboardStack.Navigator screenOptions={{ headerShown: false }}>
+      <DashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
+      <DashboardStack.Screen name={OWNER_SCREENS.RENTAL_REQUEST} component={RentalRequestScreen} />
+      <DashboardStack.Screen name={OWNER_SCREENS.PROPERTY_FORM} component={PropertyFormScreen} />
+    </DashboardStack.Navigator>
+  );
+};
+
+/**
  * Bottom Tab Navigator untuk Owner
  */
 const OwnerBottomTabNavigator = () => {
@@ -107,7 +122,7 @@ const OwnerBottomTabNavigator = () => {
     >
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.DASHBOARD}
-        component={DashboardScreen}
+        component={DashboardStackNavigator}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.PROPERTY_STACK}
@@ -142,6 +157,7 @@ const OwnerDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
+    { label: 'Pengajuan Masuk', screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
     { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: '👥' },
     { label: t('navigation.owner.reports'), screen: OWNER_SCREENS.REPORT, icon: '📈' },
     { label: t('navigation.owner.profile'), screen: OWNER_SCREENS.PROFILE, icon: '👤' },
@@ -203,6 +219,11 @@ const OwnerNavigator = () => {
         options={{ drawerItemStyle: { display: 'none' } }} // Tersembunyi dari drawer list
       />
       {/* Layar yang hanya bisa diakses dari Drawer */}
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.RENTAL_REQUEST}
+        component={RentalRequestScreen}
+        options={{ headerShown: false }}
+      />
       <OwnerDrawer.Screen
         name={OWNER_SCREENS.TENANT_LIST}
         component={TenantListScreen}

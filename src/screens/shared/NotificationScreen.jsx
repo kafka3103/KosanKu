@@ -133,6 +133,9 @@ const NotificationScreen = () => {
           userMap = Object.fromEntries((usersData || []).map((u) => [u.id, u]));
         }
 
+        await useNotificationStore.getState().initVirtualReads();
+        const isVirtualRead = useNotificationStore.getState().isVirtualRead;
+
         const existingRefIds = new Set(mergedList.map((n) => n.reference_id));
         const virtualNotifs = [];
 
@@ -140,15 +143,16 @@ const NotificationScreen = () => {
           if (!existingRefIds.has(req.id)) {
             const rInfo = roomMap[req.room_id] || {};
             const uInfo = userMap[req.tenant_id] || {};
+            const virtualId = `req_pen_${req.id}`;
             virtualNotifs.push({
-              id: `req_${req.id}`,
+              id: virtualId,
               user_id: currentUser.id,
               title: 'Pengajuan Sewa Baru 📋',
               body: `${uInfo.full_name ?? 'Penghuni baru'} mengajukan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} (${req.duration_months ?? 1} bulan). Tekan untuk meninjau/menyetujui.`,
               type: 'rental_request_new',
               reference_id: req.id,
               reference_type: 'rental_request',
-              is_read: false,
+              is_read: isVirtualRead(virtualId),
               created_at: req.created_at,
               is_virtual_request: true,
             });
@@ -161,6 +165,9 @@ const NotificationScreen = () => {
 
     // Jika Tenant, ambil SEMUA pengajuan sewa (pending, approved, rejected) + tagihan unpaid
     if (currentUser.role === 'tenant') {
+      await useNotificationStore.getState().initVirtualReads();
+      const isVirtualRead = useNotificationStore.getState().isVirtualRead;
+
       const { data: tenantReqs } = await supabaseClient
         .from('rental_requests')
         .select('*')
@@ -198,41 +205,44 @@ const NotificationScreen = () => {
             const roomNum = rInfo.room_number || '';
 
             if (req.status === 'approved') {
+              const virtualId = `req_app_${req.id}`;
               virtualTenantNotifs.push({
-                id: `req_app_${req.id}`,
+                id: virtualId,
                 user_id: currentUser.id,
                 title: 'Pengajuan Sewa Disetujui! 🎉',
                 body: `Selamat! Pengajuan sewa kamar ${roomNum} di ${propName} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`,
                 type: 'rental_request_approved',
                 reference_id: req.id,
                 reference_type: 'rental_request',
-                is_read: false,
+                is_read: isVirtualRead(virtualId),
                 created_at: req.reviewed_at || req.created_at,
                 is_virtual_request: true,
               });
             } else if (req.status === 'rejected') {
+              const virtualId = `req_rej_${req.id}`;
               virtualTenantNotifs.push({
-                id: `req_rej_${req.id}`,
+                id: virtualId,
                 user_id: currentUser.id,
                 title: 'Pengajuan Sewa Ditolak ❌',
                 body: `Mohon maaf, pengajuan sewa kamar ${roomNum} di ${propName} tidak dapat disetujui. ${req.rejection_reason ? 'Alasan: ' + req.rejection_reason : ''}`,
                 type: 'rental_request_rejected',
                 reference_id: req.id,
                 reference_type: 'rental_request',
-                is_read: false,
+                is_read: isVirtualRead(virtualId),
                 created_at: req.reviewed_at || req.created_at,
                 is_virtual_request: true,
               });
             } else if (req.status === 'pending') {
+              const virtualId = `req_pen_${req.id}`;
               virtualTenantNotifs.push({
-                id: `req_pen_${req.id}`,
+                id: virtualId,
                 user_id: currentUser.id,
                 title: 'Pengajuan Sewa Dikirim ⏳',
                 body: `Pengajuan sewa kamar ${roomNum} di ${propName} telah dikirim dan sedang menunggu tinjauan dari pemilik kos.`,
                 type: 'rental_request_pending',
                 reference_id: req.id,
                 reference_type: 'rental_request',
-                is_read: false,
+                is_read: isVirtualRead(virtualId),
                 created_at: req.created_at,
                 is_virtual_request: true,
               });
@@ -252,15 +262,16 @@ const NotificationScreen = () => {
             const rInfo = roomMap[inv.room_id] || {};
             const propName = rInfo.properties?.name || 'kos';
             const roomNum = rInfo.room_number || '';
+            const virtualId = `inv_${inv.id}`;
             virtualInvoiceNotifs.push({
-              id: `inv_${inv.id}`,
+              id: virtualId,
               user_id: currentUser.id,
               title: 'Tagihan Pembayaran Baru 📄',
               body: `Tagihan kamar ${roomNum} di ${propName} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.total_amount || inv.amount || 0)} siap untuk dibayar.`,
               type: 'invoice_new',
               reference_id: inv.id,
               reference_type: 'invoice',
-              is_read: false,
+              is_read: isVirtualRead(virtualId),
               created_at: inv.created_at,
               is_virtual_request: true,
             });
@@ -273,7 +284,9 @@ const NotificationScreen = () => {
 
     mergedList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     setNotifications(mergedList);
-    setUnreadCount(mergedList.filter((n) => !n.is_read).length);
+    const unread = mergedList.filter((n) => !n.is_read).length;
+    setUnreadCount(unread);
+    useNotificationStore.getState().setUnreadCount(unread);
     setIsLoading(false);
     setIsRefreshing(false);
   }, [currentUser?.id, currentUser?.role]);
@@ -285,17 +298,22 @@ const NotificationScreen = () => {
   );
 
   const handleMarkRead = async (notifId) => {
-    setNotifications((prev) => {
-      const updated = prev.map((n) => (n.id === notifId ? { ...n, is_read: true } : n));
-      setUnreadCount(updated.filter((n) => !n.is_read).length);
-      return updated;
-    });
-    if (!String(notifId).startsWith('req_') && !String(notifId).startsWith('inv_')) {
+    if (String(notifId).startsWith('req_') || String(notifId).startsWith('inv_')) {
+      await useNotificationStore.getState().markVirtualAsRead([notifId]);
+    } else {
       await supabaseClient
         .from('notifications')
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', notifId);
     }
+
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === notifId ? { ...n, is_read: true } : n));
+      const unread = updated.filter((n) => !n.is_read).length;
+      setUnreadCount(unread);
+      useNotificationStore.getState().setUnreadCount(unread);
+      return updated;
+    });
   };
 
   const handleNotifPress = async (notif) => {
@@ -304,7 +322,7 @@ const NotificationScreen = () => {
     }
     if (currentUser?.role === 'owner') {
       if (notif.type === 'rental_request_new' || notif.reference_type === 'rental_request') {
-        navigation.navigate('PropertyStack', { screen: 'RentalRequest' });
+        navigation.navigate('RentalRequest');
       } else if (notif.reference_type === 'invoice') {
         navigation.navigate('OwnerInvoiceList');
       }
@@ -325,8 +343,18 @@ const NotificationScreen = () => {
   };
 
   const handleMarkAllRead = async () => {
+    const virtualIdsToMark = [];
+    notifications.forEach((n) => {
+      if (n.is_virtual_request || String(n.id).startsWith('req_') || String(n.id).startsWith('inv_')) {
+        virtualIdsToMark.push(n.id);
+      }
+    });
+    await useNotificationStore.getState().markVirtualAsRead(virtualIdsToMark);
+
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
+    useNotificationStore.getState().setUnreadCount(0);
+
     await supabaseClient
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })

@@ -49,26 +49,52 @@ const STATUS_CONFIG = {
 const InvoiceDetailScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
   const invoiceParam = route.params?.invoice;
+  const invoiceIdParam = route.params?.invoiceId || invoiceParam?.id;
+
   const [invoice, setInvoice] = useState(invoiceParam);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!invoiceParam);
 
   useEffect(() => {
-    if (invoiceParam?.id) {
-      loadDetail();
+    if (invoiceIdParam) {
+      loadDetail(invoiceIdParam);
+    } else {
+      setIsLoading(false);
     }
-  }, [invoiceParam?.id]);
+  }, [invoiceIdParam]);
 
-  const loadDetail = async () => {
+  const loadDetail = async (id) => {
     setIsLoading(true);
-    const { data, error } = await getInvoiceDetail(invoiceParam.id);
-    if (!error && data) setInvoice(data);
+    const { data, error } = await getInvoiceDetail(id);
+    if (!error && data) {
+      setInvoice(data);
+    }
     setIsLoading(false);
   };
 
-  if (isLoading || !invoice) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!invoice) {
+    return (
+      <View style={[styles.loadingContainer, { paddingHorizontal: SPACING[6] }]}>
+        <Ionicons name="document-text-outline" size={56} color={COLORS.textTertiary} />
+        <Text style={{ fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginTop: SPACING[3] }}>
+          Tagihan Tidak Ditemukan
+        </Text>
+        <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, textAlign: 'center', marginTop: SPACING[1], marginBottom: SPACING[5] }}>
+          Data tagihan mungkin telah dihapus atau tidak dapat dimuat dari server.
+        </Text>
+        <TouchableOpacity
+          style={{ paddingHorizontal: SPACING[6], paddingVertical: SPACING[3], backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md }}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.semiBold }}>Kembali</Text>
+        </TouchableOpacity>
       </View>
     );
   }

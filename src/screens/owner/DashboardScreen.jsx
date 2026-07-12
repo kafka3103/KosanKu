@@ -36,21 +36,29 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-const StatCard = ({ label, value, icon, color, onPress, isGradient }) => {
+const StatCard = ({ label, value, icon, color = COLORS.primary, isGradient = false, gradientColors = [COLORS.secondary, COLORS.primary], onPress }) => {
   const CardContent = (
     <>
-      <View style={[styles.statIconBg, { backgroundColor: isGradient ? 'rgba(255,255,255,0.2)' : color + '20' }]}>
-        <Ionicons name={icon} size={22} color={isGradient ? COLORS.white : color} />
+      <View style={[styles.statIconBg, { backgroundColor: isGradient ? 'rgba(255, 255, 255, 0.22)' : color + '20' }]}>
+        <Ionicons name={icon} size={24} color={isGradient ? COLORS.white : color} />
       </View>
-      <Text style={[styles.statValue, { color: isGradient ? COLORS.white : color }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: isGradient ? 'rgba(255,255,255,0.8)' : COLORS.textSecondary }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: isGradient ? COLORS.white : color }]} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+      <Text style={[styles.statLabel, { color: isGradient ? 'rgba(255, 255, 255, 0.9)' : COLORS.textSecondary }]} numberOfLines={1}>
+        {label}
+      </Text>
     </>
   );
 
   if (isGradient) {
     return (
-      <TouchableOpacity style={[styles.statCardContainer, onPress && styles.statCardPressable]} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
-        <LinearGradient colors={[COLORS.secondary, COLORS.primary]} style={styles.statCard}>
+      <TouchableOpacity
+        style={[styles.statCardContainer, onPress && styles.statCardPressable]}
+        onPress={onPress}
+        activeOpacity={onPress ? 0.8 : 1}
+      >
+        <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.statCard}>
           {CardContent}
         </LinearGradient>
       </TouchableOpacity>
@@ -58,7 +66,11 @@ const StatCard = ({ label, value, icon, color, onPress, isGradient }) => {
   }
 
   return (
-    <TouchableOpacity style={[styles.statCardContainer, styles.statCard, onPress && styles.statCardPressable]} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
+    <TouchableOpacity
+      style={[styles.statCardContainer, styles.statCard, onPress && styles.statCardPressable]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.8 : 1}
+    >
       {CardContent}
     </TouchableOpacity>
   );
@@ -193,29 +205,40 @@ const DashboardScreen = ({ navigation }) => {
           label="Properti"
           value={stats?.totalProperties ?? 0}
           icon="business-outline"
-          color={COLORS.primary}
-          onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_STACK)}
+          isGradient={true}
+          gradientColors={['#1E40AF', '#3B82F6']}
+          onPress={() =>
+            navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
+              screen: OWNER_SCREENS.PROPERTY_LIST,
+            })
+          }
         />
         <StatCard
           label="Kamar Tersedia"
           value={stats?.availableRooms ?? 0}
           icon="bed-outline"
-          color={COLORS.success}
-          onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_STACK)}
+          isGradient={true}
+          gradientColors={['#0F766E', '#14B8A6']}
+          onPress={() =>
+            navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
+              screen: OWNER_SCREENS.PROPERTY_LIST,
+            })
+          }
         />
         <StatCard
           label="Tagihan Tertunda"
           value={stats?.unpaidInvoicesCount ?? 0}
           icon="document-text-outline"
-          color={COLORS.warning}
+          isGradient={true}
+          gradientColors={['#B45309', '#F59E0B']}
           onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
         />
         <StatCard
           label="Pendapatan Bulan Ini"
           value={formatCurrency(stats?.monthlyRevenue ?? 0)}
           icon="wallet-outline"
-          color={COLORS.primary}
           isGradient={true}
+          gradientColors={[COLORS.secondary, COLORS.primary]}
         />
       </View>
 
@@ -225,11 +248,7 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Pengajuan Masuk</Text>
           {(stats?.pendingRequests?.length ?? 0) > 0 && (
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
-                  screen: OWNER_SCREENS.RENTAL_REQUEST,
-                })
-              }
+              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
             >
               <Text style={styles.seeAllText}>Lihat Semua</Text>
             </TouchableOpacity>
@@ -247,11 +266,7 @@ const DashboardScreen = ({ navigation }) => {
             <RequestCard
               key={req.id}
               request={req}
-              onPress={() =>
-                navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
-                  screen: OWNER_SCREENS.RENTAL_REQUEST,
-                })
-              }
+              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
             />
           ))
         )}
@@ -263,11 +278,7 @@ const DashboardScreen = ({ navigation }) => {
         <View style={styles.quickActionsRow}>
           <TouchableOpacity
             style={styles.quickAction}
-            onPress={() =>
-              navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
-                screen: OWNER_SCREENS.PROPERTY_FORM,
-              })
-            }
+            onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_FORM)}
             activeOpacity={0.7}
           >
             <Ionicons name="add-circle-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />

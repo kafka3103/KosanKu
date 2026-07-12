@@ -38,6 +38,11 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
     let isMounted = true;
     const fetchUnreadCount = async () => {
       if (!currentUser?.id) return;
+      
+      // Pastikan data pembacaan virtual notif dari AsyncStorage dimuat
+      await useNotificationStore.getState().initVirtualReads();
+      const isVirtualRead = useNotificationStore.getState().isVirtualRead;
+
       let count = 0;
 
       // 1. Unread di tabel notifications
@@ -48,28 +53,41 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         .eq('is_read', false);
       if (dbNotifs) count += dbNotifs.length;
 
-      // 2. Unread virtual requests / invoices
+      // 2. Unread virtual requests / invoices yang BELUM dibaca
       if (currentUser.role === 'owner') {
         const { data: pendingReqs } = await supabaseClient
           .from('rental_requests')
           .select('id')
           .eq('owner_id', currentUser.id)
           .eq('status', 'pending');
-        if (pendingReqs) count += pendingReqs.length;
+        if (pendingReqs) {
+          pendingReqs.forEach((req) => {
+            if (!isVirtualRead(`req_pen_${req.id}`)) count++;
+          });
+        }
       } else if (currentUser.role === 'tenant') {
         const { data: tenantReqs } = await supabaseClient
           .from('rental_requests')
-          .select('id')
+          .select('id, status')
           .eq('tenant_id', currentUser.id)
           .in('status', ['approved', 'rejected']);
-        if (tenantReqs) count += tenantReqs.length;
+        if (tenantReqs) {
+          tenantReqs.forEach((req) => {
+            const prefix = req.status === 'approved' ? 'req_app_' : 'req_rej_';
+            if (!isVirtualRead(`${prefix}${req.id}`)) count++;
+          });
+        }
 
         const { data: tenantInvoices } = await supabaseClient
           .from('invoices')
           .select('id')
           .eq('tenant_id', currentUser.id)
           .eq('status', 'unpaid');
-        if (tenantInvoices) count += tenantInvoices.length;
+        if (tenantInvoices) {
+          tenantInvoices.forEach((inv) => {
+            if (!isVirtualRead(`inv_${inv.id}`)) count++;
+          });
+        }
       }
 
       if (isMounted) setUnreadCount(count);
@@ -126,8 +144,12 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
             canPreventDefault: true,
           });
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
+          if (!event.defaultPrevented) {
+            if (route.name === 'PropertyStack') {
+              navigation.navigate('PropertyStack', { screen: 'PropertyList' });
+            } else if (!isFocused) {
+              navigation.navigate(route.name, route.params);
+            }
           }
         };
 
