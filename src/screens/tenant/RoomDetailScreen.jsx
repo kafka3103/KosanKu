@@ -31,7 +31,7 @@ const FACILITY_ICON_MAP = {
   bed: 'bed',
   wardrobe: 'file-tray',
   desk: 'desktop',
-  chair: 'chair', // doesn't exist, will fallback
+  chair: 'cube',
   refrigerator: 'snow-outline',
   television: 'tv',
   'washing-machine': 'shirt',
@@ -197,7 +197,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                 </View>
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
-                    <View key={fac.id} style={styles.facilityItem}>
+                    <View key={fac.name} style={styles.facilityItem}>
                       <Ionicons
                         name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
                         size={20}
