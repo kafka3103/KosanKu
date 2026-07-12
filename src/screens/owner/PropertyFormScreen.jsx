@@ -333,7 +333,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 onPress={() => setGenderPolicy(opt.value)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={opt.icon} size={24} color={value === opt.value ? COLORS.primary : COLORS.textTertiary} style={styles.genderIcon} />
+                <Ionicons name={opt.icon} size={24} color={genderPolicy === opt.value ? COLORS.primary : COLORS.textTertiary} style={styles.genderIcon} />
                 <Text
                   style={[
                     styles.genderLabel,

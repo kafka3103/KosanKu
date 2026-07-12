@@ -78,7 +78,7 @@ export const getPropertyById = async (propertyId) => {
 export const createProperty = async (ownerId, propertyData) => {
   const { data, error } = await supabaseClient
     .from('properties')
-    .insert({ owner_id: ownerId, ...propertyData })
+    .insert({ owner_id: ownerId, is_active: true, ...propertyData })
     .select()
     .single();
 
