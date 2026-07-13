@@ -181,11 +181,6 @@ const DashboardScreen = ({ navigation }) => {
             <Text style={styles.greeting}>{greeting()},</Text>
             <Text style={styles.ownerName}>{currentUser?.full_name ?? 'Owner'} 👋</Text>
           </View>
-          <View style={styles.headerAvatar}>
-            <Text style={styles.headerAvatarText}>
-              {currentUser?.full_name?.[0]?.toUpperCase() ?? 'O'}
-            </Text>
-          </View>
         </View>
 
         {/* Occupancy Banner */}
@@ -259,13 +254,13 @@ const DashboardScreen = ({ navigation }) => {
 
         {(stats?.pendingRequests?.length ?? 0) === 0 ? (
           <TouchableOpacity 
-            style={styles.emptyCard} 
+            style={styles.emptyCard}
             onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
             activeOpacity={0.7}
           >
             <Ionicons name="mail-open-outline" size={40} color={COLORS.textTertiary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Tidak Ada Pengajuan Baru</Text>
-            <Text style={styles.emptySubtitle}>Ketuk untuk melihat riwayat pengajuan</Text>
+            <Text style={styles.emptySubtitle}>Klik untuk melihat riwayat pengajuan</Text>
           </TouchableOpacity>
         ) : (
           stats.pendingRequests.map((req) => (
