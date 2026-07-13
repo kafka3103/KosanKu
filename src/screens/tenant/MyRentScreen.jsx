@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { id as idLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -130,8 +131,10 @@ const MyRentScreen = ({ navigation }) => {
   // Belum punya hunian aktif
   if (!contract && rentalRequests.length === 0) {
     return (
-      <ScrollView
-        style={styles.container}
+      <>
+        <DrawerButton />
+        <ScrollView
+          style={styles.container}
         contentContainerStyle={[styles.emptyContent, { paddingBottom: insets.bottom + 100 }]}
         refreshControl={
           <RefreshControl
@@ -161,6 +164,7 @@ const MyRentScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </>
     );
   }
 
@@ -170,8 +174,10 @@ const MyRentScreen = ({ navigation }) => {
   const facilities = room?.room_facilities?.map((rf) => rf.facility_master?.name).filter(Boolean) ?? [];
 
   return (
-    <ScrollView
-      style={styles.container}
+    <>
+      <DrawerButton />
+      <ScrollView
+        style={styles.container}
       contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -354,6 +360,7 @@ const MyRentScreen = ({ navigation }) => {
         </>
       )}
     </ScrollView>
+    </>
   );
 };
 
@@ -377,8 +384,14 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
+    marginLeft: 48, // Added for DrawerButton
   },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primaryLight,
+    marginTop: 2,
+    marginLeft: 48, // subtitle margin
+  },
   section: {
     marginHorizontal: SPACING[4],
     marginTop: SPACING[5],

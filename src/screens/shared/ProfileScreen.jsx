@@ -16,12 +16,14 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  Switch,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -198,8 +200,10 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
+    <>
+      {!navigation.canGoBack() && <DrawerButton />}
+      <ScrollView
+        style={styles.container}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -317,6 +321,7 @@ const ProfileScreen = ({ navigation }) => {
 
       <View style={{ height: insets.bottom + 100 }} />
     </ScrollView>
+    </>
   );
 };
 
@@ -334,6 +339,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
+    marginLeft: 48, // Added for DrawerButton
   },
   avatarSection: {
     alignItems: 'center',

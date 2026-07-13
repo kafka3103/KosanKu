@@ -185,7 +185,7 @@ const TenantNavigator = () => {
       screenOptions={{
         headerShown: false,
         drawerStyle: styles.drawer,
-        swipeEdgeWidth: 50,
+        swipeEnabled: false,
       }}
     >
       <TenantDrawer.Screen

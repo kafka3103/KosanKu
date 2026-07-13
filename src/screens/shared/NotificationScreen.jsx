@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
+import DrawerButton from '../../components/navigation/DrawerButton';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
@@ -374,6 +375,7 @@ const NotificationScreen = () => {
 
   return (
     <View style={styles.container}>
+      <DrawerButton />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Notifikasi</Text>
@@ -435,11 +437,13 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
+    marginLeft: 48, // Added for DrawerButton
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
     marginTop: 2,
+    marginLeft: 48, // subtitle margin
   },
   markAllBtn: {
     alignSelf: 'flex-start',

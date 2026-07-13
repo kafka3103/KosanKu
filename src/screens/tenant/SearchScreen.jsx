@@ -20,6 +20,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -205,6 +206,7 @@ const SearchScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <DrawerButton />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Cari Kosan</Text>
@@ -427,12 +429,14 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
+    marginLeft: 48, // Added for DrawerButton
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
     marginTop: 2,
     marginBottom: SPACING[4],
+    marginLeft: 48, // subtitle margin
   },
   searchBar: {
     flexDirection: 'row',

@@ -16,9 +16,10 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import DrawerButton from '../../components/navigation/DrawerButton';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -167,6 +168,7 @@ const InvoiceListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <DrawerButton />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Daftar Tagihan</Text>
@@ -244,6 +246,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
     marginBottom: SPACING[3],
+    marginLeft: 48, // Added for DrawerButton
   },
   summaryBanner: {
     backgroundColor: 'rgba(255,255,255,0.15)',

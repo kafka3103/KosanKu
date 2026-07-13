@@ -209,7 +209,7 @@ const OwnerNavigator = () => {
       screenOptions={{
         headerShown: false,
         drawerStyle: styles.drawer,
-        swipeEdgeWidth: 50,
+        swipeEnabled: false,
       }}
     >
       {/* Tab Navigator sebagai layar utama Drawer */}

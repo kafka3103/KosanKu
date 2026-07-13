@@ -14,11 +14,12 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -158,163 +159,163 @@ const DashboardScreen = ({ navigation }) => {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Image source={require('../../../assets/logo.png')} style={styles.headerLogo} resizeMode="contain" />
-        </View>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greeting}>{greeting()},</Text>
-            <Text style={styles.ownerName}>{currentUser?.full_name ?? 'Owner'} 👋</Text>
+    <>
+      <DrawerButton />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.greeting}>{greeting()},</Text>
+              <Text style={styles.ownerName}>{currentUser?.full_name ?? 'Owner'} 👋</Text>
+            </View>
+          </View>
+
+          {/* Occupancy Banner */}
+          <View style={styles.occupancyBanner}>
+            <View>
+              <Text style={styles.occupancyLabel}>Tingkat Hunian</Text>
+              <Text style={styles.occupancyValue}>{occupancyRate}%</Text>
+            </View>
+            <View style={styles.occupancyBarContainer}>
+              <View style={[styles.occupancyBar, { width: `${occupancyRate}%` }]} />
+            </View>
+            <Text style={styles.occupancyDetail}>
+              {stats?.occupiedRooms ?? 0}/{stats?.totalRooms ?? 0} kamar terisi
+            </Text>
           </View>
         </View>
 
-        {/* Occupancy Banner */}
-        <View style={styles.occupancyBanner}>
-          <View>
-            <Text style={styles.occupancyLabel}>Tingkat Hunian</Text>
-            <Text style={styles.occupancyValue}>{occupancyRate}%</Text>
-          </View>
-          <View style={styles.occupancyBarContainer}>
-            <View style={[styles.occupancyBar, { width: `${occupancyRate}%` }]} />
-          </View>
-          <Text style={styles.occupancyDetail}>
-            {stats?.occupiedRooms ?? 0}/{stats?.totalRooms ?? 0} kamar terisi
-          </Text>
-        </View>
-      </View>
-
-      {/* Stat Cards */}
-      <View style={styles.statsGrid}>
-        <StatCard
-          label="Properti"
-          value={stats?.totalProperties ?? 0}
-          icon="business-outline"
-          isGradient={true}
-          gradientColors={['#1E40AF', '#3B82F6']}
-          onPress={() =>
-            navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
-              screen: OWNER_SCREENS.PROPERTY_LIST,
-            })
-          }
-        />
-        <StatCard
-          label="Kamar Tersedia"
-          value={stats?.availableRooms ?? 0}
-          icon="bed-outline"
-          isGradient={true}
-          gradientColors={['#0F766E', '#14B8A6']}
-          onPress={() =>
-            navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
-              screen: OWNER_SCREENS.PROPERTY_LIST,
-            })
-          }
-        />
-        <StatCard
-          label="Tagihan Tertunda"
-          value={stats?.unpaidInvoicesCount ?? 0}
-          icon="document-text-outline"
-          isGradient={true}
-          gradientColors={['#B45309', '#F59E0B']}
-          onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
-        />
-        <StatCard
-          label="Pendapatan Bulan Ini"
-          value={formatCurrency(stats?.monthlyRevenue ?? 0)}
-          icon="wallet-outline"
-          isGradient={true}
-          gradientColors={[COLORS.secondary, COLORS.primary]}
-        />
-      </View>
-
-      {/* Pengajuan Sewa Terbaru */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Pengajuan Masuk</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
-          >
-            <Text style={styles.seeAllText}>Lihat Semua</Text>
-          </TouchableOpacity>
-        </View>
-
-        {(stats?.pendingRequests?.length ?? 0) === 0 ? (
-          <TouchableOpacity 
-            style={styles.emptyCard}
-            onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="mail-open-outline" size={40} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Tidak Ada Pengajuan Baru</Text>
-            <Text style={styles.emptySubtitle}>Klik untuk melihat riwayat pengajuan</Text>
-          </TouchableOpacity>
-        ) : (
-          stats.pendingRequests.map((req) => (
-            <RequestCard
-              key={req.id}
-              request={req}
-              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
-            />
-          ))
-        )}
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Aksi Cepat</Text>
-        <View style={styles.quickActionsRow}>
-          <TouchableOpacity
-            style={styles.quickAction}
-            onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_FORM)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-            <Text style={styles.quickActionLabel}>Tambah Properti</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickAction}
-            onPress={() => navigation.navigate(OWNER_SCREENS.TENANT_LIST)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="people-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-            <Text style={styles.quickActionLabel}>Daftar Penghuni</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickAction}
-            onPress={() => navigation.navigate(OWNER_SCREENS.REPORT)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="stats-chart-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-            <Text style={styles.quickActionLabel}>Laporan</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickAction}
+        {/* Stat Cards */}
+        <View style={styles.statsGrid}>
+          <StatCard
+            label="Properti"
+            value={stats?.totalProperties ?? 0}
+            icon="business-outline"
+            isGradient={true}
+            gradientColors={['#1E40AF', '#3B82F6']}
+            onPress={() =>
+              navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
+                screen: OWNER_SCREENS.PROPERTY_LIST,
+              })
+            }
+          />
+          <StatCard
+            label="Kamar Tersedia"
+            value={stats?.availableRooms ?? 0}
+            icon="bed-outline"
+            isGradient={true}
+            gradientColors={['#0F766E', '#14B8A6']}
+            onPress={() =>
+              navigation.navigate(OWNER_SCREENS.PROPERTY_STACK, {
+                screen: OWNER_SCREENS.PROPERTY_LIST,
+              })
+            }
+          />
+          <StatCard
+            label="Tagihan Tertunda"
+            value={stats?.unpaidInvoicesCount ?? 0}
+            icon="document-text-outline"
+            isGradient={true}
+            gradientColors={['#B45309', '#F59E0B']}
             onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="card-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-            <Text style={styles.quickActionLabel}>Tagihan</Text>
-          </TouchableOpacity>
+          />
+          <StatCard
+            label="Pendapatan Bulan Ini"
+            value={formatCurrency(stats?.monthlyRevenue ?? 0)}
+            icon="wallet-outline"
+            isGradient={true}
+            gradientColors={[COLORS.secondary, COLORS.primary]}
+          />
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Pengajuan Sewa Terbaru */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Pengajuan Masuk</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+            >
+              <Text style={styles.seeAllText}>Lihat Semua</Text>
+            </TouchableOpacity>
+          </View>
+
+          {(stats?.pendingRequests?.length ?? 0) === 0 ? (
+            <TouchableOpacity 
+              style={styles.emptyCard}
+              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="mail-open-outline" size={40} color={COLORS.textTertiary} style={styles.emptyIcon} />
+              <Text style={styles.emptyTitle}>Tidak Ada Pengajuan Baru</Text>
+              <Text style={styles.emptySubtitle}>Klik untuk melihat riwayat pengajuan</Text>
+            </TouchableOpacity>
+          ) : (
+            stats.pendingRequests.map((req) => (
+              <RequestCard
+                key={req.id}
+                request={req}
+                onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+              />
+            ))
+          )}
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Aksi Cepat</Text>
+          <View style={styles.quickActionsRow}>
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_FORM)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
+              <Text style={styles.quickActionLabel}>Tambah Properti</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={() => navigation.navigate(OWNER_SCREENS.TENANT_LIST)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="people-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
+              <Text style={styles.quickActionLabel}>Daftar Penghuni</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={() => navigation.navigate(OWNER_SCREENS.REPORT)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="stats-chart-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
+              <Text style={styles.quickActionLabel}>Laporan</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="card-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
+              <Text style={styles.quickActionLabel}>Tagihan</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </>
   );
 };
 
@@ -334,26 +335,18 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[10],
+    paddingTop: SPACING[14],
     paddingBottom: SPACING[6],
     paddingHorizontal: SPACING[5],
     borderBottomLeftRadius: BORDER_RADIUS['3xl'],
     borderBottomRightRadius: BORDER_RADIUS['3xl'],
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: SPACING[6],
-  },
-  headerLogo: {
-    width: 60,
-    height: 60,
-    tintColor: COLORS.white,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: SPACING[5],
+    marginLeft: 48,
   },
   greeting: {
     fontSize: FONT_SIZE.base,
