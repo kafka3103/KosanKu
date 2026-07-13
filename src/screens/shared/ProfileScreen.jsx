@@ -67,7 +67,7 @@ const ProfileScreen = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -175,37 +175,6 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Hapus Akun',
-      'Apakah Anda yakin ingin menghapus akun ini secara permanen? Semua data Anda (termasuk properti/kamar yang Anda kelola atau sewa) akan ikut terhapus dan tidak dapat dikembalikan.',
-      [
-        { text: 'Batal', style: 'cancel' },
-        { 
-          text: 'Ya, Hapus Permanen', 
-          style: 'destructive',
-          onPress: async () => {
-            setIsSaving(true);
-            const { error } = await deleteAccount();
-            setIsSaving(false);
-            if (error) {
-              Alert.alert('Gagal Menghapus Akun', error.message || 'Terjadi kesalahan saat menghapus akun.');
-            } else {
-              Alert.alert(
-                'Akun Berhasil Dihapus',
-                'Akun beserta seluruh data Anda telah dihapus secara permanen dari sistem.',
-                [
-                  { text: 'Tutup', onPress: () => useAuthStore.getState().clearAuthState() }
-                ],
-                { cancelable: false }
-              );
-            }
-          }
-        }
-      ]
-    );
-  };
-
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
       Alert.alert('Error', 'Nama Lengkap wajib diisi');
@@ -227,8 +196,6 @@ const ProfileScreen = ({ navigation }) => {
       setAuthenticatedUser(currentSession, data);
     }
   };
-
-
 
   return (
     <ScrollView
@@ -298,19 +265,19 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('profile.editButton') || 'Informasi Akun'}</Text>
         </View>
-        <EditableInfoRow 
-          label="Nama Lengkap" 
-          value={fullName} 
+        <EditableInfoRow
+          label="Nama Lengkap"
+          value={fullName}
           onChangeText={setFullName}
-          icon="person-outline" 
+          icon="person-outline"
           placeholder="Masukkan nama lengkap"
         />
         <InfoRow label="Email" value={profile?.email ?? currentUser?.email} icon="mail-outline" />
-        <EditableInfoRow 
-          label="Nomor Telepon" 
-          value={phoneNumber} 
+        <EditableInfoRow
+          label="Nomor Telepon"
+          value={phoneNumber}
           onChangeText={setPhoneNumber}
-          icon="call-outline" 
+          icon="call-outline"
           placeholder="Contoh: +628123456789"
           keyboardType="phone-pad"
         />
@@ -341,15 +308,10 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </View>
 
-            <View style={styles.section}>
+      <View style={styles.section}>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={styles.logoutBtnText}>Keluar (Logout)</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
-          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-          <Text style={styles.deleteBtnText}>Hapus Akun Permanen</Text>
         </TouchableOpacity>
       </View>
 
