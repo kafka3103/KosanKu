@@ -65,7 +65,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: false,
       quality: 0.9,
     });
@@ -83,7 +83,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: false,
       quality: 0.9,
     });

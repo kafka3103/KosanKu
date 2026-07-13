@@ -8,6 +8,8 @@
  */
 
 import supabaseClient from './supabaseClient';
+import * as FileSystem from 'expo-file-system/legacy';
+import { decode } from 'base64-arraybuffer';
 
 // ─── Bucket Storage ───────────────────────────────────────────
 const AVATARS_BUCKET = 'avatars';
@@ -152,9 +154,8 @@ export const uploadAvatar = async (userId, localUri) => {
     const fileName = `${userId}/avatar.${ext}`;
     const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-    const response = await fetch(localUri);
-    const blob = await response.blob();
-    const arrayBuffer = await new Response(blob).arrayBuffer();
+    const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+    const arrayBuffer = decode(base64);
 
     const { error: uploadError } = await supabaseClient.storage
       .from(AVATARS_BUCKET)
@@ -188,9 +189,8 @@ export const uploadKtpPhoto = async (userId, localUri) => {
     const fileName = `${userId}/ktp.${ext}`;
     const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-    const response = await fetch(localUri);
-    const blob = await response.blob();
-    const arrayBuffer = await new Response(blob).arrayBuffer();
+    const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+    const arrayBuffer = decode(base64);
 
     const { error: uploadError } = await supabaseClient.storage
       .from(KTP_BUCKET)
