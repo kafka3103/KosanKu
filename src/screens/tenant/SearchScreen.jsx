@@ -47,9 +47,9 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // in kilometers
 };
@@ -102,20 +102,20 @@ const PropertyCard = ({ property, onPress }) => {
           <Text style={styles.availableTagText}>{availableCount} tersedia</Text>
         </View>
         <View style={styles.genderTag}>
-          <Ionicons 
+          <Ionicons
             name={
-              property.gender_policy === 'male' ? 'man' 
-              : property.gender_policy === 'female' ? 'woman' 
-              : 'male-female'
-            } 
-            size={12} 
-            color={COLORS.white} 
-            style={{ marginRight: 4 }} 
+              property.gender_policy === 'male' ? 'man'
+                : property.gender_policy === 'female' ? 'woman'
+                  : 'male-female'
+            }
+            size={12}
+            color={COLORS.white}
+            style={{ marginRight: 4 }}
           />
           <Text style={styles.genderTagText}>
             {property.gender_policy === 'male' ? 'Putra'
               : property.gender_policy === 'female' ? 'Putri'
-              : 'Campur'}
+                : 'Campur'}
           </Text>
         </View>
       </View>
@@ -402,8 +402,8 @@ const SearchScreen = ({ navigation }) => {
       {viewMode === 'map' ? (
         <View style={{ flex: 1, backgroundColor: '#0D1B2A' }}>
           {process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY &&
-          process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY !== 'your-google-maps-api-key' &&
-          process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.trim() !== '' ? (
+            process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY !== 'your-google-maps-api-key' &&
+            process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.trim() !== '' ? (
             <MapView
               style={{ flex: 1, width: '100%' }}
               initialRegion={{
@@ -498,11 +498,6 @@ const SearchScreen = ({ navigation }) => {
                 domStorageEnabled={true}
                 style={{ flex: 1 }}
               />
-              <View style={{ position: 'absolute', top: 12, left: 12, right: 12, backgroundColor: 'rgba(13,27,42,0.85)', padding: 10, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: '#415A77' }}>
-                <Text style={{ color: COLORS.white, fontSize: FONT_SIZE.xs, textAlign: 'center', fontWeight: FONT_WEIGHT.semiBold }}>
-                  🗺️ Peta Interaktif OpenStreetMap (Gratis & Bebas Kuota): Ketuk pin di peta untuk melihat detail kosan
-                </Text>
-              </View>
             </View>
           )}
 
