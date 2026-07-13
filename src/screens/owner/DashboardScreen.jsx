@@ -78,8 +78,10 @@ const StatCard = ({ label, value, icon, color = COLORS.primary, isGradient = fal
 
 const RequestCard = ({ request, onPress }) => {
   const tenantName = request.users?.full_name ?? 'Tenant';
-  const roomName = request.rooms?.room_number ?? '—';
-  const propertyName = request.rooms?.properties?.name ?? '—';
+  
+  const details = [];
+  if (request.rooms?.room_number) details.push(`Kamar ${request.rooms.room_number}`);
+  if (request.rooms?.properties?.name) details.push(request.rooms.properties.name);
 
   return (
     <TouchableOpacity style={styles.requestCard} onPress={onPress} activeOpacity={0.7}>
@@ -88,9 +90,11 @@ const RequestCard = ({ request, onPress }) => {
       </View>
       <View style={styles.requestInfo}>
         <Text style={styles.requestName}>{tenantName}</Text>
-        <Text style={styles.requestDetail}>
-          Kamar {roomName} · {propertyName}
-        </Text>
+        {details.length > 0 && (
+          <Text style={styles.requestDetail}>
+            {details.join(' · ')}
+          </Text>
+        )}
       </View>
       <View style={styles.requestBadge}>
         <Text style={styles.requestBadgeText}>Pending</Text>
@@ -246,21 +250,23 @@ const DashboardScreen = ({ navigation }) => {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Pengajuan Masuk</Text>
-          {(stats?.pendingRequests?.length ?? 0) > 0 && (
-            <TouchableOpacity
-              onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
-            >
-              <Text style={styles.seeAllText}>Lihat Semua</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+          >
+            <Text style={styles.seeAllText}>Lihat Semua</Text>
+          </TouchableOpacity>
         </View>
 
         {(stats?.pendingRequests?.length ?? 0) === 0 ? (
-          <View style={styles.emptyCard}>
+          <TouchableOpacity 
+            style={styles.emptyCard} 
+            onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
+            activeOpacity={0.7}
+          >
             <Ionicons name="mail-open-outline" size={40} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Tidak Ada Pengajuan</Text>
-            <Text style={styles.emptySubtitle}>Pengajuan sewa masuk akan muncul di sini</Text>
-          </View>
+            <Text style={styles.emptyTitle}>Tidak Ada Pengajuan Baru</Text>
+            <Text style={styles.emptySubtitle}>Ketuk untuk melihat riwayat pengajuan</Text>
+          </TouchableOpacity>
         ) : (
           stats.pendingRequests.map((req) => (
             <RequestCard
