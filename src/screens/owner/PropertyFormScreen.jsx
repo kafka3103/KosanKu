@@ -3,7 +3,7 @@
  * Form tambah / edit properti kosan
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,17 @@ import {
   Platform,
   Switch,
   Image,
+  Modal,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
+
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
@@ -78,6 +84,82 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const [coverPhotoUri, setCoverPhotoUri] = useState(existingProperty?.cover_photo_url ?? null);
   const [additionalPhotos, setAdditionalPhotos] = useState(existingProperty?.photo_urls ?? []);
   const [isLoading, setIsLoading] = useState(false);
+
+  // GPS Koordinat Lokasi
+  const [latitude, setLatitude] = useState(existingProperty?.latitude != null ? parseFloat(existingProperty.latitude) : null);
+  const [longitude, setLongitude] = useState(existingProperty?.longitude != null ? parseFloat(existingProperty.longitude) : null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [tempLatitude, setTempLatitude] = useState(-6.2641);
+  const [tempLongitude, setTempLongitude] = useState(106.7944);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const webViewRef = useRef(null);
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
+  const [mapSearchResults, setMapSearchResults] = useState([]);
+  const [mapSearchLoading, setMapSearchLoading] = useState(false);
+
+  const handleSearchOSM = async () => {
+    if (!mapSearchQuery.trim()) return;
+    setMapSearchLoading(true);
+    setMapSearchResults([]);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(mapSearchQuery.trim())}&limit=5&countrycodes=id`, {
+        headers: {
+          'User-Agent': 'KosanKuApp/1.0 (Contact: support@kosanku.app)'
+        }
+      });
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        if (data.length === 1) {
+          const newLat = parseFloat(data[0].lat);
+          const newLon = parseFloat(data[0].lon);
+          setTempLatitude(newLat);
+          setTempLongitude(newLon);
+          webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${newLat}, ${newLon}); true;`);
+        } else {
+          setMapSearchResults(data);
+        }
+      } else {
+        Alert.alert('Pencarian Peta', 'Lokasi tidak ditemukan di OpenStreetMap. Coba masukkan nama jalan atau kota yang lebih spesifik.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Gagal mencari lokasi di peta. Periksa koneksi internet Anda.');
+    } finally {
+      setMapSearchLoading(false);
+    }
+  };
+
+  const handleAutoDetectGPS = async () => {
+    try {
+      setLocationLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Izin Ditolak', 'Akses lokasi diperlukan untuk mendeteksi koordinat GPS otomatis kosan Anda.');
+        setLocationLoading(false);
+        return;
+      }
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      if (current?.coords) {
+        setLatitude(current.coords.latitude);
+        setLongitude(current.coords.longitude);
+        setTempLatitude(current.coords.latitude);
+        setTempLongitude(current.coords.longitude);
+        webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${current.coords.latitude}, ${current.coords.longitude}); true;`);
+        Alert.alert(
+          '📍 Lokasi GPS Terdeteksi!',
+          `Koordinat berhasil disimpan dari posisi Anda:\nLat: ${current.coords.latitude.toFixed(5)}\nLong: ${current.coords.longitude.toFixed(5)}`
+        );
+      } else {
+        Alert.alert('Gagal', 'Tidak dapat mengambil lokasi GPS saat ini.');
+      }
+      setLocationLoading(false);
+    } catch (err) {
+      console.warn('GPS Error:', err);
+      Alert.alert('Error', 'Gagal mendeteksi lokasi GPS. Pastikan GPS di perangkat aktif.');
+      setLocationLoading(false);
+    }
+  };
 
   const toggleFacility = (key) => {
     setSelectedFacilities((prev) =>
@@ -224,7 +306,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
       // Pisahkan foto lama (http) dan baru (file uri)
       const existingAdditional = additionalPhotos.filter(p => p.startsWith('http'));
       const newAdditional = additionalPhotos.filter(p => !p.startsWith('http'));
-      
+
       let uploadedAdditional = [];
       if (newAdditional.length > 0) {
         const propertyId = existingProperty?.id ?? `temp_${Date.now()}`;
@@ -247,6 +329,8 @@ const PropertyFormScreen = ({ navigation, route }) => {
         general_facilities: selectedFacilities,
         cover_photo_url: coverPhotoUrl,
         photo_urls: finalPhotoUrls,
+        latitude: latitude != null ? parseFloat(latitude) : null,
+        longitude: longitude != null ? parseFloat(longitude) : null,
       };
 
       let result;
@@ -329,7 +413,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
             {additionalPhotos.map((photoUri, index) => (
               <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
                 <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
                   onPress={() => removeAdditionalPhoto(index)}
                 >
@@ -414,6 +498,74 @@ const PropertyFormScreen = ({ navigation, route }) => {
             keyboardType="numeric"
             placeholderTextColor={COLORS.textTertiary}
           />
+        </View>
+
+        {/* Koordinat GPS / Peta */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📍 Titik Koordinat GPS Peta</Text>
+          <Text style={styles.sectionSubtitle}>Atur titik peta agar calon penghuni bisa menemukan kosan Anda melalui fitur pencarian GPS terdekat</Text>
+
+          {latitude != null && longitude != null ? (
+            <View style={{ backgroundColor: COLORS.primarySurface, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], borderWidth: 1, borderColor: COLORS.primary, marginBottom: SPACING[3] }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+                <Ionicons name="navigate-circle" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
+                <Text style={{ fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>
+                  Titik GPS Tersimpan
+                </Text>
+              </View>
+              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.semiBold }}>
+                Lat (ltd): {parseFloat(latitude).toFixed(5)}, Long (lnt): {parseFloat(longitude).toFixed(5)}
+              </Text>
+              <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 2 }}>
+                Titik lokasi ini akan tampil akurat di peta pencarian tenant.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ backgroundColor: `${COLORS.warning}15`, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], borderWidth: 1, borderColor: COLORS.warning, marginBottom: SPACING[3] }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+                <Ionicons name="alert-circle" size={22} color={COLORS.warning} style={{ marginRight: 8 }} />
+                <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.warning }}>
+                  Titik Peta Belum Diatur
+                </Text>
+              </View>
+              <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary }}>
+                Kosan tanpa titik GPS tidak akan muncul di peta & pencarian urutan terdekat tenant.
+              </Text>
+            </View>
+          )}
+
+          <View style={{ flexDirection: 'row', gap: SPACING[3] }}>
+            <TouchableOpacity
+              style={{ flex: 1, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING[3], borderRadius: BORDER_RADIUS.md }}
+              onPress={() => {
+                setTempLatitude(latitude ?? -6.2641);
+                setTempLongitude(longitude ?? 106.7944);
+                setShowLocationModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="map-outline" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
+                {latitude != null ? 'Ubah Titik Peta' : 'Pilih Titik di Peta'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ flex: 1, backgroundColor: COLORS.primarySurface, borderWidth: 1, borderColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING[3], borderRadius: BORDER_RADIUS.md }}
+              onPress={handleAutoDetectGPS}
+              disabled={locationLoading}
+              activeOpacity={0.8}
+            >
+              {locationLoading ? (
+                <ActivityIndicator size="small" color={COLORS.primary} style={{ marginRight: 6 }} />
+              ) : (
+                <Ionicons name="locate" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+              )}
+              <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>
+                {locationLoading ? 'Mendeteksi...' : 'Deteksi GPS Saya'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Gender Policy */}
@@ -537,6 +689,285 @@ const PropertyFormScreen = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal Pemilih Titik GPS Peta */}
+      <Modal
+        visible={showLocationModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowLocationModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: BORDER_RADIUS['3xl'], borderTopRightRadius: BORDER_RADIUS['3xl'], padding: SPACING[5], maxHeight: '88%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[4] }}>
+              <View>
+                <Text style={{ fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
+                  Pilih Titik Lokasi Peta
+                </Text>
+                <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 2 }}>
+                  Tentukan posisi koordinat kosan agar akurat di peta
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowLocationModal(false)}>
+                <Ionicons name="close-circle" size={26} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY &&
+              process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY !== 'your-google-maps-api-key' &&
+              process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.trim() !== '' ? (
+              <View style={{ height: 320, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING[4] }}>
+                <MapView
+                  style={{ flex: 1 }}
+                  initialRegion={{
+                    latitude: tempLatitude,
+                    longitude: tempLongitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  onPress={(e) => {
+                    setTempLatitude(e.nativeEvent.coordinate.latitude);
+                    setTempLongitude(e.nativeEvent.coordinate.longitude);
+                  }}
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: tempLatitude,
+                      longitude: tempLongitude,
+                    }}
+                    draggable
+                    onDragEnd={(e) => {
+                      setTempLatitude(e.nativeEvent.coordinate.latitude);
+                      setTempLongitude(e.nativeEvent.coordinate.longitude);
+                    }}
+                    title="Titik Kosan Anda"
+                  />
+                </MapView>
+                <View style={{ position: 'absolute', bottom: 10, left: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', padding: 8, borderRadius: 8 }}>
+                  <Text style={{ color: COLORS.white, fontSize: 11, textAlign: 'center' }}>
+                    💡 Ketuk atau geser pin di atas peta ke lokasi kosan yang tepat
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={{ marginBottom: SPACING[3] }}>
+                {/* Search Bar OpenStreetMap (Cari Jalan / Lokasi) */}
+                <View style={{ marginBottom: SPACING[3] }}>
+                  <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.grey100, borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING[3], borderWidth: 1, borderColor: COLORS.border }}>
+                      <Ionicons name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 6 }} />
+                      <TextInput
+                        style={{ flex: 1, paddingVertical: 10, fontSize: FONT_SIZE.sm, color: COLORS.textPrimary }}
+                        placeholder="Cari jalan, area, atau kota..."
+                        placeholderTextColor={COLORS.textTertiary}
+                        value={mapSearchQuery}
+                        onChangeText={setMapSearchQuery}
+                        returnKeyType="search"
+                        onSubmitEditing={handleSearchOSM}
+                      />
+                      {mapSearchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => { setMapSearchQuery(''); setMapSearchResults([]); }}>
+                          <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={{ backgroundColor: COLORS.primary, paddingHorizontal: SPACING[4], justifyContent: 'center', alignItems: 'center', borderRadius: BORDER_RADIUS.lg }}
+                      onPress={handleSearchOSM}
+                      disabled={mapSearchLoading}
+                    >
+                      {mapSearchLoading ? (
+                        <ActivityIndicator size="small" color={COLORS.white} />
+                      ) : (
+                        <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>Cari</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Dropdown Hasil Pencarian OSM */}
+                  {mapSearchResults.length > 0 && (
+                    <View style={{ marginTop: 6, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, maxHeight: 150, overflow: 'hidden' }}>
+                      <ScrollView nestedScrollEnabled={true}>
+                        {mapSearchResults.map((item, idx) => (
+                          <TouchableOpacity
+                            key={idx.toString()}
+                            style={{ padding: SPACING[3], borderBottomWidth: idx < mapSearchResults.length - 1 ? 1 : 0, borderBottomColor: COLORS.border, flexDirection: 'row', alignItems: 'center' }}
+                            onPress={() => {
+                              const newLat = parseFloat(item.lat);
+                              const newLon = parseFloat(item.lon);
+                              setTempLatitude(newLat);
+                              setTempLongitude(newLon);
+                              setMapSearchResults([]);
+                              webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${newLat}, ${newLon}); true;`);
+                            }}
+                          >
+                            <Ionicons name="location-outline" size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textPrimary, flex: 1 }} numberOfLines={2}>
+                              {item.display_name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={{ backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: SPACING[3], borderRadius: BORDER_RADIUS.lg, marginBottom: SPACING[3] }}
+                  onPress={async () => {
+                    await handleAutoDetectGPS();
+                  }}
+                >
+                  <Ionicons name="locate" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
+                  <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>
+                    Gunakan Posisi Saya Saat ini
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 300, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, position: 'relative' }}>
+                  <WebView
+                    ref={webViewRef}
+                    source={{
+                      html: `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta charset="utf-8" />
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                          <style>
+                            body, html, #map {
+                              width: 100%;
+                              height: 100%;
+                              margin: 0;
+                              padding: 0;
+                              background-color: #f0f0f0;
+                            }
+                          </style>
+                        </head>
+                        <body>
+                          <div id="map"></div>
+                          <script>
+                            var map = L.map('map', { zoomControl: true }).setView([${tempLatitude}, ${tempLongitude}], 15);
+                            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                              maxZoom: 19,
+                              attribution: '© OpenStreetMap'
+                            }).addTo(map);
+
+                            var marker = L.marker([${tempLatitude}, ${tempLongitude}], { draggable: true }).addTo(map);
+
+                            marker.on('dragend', function(event) {
+                              var position = marker.getLatLng();
+                              window.ReactNativeWebView.postMessage(JSON.stringify({
+                                type: 'locationSelected',
+                                latitude: position.lat,
+                                longitude: position.lng
+                              }));
+                            });
+
+                            map.on('click', function(e) {
+                              marker.setLatLng(e.latlng);
+                              window.ReactNativeWebView.postMessage(JSON.stringify({
+                                type: 'locationSelected',
+                                latitude: e.latlng.lat,
+                                longitude: e.latlng.lng
+                              }));
+                            });
+
+                            function updateMarker(lat, lng) {
+                              var newLatLng = new L.LatLng(lat, lng);
+                              marker.setLatLng(newLatLng);
+                              map.panTo(newLatLng);
+                            }
+                          </script>
+                        </body>
+                        </html>
+                      `
+                    }}
+                    onMessage={(event) => {
+                      try {
+                        const data = JSON.parse(event.nativeEvent.data);
+                        if (data.type === 'locationSelected') {
+                          setTempLatitude(data.latitude);
+                          setTempLongitude(data.longitude);
+                        }
+                      } catch (err) {
+                        console.warn('WebView Message Error:', err);
+                      }
+                    }}
+                    javaScriptEnabled={true}
+                    domStorageEnabled={true}
+                    style={{ flex: 1 }}
+                  />
+                </View>
+
+                {/* Tombol Nudge / Geser Manual Cepat jika butuh presisi mikro */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING[2], paddingHorizontal: SPACING[1] }}>
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium }}>
+                    Presisi Koordinat:
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity onPress={() => {
+                      const newLat = parseFloat((tempLatitude + 0.0005).toFixed(5));
+                      setTempLatitude(newLat);
+                      webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${newLat}, ${tempLongitude}); true;`);
+                    }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 11, fontWeight: 'bold' }}>▲ Utara</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                      const newLat = parseFloat((tempLatitude - 0.0005).toFixed(5));
+                      setTempLatitude(newLat);
+                      webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${newLat}, ${tempLongitude}); true;`);
+                    }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 11, fontWeight: 'bold' }}>▼ Selatan</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                      const newLon = parseFloat((tempLongitude - 0.0005).toFixed(5));
+                      setTempLongitude(newLon);
+                      webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${tempLatitude}, ${newLon}); true;`);
+                    }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 11, fontWeight: 'bold' }}>◀ Barat</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                      const newLon = parseFloat((tempLongitude + 0.0005).toFixed(5));
+                      setTempLongitude(newLon);
+                      webViewRef.current?.injectJavaScript(`if (typeof updateMarker === 'function') updateMarker(${tempLatitude}, ${newLon}); true;`);
+                    }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 11, fontWeight: 'bold' }}>Timur ▶</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            <View style={{ backgroundColor: COLORS.grey50, padding: SPACING[3], borderRadius: BORDER_RADIUS.md, marginBottom: SPACING[4] }}>
+              <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, textAlign: 'center' }}>
+                📌 Koordinat yang akan disimpan: <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>{parseFloat(tempLatitude).toFixed(5)}, {parseFloat(tempLongitude).toFixed(5)}</Text>
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: SPACING[3] }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: SPACING[3], backgroundColor: COLORS.grey200, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
+                onPress={() => setShowLocationModal(false)}
+              >
+                <Text style={{ color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.bold }}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 2, paddingVertical: SPACING[3], backgroundColor: COLORS.accent, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
+                onPress={() => {
+                  setLatitude(tempLatitude);
+                  setLongitude(tempLongitude);
+                  setShowLocationModal(false);
+                }}
+              >
+                <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold }}>✅ Simpan Titik Ini</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
