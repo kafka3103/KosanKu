@@ -4,7 +4,7 @@
  * Menampilkan info kamar, tagihan terbaru, dan pengajuan sewa
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,6 +32,7 @@ import useAuthStore from '../../store/authStore';
 import { getTenantActiveContract } from '../../services/invoiceService';
 import { getTenantInvoices } from '../../services/invoiceService';
 import { getTenantRentalRequests } from '../../services/searchService';
+import { subscribeToUserInvoicesRealtime } from '../../services/xenditService';
 import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
 
 const formatCurrency = (amount) =>
@@ -44,7 +45,7 @@ const formatCurrency = (amount) =>
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale: idLocale });
   } catch {
     return dateStr;
   }
@@ -112,6 +113,16 @@ const MyRentScreen = ({ navigation }) => {
       loadData();
     }, [loadData])
   );
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const sub = subscribeToUserInvoicesRealtime(currentUser.id, 'tenant', () => {
+      loadData(true);
+    });
+    return () => {
+      if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
+    };
+  }, [currentUser?.id, loadData]);
 
   const handleCallOwner = (phone) => {
     if (!phone) return;

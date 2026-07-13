@@ -3,7 +3,7 @@
  * Detail tagihan tenant dengan opsi bayar
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { getInvoiceDetail } from '../../services/invoiceService';
+import { subscribeToInvoiceRealtime } from '../../services/xenditService';
 import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
 
 const formatCurrency = (amount) =>
@@ -54,22 +56,37 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
   const [invoice, setInvoice] = useState(invoiceParam);
   const [isLoading, setIsLoading] = useState(!invoiceParam);
 
-  useEffect(() => {
-    if (invoiceIdParam) {
-      loadDetail(invoiceIdParam);
-    } else {
-      setIsLoading(false);
-    }
-  }, [invoiceIdParam]);
-
-  const loadDetail = async (id) => {
-    setIsLoading(true);
+  const loadDetail = useCallback(async (id, silent = false) => {
+    if (!silent) setIsLoading(true);
     const { data, error } = await getInvoiceDetail(id);
     if (!error && data) {
       setInvoice(data);
     }
-    setIsLoading(false);
-  };
+    if (!silent) setIsLoading(false);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (invoiceIdParam) {
+        loadDetail(invoiceIdParam, !!invoice);
+      } else {
+        setIsLoading(false);
+      }
+    }, [invoiceIdParam, loadDetail, invoice])
+  );
+
+  useEffect(() => {
+    if (!invoiceIdParam) return;
+    const sub = subscribeToInvoiceRealtime(invoiceIdParam, (updated) => {
+      setInvoice((prev) => (prev ? { ...prev, ...updated } : prev));
+      if (updated.status === 'paid') {
+        loadDetail(invoiceIdParam, true);
+      }
+    });
+    return () => {
+      if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
+    };
+  }, [invoiceIdParam, loadDetail]);
 
   if (isLoading) {
     return (
