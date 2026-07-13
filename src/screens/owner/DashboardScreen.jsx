@@ -345,6 +345,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginTop: 10, // Added to vertically align with fixed DrawerButton
     marginBottom: SPACING[5],
     marginLeft: 48,
   },
