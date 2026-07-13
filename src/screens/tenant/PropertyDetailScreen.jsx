@@ -13,9 +13,13 @@ import {
   Image,
   ActivityIndicator,
   FlatList,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -161,6 +165,109 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <Text style={styles.infoText}>{property?.address_line}</Text>
         <Text style={styles.infoText}>{property?.district ? `${property.district}, ` : ''}{property?.city}</Text>
         {property?.postal_code && <Text style={styles.infoText}>Kode Pos: {property.postal_code}</Text>}
+
+        {property?.latitude != null && property?.longitude != null && (
+          <View style={{ borderRadius: BORDER_RADIUS.md, overflow: 'hidden', marginTop: SPACING[3], borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.primarySurface }}>
+            {process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY &&
+            process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY !== 'your-google-maps-api-key' &&
+            process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.trim() !== '' ? (
+              <View style={{ height: 180, width: '100%' }}>
+                <MapView
+                  style={{ flex: 1 }}
+                  initialRegion={{
+                    latitude: parseFloat(property.latitude),
+                    longitude: parseFloat(property.longitude),
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: parseFloat(property.latitude),
+                      longitude: parseFloat(property.longitude),
+                    }}
+                    title={property.name}
+                  />
+                </MapView>
+              </View>
+            ) : (
+              <View style={{ height: 200, width: '100%', position: 'relative' }}>
+                <WebView
+                  source={{
+                    html: `
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <meta charset="utf-8" />
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                        <style>
+                          body, html, #map {
+                            width: 100%;
+                            height: 100%;
+                            margin: 0;
+                            padding: 0;
+                          }
+                        </style>
+                      </head>
+                      <body>
+                        <div id="map"></div>
+                        <script>
+                          var map = L.map('map', { zoomControl: false }).setView([${parseFloat(property.latitude)}, ${parseFloat(property.longitude)}], 16);
+                          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            maxZoom: 19,
+                            attribution: '© OpenStreetMap'
+                          }).addTo(map);
+
+                          var marker = L.marker([${parseFloat(property.latitude)}, ${parseFloat(property.longitude)}]).addTo(map);
+                          marker.bindPopup("<b>${property.name}</b>").openPopup();
+                        </script>
+                      </body>
+                      </html>
+                    `
+                  }}
+                  javaScriptEnabled={true}
+                  domStorageEnabled={true}
+                  style={{ flex: 1 }}
+                />
+                <View style={{ position: 'absolute', bottom: 6, left: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.7)', padding: 6, borderRadius: 6 }}>
+                  <Text style={{ color: COLORS.white, fontSize: 10, textAlign: 'center' }}>
+                    💡 Peta Interaktif OpenStreetMap: Lat: {parseFloat(property.latitude).toFixed(5)}, Long: {parseFloat(property.longitude).toFixed(5)}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
+        {property?.latitude != null && property?.longitude != null && (
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: COLORS.primary,
+              paddingVertical: SPACING[3],
+              borderRadius: BORDER_RADIUS.md,
+              marginTop: SPACING[3],
+            }}
+            onPress={() => {
+              const url = `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`;
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Error', 'Tidak dapat membuka aplikasi Google Maps.');
+              });
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="map" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+            <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
+              🗺️ Buka Rute di Google Maps (Peta Bawaan HP)
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.infoCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
