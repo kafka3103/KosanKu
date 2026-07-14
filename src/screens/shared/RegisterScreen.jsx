@@ -103,11 +103,11 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
-  const RoleCard = ({ role, label, description }) => {
+  const RoleCard = ({ role, label, description, style }) => {
     const isSelected = selectedRole === role;
     return (
       <TouchableOpacity
-        style={[styles.roleCard, isSelected && styles.roleCardSelected]}
+        style={[styles.roleCard, style, isSelected && styles.roleCardSelected]}
         onPress={() => setSelectedRole(role)}
         activeOpacity={0.7}
       >
@@ -143,18 +143,26 @@ const RegisterScreen = ({ navigation }) => {
           <Text style={styles.subtitle}>{t('auth.register.subtitle') || 'Sign up and explore KosanKu'}</Text>
         </View>
 
-        <View style={styles.formContainer}>
+          <View style={styles.formContainer}>
           {/* Role Selector */}
-          <View style={styles.roleRow}>
+          <View style={[styles.roleRow, { flexWrap: 'wrap' }]}>
             <RoleCard
               role={USER_ROLE.TENANT}
               label={t('auth.register.roleTenant') || 'Pencari Kosan'}
               description="Cari & sewa kos"
+              style={{ minWidth: '47%' }}
             />
             <RoleCard
               role={USER_ROLE.OWNER}
               label={t('auth.register.roleOwner') || 'Pemilik Kosan'}
-              description="Kelola properti kos"
+              description="Kelola properti"
+              style={{ minWidth: '47%' }}
+            />
+            <RoleCard
+              role={USER_ROLE.BOTH}
+              label="Keduanya"
+              description="Pencari sekaligus Pemilik"
+              style={{ minWidth: '100%', marginTop: SPACING[1] }}
             />
           </View>
 

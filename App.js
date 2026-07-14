@@ -24,6 +24,9 @@ LogBox.ignoreLogs([
 import { initializeI18n } from './src/localization/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 import COLORS from './src/constants/colors';
+import MapboxGL from '@rnmapbox/maps';
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
+MapboxGL.setTelemetryEnabled(false);
 
 // Paper Theme — kustom sesuai brand KosanKu
 const paperTheme = {

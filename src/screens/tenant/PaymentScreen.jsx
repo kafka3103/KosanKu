@@ -244,8 +244,8 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={[styles.header, { paddingTop: insets.top + SPACING[4] }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
-              <Text style={styles.backBtnText}>Kembali</Text>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+              
             </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Pembayaran Tagihan</Text>

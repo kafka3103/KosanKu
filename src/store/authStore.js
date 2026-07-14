@@ -24,10 +24,15 @@ const useAuthStore = create((set, get) => ({
    * @param {Object} userProfile - Data dari public.users
    */
   setAuthenticatedUser: (session, userProfile) => {
+    let initialActiveRole = userProfile?.role ?? null;
+    if (initialActiveRole === USER_ROLE.BOTH) {
+      initialActiveRole = USER_ROLE.TENANT; // Default login sebagai tenant
+    }
+
     set({
       currentSession: session,
       currentUser: userProfile,
-      userRole: userProfile?.role ?? null,
+      userRole: initialActiveRole,
       isAuthenticated: true,
       isLoading: false,
       isProfileComplete: userProfile?.is_profile_complete ?? false,
@@ -46,6 +51,18 @@ const useAuthStore = create((set, get) => ({
       isLoading: false,
       isProfileComplete: false,
     });
+  },
+
+  /**
+   * Pindah antar role (jika user memiliki role 'both')
+   */
+  switchRole: () => {
+    const state = get();
+    if (state.currentUser?.role === USER_ROLE.BOTH) {
+      set({ 
+        userRole: state.userRole === USER_ROLE.OWNER ? USER_ROLE.TENANT : USER_ROLE.OWNER 
+      });
+    }
   },
 
   /**

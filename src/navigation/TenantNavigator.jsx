@@ -12,6 +12,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import COLORS from '../constants/colors';
@@ -20,9 +21,9 @@ import { SPACING } from '../constants/spacing';
 import useAuthStore from '../store/authStore';
 import { logout } from '../services/authService';
 import { TENANT_SCREENS } from '../constants/screenNames';
+import USER_ROLE from '../constants/userRole';
 
 export { TENANT_SCREENS }; // re-export untuk backward compatibility sementara
-
 
 // Tenant Screens
 import SearchScreen from '../screens/tenant/SearchScreen';
@@ -128,7 +129,8 @@ const TenantBottomTabNavigator = () => {
  */
 const TenantDrawerContent = ({ navigation }) => {
   const { t } = useTranslation();
-  const { currentUser, clearAuthState } = useAuthStore();
+  const { currentUser, clearAuthState, switchRole } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     await logout();
@@ -141,7 +143,7 @@ const TenantDrawerContent = ({ navigation }) => {
   ];
 
   return (
-    <View style={styles.drawerContainer}>
+    <View style={[styles.drawerContainer, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>
           <Text style={styles.drawerAvatarText}>
@@ -164,6 +166,12 @@ const TenantDrawerContent = ({ navigation }) => {
           </TouchableOpacity>
         ))}
       </View>
+
+      {currentUser?.role === USER_ROLE.BOTH && (
+        <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={switchRole}>
+          <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Owner</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t('profile.logoutButton')}</Text>

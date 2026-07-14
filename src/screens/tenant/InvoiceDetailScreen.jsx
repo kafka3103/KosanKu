@@ -130,7 +130,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
           style={{ paddingHorizontal: SPACING[6], paddingVertical: SPACING[3], backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md }}
           onPress={() => navigation.goBack()}
         >
-          <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.semiBold }}>Kembali</Text>
+          
         </TouchableOpacity>
       </View>
     );
@@ -148,8 +148,8 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
-              <Text style={styles.backBtnText}>Kembali</Text>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+              
             </View>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Detail Tagihan</Text>

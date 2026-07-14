@@ -199,9 +199,36 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  const handleUpgradeRole = () => {
+    const targetRoleText = isOwner ? 'Pencari Kosan' : 'Pemilik Kosan';
+    Alert.alert(
+      'Aktifkan Peran Ganda',
+      `Apakah Anda ingin mengaktifkan fitur sebagai ${targetRoleText} sekaligus? Anda bisa beralih mode kapan saja di menu utama.`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Aktifkan',
+          onPress: async () => {
+            setIsSaving(true);
+            const { data, error } = await updateUserProfile(currentUser.id, {
+              role: USER_ROLE.BOTH,
+            });
+            setIsSaving(false);
+            if (error) {
+              Alert.alert('Gagal', error.message);
+            } else if (data) {
+              Alert.alert('Berhasil', `Fitur ${targetRoleText} berhasil diaktifkan!`);
+              setProfile(data);
+              setAuthenticatedUser(currentSession, data);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <>
-      {!navigation.canGoBack() && <DrawerButton />}
       <ScrollView
         style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -215,12 +242,13 @@ const ProfileScreen = ({ navigation }) => {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
+        {!navigation.canGoBack() && <DrawerButton style={{ marginRight: SPACING[3] }} />}
         {navigation.canGoBack() && (
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
-              <Text style={styles.backBtnText}>Kembali</Text>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+              
             </View>
           </TouchableOpacity>
         )}
@@ -299,6 +327,30 @@ const ProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Upgrade Role Section */}
+      {currentUser?.role !== USER_ROLE.BOTH && (
+        <View style={[styles.section, { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primaryLight, borderWidth: 1 }]}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="star" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>Peran Ganda</Text>
+          </View>
+          <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
+            {isOwner
+              ? 'Ingin mencari kosan juga? Aktifkan fitur Pencari Kosan untuk menelusuri properti lain.'
+              : 'Punya properti kosan? Aktifkan fitur Pemilik Kosan untuk mulai mengelola kosan Anda.'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
+            onPress={handleUpgradeRole}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveProfileBtnText}>
+              {isOwner ? 'Aktifkan Fitur Pencari Kosan' : 'Aktifkan Fitur Pemilik Kosan'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* About App */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tentang Aplikasi</Text>
@@ -338,8 +390,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
+    color: COLORS.white,
   },
   avatarSection: {
     alignItems: 'center',

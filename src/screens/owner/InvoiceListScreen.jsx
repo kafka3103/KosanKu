@@ -168,16 +168,18 @@ const InvoiceListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <DrawerButton />
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Daftar Tagihan</Text>
-        {totalUnpaid > 0 && (
-          <View style={styles.summaryBanner}>
-            <Text style={styles.summaryLabel}>Total Belum Terbayar</Text>
-            <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
-          </View>
-        )}
+      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
+        <DrawerButton style={{ marginRight: SPACING[3] }} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Daftar Tagihan</Text>
+          {totalUnpaid > 0 && (
+            <View style={styles.summaryBanner}>
+              <Text style={styles.summaryLabel}>Total Belum Terbayar</Text>
+              <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Filter Tabs */}
@@ -245,8 +247,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
-    marginBottom: SPACING[3],
-    marginLeft: 48, // Added for DrawerButton
+    marginBottom: SPACING[3],
   },
   summaryBanner: {
     backgroundColor: 'rgba(255,255,255,0.15)',

@@ -92,8 +92,8 @@ const ReportScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
-          <Text style={styles.backBtnText}>Kembali</Text>
+          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+          
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('report.title')}</Text>
         <Text style={styles.headerSubtitle}>12 bulan terakhir</Text>
