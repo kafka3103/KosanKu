@@ -242,17 +242,13 @@ const ProfileScreen = ({ navigation }) => {
       }
     >
       {/* Header */}
-      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
-        {!navigation.canGoBack() && <DrawerButton style={{ marginRight: SPACING[3] }} />}
-        {navigation.canGoBack() && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
-          </TouchableOpacity>
-        )}
-        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+          </View>
+        </View>
       </View>
 
       {/* Avatar Section */}
@@ -381,7 +377,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

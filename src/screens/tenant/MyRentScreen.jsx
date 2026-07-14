@@ -170,10 +170,8 @@ const MyRentScreen = ({ navigation }) => {
   // Belum punya hunian aktif
   if (!contract && rentalRequests.length === 0) {
     return (
-      <>
-        <DrawerButton />
-        <ScrollView
-          style={styles.container}
+      <ScrollView
+        style={styles.container}
         contentContainerStyle={[styles.emptyContent, { paddingBottom: insets.bottom + 100 }]}
         refreshControl={
           <RefreshControl
@@ -183,8 +181,13 @@ const MyRentScreen = ({ navigation }) => {
           />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hunian Saya</Text>
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <DrawerButton />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.headerTitle}>Hunian Saya</Text>
+            </View>
+          </View>
         </View>
         <View style={styles.emptyContainer}>
           <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
@@ -203,7 +206,6 @@ const MyRentScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      </>
     );
   }
 
@@ -216,9 +218,8 @@ const MyRentScreen = ({ navigation }) => {
 
   return (
     <>
-      <DrawerButton />
       <ScrollView
-        style={styles.container}
+      style={styles.container}
       contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -231,11 +232,16 @@ const MyRentScreen = ({ navigation }) => {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Hunian Saya</Text>
-        <Text style={styles.headerSubtitle}>
-          {contract ? 'Kontrak aktif' : 'Pengajuan sewa Anda'}
-        </Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Hunian Saya</Text>
+            <Text style={styles.headerSubtitle}>
+              {contract ? 'Kontrak aktif' : 'Pengajuan sewa Anda'}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Pengajuan Pending (jika belum punya kontrak) */}
@@ -512,7 +518,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
@@ -520,13 +526,11 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
     marginTop: 2,
-    marginLeft: 48, // subtitle margin
   },
   section: {
     marginHorizontal: SPACING[4],

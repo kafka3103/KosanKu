@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -61,6 +62,7 @@ const STATUS_CONFIG = {
 };
 
 const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }) => {
+  const insets = useSafeAreaInsets();
   const status = STATUS_CONFIG[contract.status] ?? STATUS_CONFIG.completed;
   const tenant = contract.users;
   const room = contract.rooms;
@@ -293,7 +295,7 @@ const ContractScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           
         </TouchableOpacity>
@@ -486,7 +488,7 @@ const ContractScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
-  header: { backgroundColor: COLORS.primary, paddingTop: SPACING[14], paddingBottom: SPACING[5], paddingHorizontal: SPACING[5] },
+  header: { backgroundColor: COLORS.primary,  paddingBottom: SPACING[5], paddingHorizontal: SPACING[5] },
   backBtn: { marginBottom: SPACING[2] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, color: COLORS.white },

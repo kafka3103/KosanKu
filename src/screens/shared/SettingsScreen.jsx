@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -24,6 +25,7 @@ import useAuthStore from '../../store/authStore';
 import { logout, updatePassword } from '../../services/authService';
 
 const SettingsScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const { clearAuthState } = useAuthStore();
 
@@ -113,7 +115,7 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         {navigation?.canGoBack?.() && (
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

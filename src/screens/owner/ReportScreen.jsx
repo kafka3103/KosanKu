@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -33,6 +34,7 @@ const formatCurrency = (amount) =>
   }).format(amount ?? 0);
 
 const ReportScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { currentUser } = useAuthStore();
   const [revenueData, setRevenueData] = useState([]);
@@ -90,7 +92,7 @@ const ReportScreen = ({ navigation }) => {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
           
@@ -274,7 +276,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

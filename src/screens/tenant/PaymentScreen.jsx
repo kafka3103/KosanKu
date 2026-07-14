@@ -241,7 +241,7 @@ const PaymentScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + SPACING[4] }]}>
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: insets.top + SPACING[4] }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[5],
+    
     paddingBottom: SPACING[4],
     paddingHorizontal: SPACING[4],
   },

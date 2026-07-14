@@ -141,11 +141,15 @@ const FavoriteScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <DrawerButton />
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Favorit Saya</Text>
-        <Text style={styles.headerSubtitle}>{favorites.length} kosan disimpan</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Favorit Saya</Text>
+            <Text style={styles.headerSubtitle}>{favorites.length} kosan disimpan</Text>
+          </View>
+        </View>
       </View>
 
       <FlatList
@@ -201,7 +205,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
@@ -209,13 +213,11 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
     marginTop: 2,
-    marginLeft: 48, // subtitle margin
   },
   listContent: { padding: SPACING[4], gap: SPACING[4], paddingBottom: SPACING[10] },
   card: {

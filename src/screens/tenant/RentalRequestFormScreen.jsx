@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -43,6 +44,7 @@ const formatDate = (date) => format(date, 'd MMMM yyyy', { locale: idLocale });
 const DURATION_OPTIONS = [1, 3, 6, 12];
 
 const RentalRequestFormScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { currentUser } = useAuthStore();
   const room = route.params?.room;
@@ -186,7 +188,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
   container: { paddingBottom: 100 },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

@@ -169,16 +169,18 @@ const InvoiceListScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
-        <DrawerButton style={{ marginRight: SPACING[3] }} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Daftar Tagihan</Text>
-          {totalUnpaid > 0 && (
-            <View style={styles.summaryBanner}>
-              <Text style={styles.summaryLabel}>Total Belum Terbayar</Text>
-              <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
-            </View>
-          )}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Daftar Tagihan</Text>
+            {totalUnpaid > 0 && (
+              <View style={styles.summaryBanner}>
+                <Text style={styles.summaryLabel}>Total Belum Terbayar</Text>
+                <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
 
@@ -239,7 +241,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

@@ -564,7 +564,7 @@ const SearchScreen = ({ navigation }) => {
             <FlatList
               data={properties}
               keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={{ paddingHorizontal: SPACING[5], paddingBottom: insets.bottom + 100 }}
+              contentContainerStyle={[styles.listContent, { paddingHorizontal: SPACING[5], paddingBottom: (insets?.bottom || 0) + 100 }]}
               refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); loadProperties(true); }} colors={[COLORS.primary]} />}
               ListEmptyComponent={() => (
                 <View style={styles.emptyContainer}>

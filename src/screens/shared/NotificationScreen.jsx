@@ -378,32 +378,24 @@ const NotificationScreen = () => {
     );
   }
 
-  const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate(currentUser?.role === 'owner' ? 'OwnerDashboard' : 'SearchStack');
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={handleBack} style={{ marginRight: SPACING[4], padding: 4 }}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { marginLeft: 0 }]}>Notifikasi</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Notifikasi</Text>
+            {unreadCount > 0 && (
+              <Text style={styles.headerSubtitle}>{unreadCount} belum dibaca</Text>
+            )}
+            {unreadCount > 0 && (
+              <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAllRead}>
+                <Text style={styles.markAllText}>Tandai Semua Dibaca</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-        {unreadCount > 0 && (
-          <Text style={styles.headerSubtitle}>{unreadCount} belum dibaca</Text>
-        )}
-        {unreadCount > 0 && (
-          <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAllRead}>
-            <Text style={styles.markAllText}>Tandai Semua Dibaca</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <FlatList
@@ -446,7 +438,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

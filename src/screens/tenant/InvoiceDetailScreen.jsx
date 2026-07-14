@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -49,6 +50,7 @@ const STATUS_CONFIG = {
 };
 
 const InvoiceDetailScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const invoiceParam = route.params?.invoice;
   const invoiceIdParam = route.params?.invoiceId || invoiceParam?.id;
@@ -145,7 +147,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
+    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

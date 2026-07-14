@@ -159,8 +159,6 @@ const DashboardScreen = ({ navigation }) => {
   }
 
   return (
-    <>
-      <DrawerButton />
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
@@ -175,9 +173,10 @@ const DashboardScreen = ({ navigation }) => {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
           <View style={styles.headerTop}>
-            <View>
+            <DrawerButton />
+            <View style={{ flex: 1 }}>
               <Text style={styles.greeting}>{greeting()},</Text>
               <Text style={styles.ownerName}>{currentUser?.full_name ?? 'Owner'} 👋</Text>
             </View>
@@ -324,7 +323,6 @@ const DashboardScreen = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
-    </>
   );
 };
 
@@ -344,19 +342,14 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
     paddingBottom: SPACING[6],
     paddingHorizontal: SPACING[5],
-    borderBottomLeftRadius: BORDER_RADIUS['3xl'],
-    borderBottomRightRadius: BORDER_RADIUS['3xl'],
   },
   headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: 10, // Added to vertically align with fixed DrawerButton
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     marginBottom: SPACING[5],
-    marginLeft: 48,
   },
   greeting: {
     fontSize: FONT_SIZE.base,
