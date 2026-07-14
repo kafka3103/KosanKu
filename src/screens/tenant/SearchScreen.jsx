@@ -17,6 +17,8 @@ import {
   Modal,
   ScrollView,
   Platform,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -489,15 +491,7 @@ const SearchScreen = ({ navigation }) => {
           {/* Selected Property Preview Modal (Floating Bottom) */}
           {selectedMapProperty && (
             <View style={[styles.mapPreviewContainer, { paddingBottom: insets.bottom + 100 }]}>
-              <TouchableOpacity
-                style={styles.mapPreviewCard}
-                onPress={() => {
-                  navigation.navigate(TENANT_SCREENS.PROPERTY_DETAIL, {
-                    property: selectedMapProperty,
-                  });
-                }}
-                activeOpacity={0.9}
-              >
+              <View style={styles.mapPreviewCard}>
                 <TouchableOpacity
                   style={styles.mapPreviewCloseBtn}
                   onPress={() => setSelectedMapProperty(null)}
@@ -524,10 +518,32 @@ const SearchScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                <View style={styles.mapPreviewAction}>
-                  <Text style={styles.mapPreviewActionText}>Lihat Detail Kosan & Kamar →</Text>
+                <View style={[styles.mapPreviewAction, { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0, marginTop: SPACING[2], paddingTop: 0 }]}>
+                  <TouchableOpacity
+                    style={{ flex: 1, backgroundColor: COLORS.primarySurface, paddingVertical: 10, borderRadius: 10, alignItems: 'center', marginRight: SPACING[2], flexDirection: 'row', justifyContent: 'center' }}
+                    onPress={() => {
+                       const lat = selectedMapProperty.latitude;
+                       const lon = selectedMapProperty.longitude;
+                       const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+                       Linking.openURL(url).catch(() => Alert.alert('Error', 'Gagal membuka rute di peta.'));
+                    }}
+                  >
+                    <Ionicons name="navigate" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                    <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: FONT_SIZE.xs }}>Rute Peta</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{ flex: 1.5, backgroundColor: COLORS.primary, paddingVertical: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}
+                    onPress={() => {
+                      navigation.navigate(TENANT_SCREENS.PROPERTY_DETAIL, {
+                        property: selectedMapProperty,
+                      });
+                    }}
+                  >
+                    <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: FONT_SIZE.xs }}>Lihat Detail Kosan</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
