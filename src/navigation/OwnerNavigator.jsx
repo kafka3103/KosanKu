@@ -21,6 +21,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import COLORS from '../constants/colors';
@@ -151,6 +152,7 @@ const OwnerBottomTabNavigator = () => {
 const OwnerDrawerContent = ({ navigation }) => {
   const { t } = useTranslation();
   const { currentUser, clearAuthState, switchRole } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     await logout();
@@ -166,7 +168,7 @@ const OwnerDrawerContent = ({ navigation }) => {
   ];
 
   return (
-    <View style={styles.drawerContainer}>
+    <View style={[styles.drawerContainer, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
       {/* Header Drawer */}
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>

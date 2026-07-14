@@ -707,7 +707,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
         onRequestClose={() => setShowLocationModal(false)}
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: BORDER_RADIUS['3xl'], borderTopRightRadius: BORDER_RADIUS['3xl'], padding: SPACING[5], maxHeight: '88%' }}>
+          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: BORDER_RADIUS['3xl'], borderTopRightRadius: BORDER_RADIUS['3xl'], padding: SPACING[5], paddingBottom: Math.max(insets.bottom, SPACING[5]), maxHeight: '88%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[4] }}>
               <View>
                 <Text style={{ fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
