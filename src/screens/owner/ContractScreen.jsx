@@ -155,7 +155,7 @@ const ContractScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+          
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Kontrak Sewa</Text>
         <Text style={styles.headerSubtitle}>{contracts.length} kontrak total</Text>

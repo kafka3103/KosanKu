@@ -416,7 +416,7 @@ const SearchScreen = ({ navigation }) => {
               ref={mapCameraRef}
               defaultSettings={{
                 centerCoordinate: userLocation ? [userLocation.longitude, userLocation.latitude] : defaultCenter,
-                zoomLevel: 13,
+                zoomLevel: 15.5,
               }}
             />
 
@@ -433,30 +433,62 @@ const SearchScreen = ({ navigation }) => {
               if (prop.latitude == null || prop.longitude == null) return null;
               const isSelected = selectedMapProperty?.id === prop.id;
               return (
-                <MapboxGL.PointAnnotation
-                  key={prop.id}
+                <MapboxGL.MarkerView
+                  key={`marker-${prop.id}`}
                   id={`marker-${prop.id}`}
                   coordinate={[parseFloat(prop.longitude), parseFloat(prop.latitude)]}
-                  onSelected={() => {
-                     setSelectedMapProperty(prop);
-                     mapCameraRef.current?.setCamera({
-                       centerCoordinate: [parseFloat(prop.longitude), parseFloat(prop.latitude)],
-                       zoomLevel: 15,
-                       animationDuration: 500,
-                     });
-                  }}
                 >
-                  <View style={[styles.mapMarker, isSelected && styles.mapMarkerSelected]}>
+                  <TouchableOpacity 
+                    style={[styles.mapMarker, isSelected && styles.mapMarkerSelected]}
+                    onPress={() => {
+                      setSelectedMapProperty(prop);
+                      mapCameraRef.current?.setCamera({
+                        centerCoordinate: [parseFloat(prop.longitude), parseFloat(prop.latitude)],
+                        zoomLevel: 15,
+                        animationDuration: 500,
+                      });
+                    }}
+                  >
                     <Ionicons name="home" size={isSelected ? 20 : 16} color={isSelected ? COLORS.white : COLORS.primary} />
-                  </View>
-                </MapboxGL.PointAnnotation>
+                  </TouchableOpacity>
+                </MapboxGL.MarkerView>
               );
             })}
           </MapboxGL.MapView>
 
+          {/* Current Location FAB */}
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              bottom: selectedMapProperty ? 220 : 145, // move up if card is shown, and keep above bottom tab
+              right: 20,
+              backgroundColor: COLORS.white,
+              width: 54,
+              height: 54,
+              borderRadius: 27,
+              justifyContent: 'center',
+              alignItems: 'center',
+              ...SHADOW,
+              elevation: 5,
+            }}
+            onPress={() => {
+              if (userLocation) {
+                mapCameraRef.current?.setCamera({
+                  centerCoordinate: [userLocation.longitude, userLocation.latitude],
+                  zoomLevel: 17.5,
+                  animationDuration: 800,
+                });
+              } else {
+                handleGetLocation();
+              }
+            }}
+          >
+            <Ionicons name="locate" size={26} color={COLORS.primary} />
+          </TouchableOpacity>
+
           {/* Selected Property Preview Modal (Floating Bottom) */}
           {selectedMapProperty && (
-            <View style={[styles.mapPreviewContainer, { paddingBottom: insets.bottom + SPACING[4] }]}>
+            <View style={[styles.mapPreviewContainer, { paddingBottom: insets.bottom + 100 }]}>
               <TouchableOpacity
                 style={styles.mapPreviewCard}
                 onPress={() => {

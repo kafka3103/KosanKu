@@ -247,8 +247,8 @@ const ProfileScreen = ({ navigation }) => {
         {navigation.canGoBack() && (
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
-              <Text style={styles.backBtnText}>Kembali</Text>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+              
             </View>
           </TouchableOpacity>
         )}
