@@ -98,21 +98,20 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const [mapSearchResults, setMapSearchResults] = useState([]);
   const [mapSearchLoading, setMapSearchLoading] = useState(false);
 
-  const handleSearchOSM = async () => {
+  const handleSearchMapbox = async () => {
     if (!mapSearchQuery.trim()) return;
     setMapSearchLoading(true);
     setMapSearchResults([]);
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(mapSearchQuery.trim())}&limit=5&countrycodes=id`, {
-        headers: {
-          'User-Agent': 'KosanKuApp/1.0 (Contact: support@kosanku.app)'
-        }
-      });
+      const token = process.env.EXPO_PUBLIC_MAPBOX_KEY;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(mapSearchQuery.trim())}.json?access_token=${token}&country=id&limit=5`;
+      const response = await fetch(url);
       const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        if (data.length === 1) {
-          const newLat = parseFloat(data[0].lat);
-          const newLon = parseFloat(data[0].lon);
+      
+      if (data.features && data.features.length > 0) {
+        if (data.features.length === 1) {
+          const newLat = parseFloat(data.features[0].center[1]);
+          const newLon = parseFloat(data.features[0].center[0]);
           setTempLatitude(newLat);
           setTempLongitude(newLon);
           mapCameraRef.current?.setCamera({
@@ -121,10 +120,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
             animationDuration: 800,
           });
         } else {
-          setMapSearchResults(data);
+          setMapSearchResults(data.features);
         }
       } else {
-        Alert.alert('Pencarian Peta', 'Lokasi tidak ditemukan di OpenStreetMap. Coba masukkan nama jalan atau kota yang lebih spesifik.');
+        Alert.alert('Pencarian Peta', 'Lokasi tidak ditemukan. Coba masukkan nama jalan atau kota yang lebih spesifik.');
       }
     } catch (err) {
       Alert.alert('Error', 'Gagal mencari lokasi di peta. Periksa koneksi internet Anda.');
@@ -724,29 +723,29 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
             {/* Mapbox Native Map Picker */}
             <View style={{ marginBottom: SPACING[3] }}>
-              {/* Search Bar OpenStreetMap (Cari Jalan / Lokasi) */}
-              <View style={{ marginBottom: SPACING[3] }}>
-                <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
-                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.grey100, borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING[3], borderWidth: 1, borderColor: COLORS.border }}>
-                    <Ionicons name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 6 }} />
-                    <TextInput
-                      style={{ flex: 1, paddingVertical: 10, fontSize: FONT_SIZE.sm, color: COLORS.textPrimary }}
-                      placeholder="Cari jalan, area, atau kota..."
-                      placeholderTextColor={COLORS.textTertiary}
-                      value={mapSearchQuery}
-                      onChangeText={setMapSearchQuery}
-                      returnKeyType="search"
-                      onSubmitEditing={handleSearchOSM}
-                    />
-                    {mapSearchQuery.length > 0 && (
-                      <TouchableOpacity onPress={() => { setMapSearchQuery(''); setMapSearchResults([]); }}>
-                        <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <TouchableOpacity
-                    style={{ backgroundColor: COLORS.primary, paddingHorizontal: SPACING[4], justifyContent: 'center', alignItems: 'center', borderRadius: BORDER_RADIUS.lg }}
-                    onPress={handleSearchOSM}
+            {/* Search Bar Mapbox (Cari Jalan / Lokasi) */}
+            <View style={{ marginBottom: SPACING[3] }}>
+              <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.grey100, borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING[3], borderWidth: 1, borderColor: COLORS.border }}>
+                  <Ionicons name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 6 }} />
+                  <TextInput
+                    style={{ flex: 1, paddingVertical: 10, fontSize: FONT_SIZE.sm, color: COLORS.textPrimary }}
+                    placeholder="Cari jalan, area, atau kota..."
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={mapSearchQuery}
+                    onChangeText={setMapSearchQuery}
+                    returnKeyType="search"
+                    onSubmitEditing={handleSearchMapbox}
+                  />
+                  {mapSearchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => { setMapSearchQuery(''); setMapSearchResults([]); }}>
+                      <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: COLORS.primary, paddingHorizontal: SPACING[4], justifyContent: 'center', alignItems: 'center', borderRadius: BORDER_RADIUS.lg }}
+                  onPress={handleSearchMapbox}
                     disabled={mapSearchLoading}
                   >
                     {mapSearchLoading ? (
@@ -757,31 +756,31 @@ const PropertyFormScreen = ({ navigation, route }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Dropdown Hasil Pencarian OSM */}
-                {mapSearchResults.length > 0 && (
-                  <View style={{ marginTop: 6, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, maxHeight: 150, overflow: 'hidden' }}>
-                    <ScrollView nestedScrollEnabled={true}>
-                      {mapSearchResults.map((item, idx) => (
-                        <TouchableOpacity
-                          key={idx.toString()}
-                          style={{ padding: SPACING[3], borderBottomWidth: idx < mapSearchResults.length - 1 ? 1 : 0, borderBottomColor: COLORS.border, flexDirection: 'row', alignItems: 'center' }}
-                          onPress={() => {
-                            const newLat = parseFloat(item.lat);
-                            const newLon = parseFloat(item.lon);
-                            setTempLatitude(newLat);
-                            setTempLongitude(newLon);
-                            setMapSearchResults([]);
-                            mapCameraRef.current?.setCamera({
-                              centerCoordinate: [newLon, newLat],
-                              zoomLevel: 15,
-                              animationDuration: 800,
-                            });
-                          }}
-                        >
-                          <Ionicons name="location-outline" size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
-                          <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textPrimary, flex: 1 }} numberOfLines={2}>
-                            {item.display_name}
-                          </Text>
+              {/* Dropdown Hasil Pencarian Mapbox */}
+              {mapSearchResults.length > 0 && (
+                <View style={{ marginTop: 6, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, maxHeight: 150, overflow: 'hidden' }}>
+                  <ScrollView nestedScrollEnabled={true}>
+                    {mapSearchResults.map((item, idx) => (
+                      <TouchableOpacity
+                        key={idx.toString()}
+                        style={{ padding: SPACING[3], borderBottomWidth: idx < mapSearchResults.length - 1 ? 1 : 0, borderBottomColor: COLORS.border, flexDirection: 'row', alignItems: 'center' }}
+                        onPress={() => {
+                          const newLat = parseFloat(item.center[1]);
+                          const newLon = parseFloat(item.center[0]);
+                          setTempLatitude(newLat);
+                          setTempLongitude(newLon);
+                          setMapSearchResults([]);
+                          mapCameraRef.current?.setCamera({
+                            centerCoordinate: [newLon, newLat],
+                            zoomLevel: 15,
+                            animationDuration: 800,
+                          });
+                        }}
+                      >
+                        <Ionicons name="location-outline" size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
+                        <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textPrimary, flex: 1 }} numberOfLines={2}>
+                          {item.place_name}
+                        </Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>

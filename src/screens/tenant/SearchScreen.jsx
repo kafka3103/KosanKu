@@ -34,8 +34,8 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { searchProperties, getAvailableCities } from '../../services/searchService';
 import { TENANT_SCREENS } from '../../constants/screenNames';
-import * as Location from 'expo-location';
-import { WebView } from 'react-native-webview';
+// import * as Location from 'expo-location';
+// import { WebView } from 'react-native-webview';
 
 
 // Setup Mapbox Token
