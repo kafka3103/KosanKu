@@ -6,6 +6,7 @@
 export const USER_ROLE = {
   OWNER: 'owner',
   TENANT: 'tenant',
+  BOTH: 'both',
 };
 
 export default USER_ROLE;

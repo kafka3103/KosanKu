@@ -375,13 +375,15 @@ const NotificationScreen = () => {
 
   return (
     <View style={styles.container}>
-      <DrawerButton />
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifikasi</Text>
-        {unreadCount > 0 && (
-          <Text style={styles.headerSubtitle}>{unreadCount} belum dibaca</Text>
-        )}
+      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
+        <DrawerButton style={{ marginRight: SPACING[3] }} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Notifikasi</Text>
+          {unreadCount > 0 && (
+            <Text style={styles.headerSubtitle}>{unreadCount} belum dibaca</Text>
+          )}
+        </View>
         {unreadCount > 0 && (
           <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAllRead}>
             <Text style={styles.markAllText}>Tandai Semua Dibaca</Text>
@@ -436,14 +438,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
+    color: COLORS.white,
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
-    marginTop: 2,
-    marginLeft: 48, // subtitle margin
+    marginTop: 2,
   },
   markAllBtn: {
     alignSelf: 'flex-start',

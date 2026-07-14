@@ -201,7 +201,6 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <>
-      {!navigation.canGoBack() && <DrawerButton />}
       <ScrollView
         style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -215,7 +214,8 @@ const ProfileScreen = ({ navigation }) => {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
+        {!navigation.canGoBack() && <DrawerButton style={{ marginRight: SPACING[3] }} />}
         {navigation.canGoBack() && (
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -338,8 +338,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
+    color: COLORS.white,
   },
   avatarSection: {
     alignItems: 'center',

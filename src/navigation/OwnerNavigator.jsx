@@ -28,6 +28,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../constants/typography';
 import { SPACING } from '../constants/spacing';
 import useAuthStore from '../store/authStore';
 import { logout } from '../services/authService';
+import USER_ROLE from '../constants/userRole';
 
 // Owner Screens
 import DashboardScreen from '../screens/owner/DashboardScreen';
@@ -149,7 +150,7 @@ const OwnerBottomTabNavigator = () => {
  */
 const OwnerDrawerContent = ({ navigation }) => {
   const { t } = useTranslation();
-  const { currentUser, clearAuthState } = useAuthStore();
+  const { currentUser, clearAuthState, switchRole } = useAuthStore();
 
   const handleLogout = async () => {
     await logout();
@@ -192,6 +193,12 @@ const OwnerDrawerContent = ({ navigation }) => {
       </View>
 
       {/* Logout Button */}
+      {currentUser?.role === USER_ROLE.BOTH && (
+        <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={switchRole}>
+          <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pencari</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t('profile.logoutButton')}</Text>
       </TouchableOpacity>

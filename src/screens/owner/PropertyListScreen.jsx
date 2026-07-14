@@ -172,13 +172,15 @@ const PropertyListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <DrawerButton />
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('property.list.title')}</Text>
-        <Text style={styles.headerSubtitle}>
-          {properties.length} properti terdaftar
-        </Text>
+      <View style={[styles.header, { flexDirection: 'row', alignItems: 'center' }]}>
+        <DrawerButton style={{ marginRight: SPACING[3] }} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>{t('property.list.title')}</Text>
+          <Text style={styles.headerSubtitle}>
+            {properties.length} properti terdaftar
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -248,14 +250,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
+    color: COLORS.white,
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
-    marginTop: 2,
-    marginLeft: 48, // subtitle margin
+    marginTop: 2,
   },
   listContent: {
     padding: SPACING[5],

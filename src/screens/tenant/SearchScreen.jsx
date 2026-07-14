@@ -1,9 +1,9 @@
 /**
  * screens/tenant/SearchScreen.jsx
- * Pencarian dan filter kosan tersedia untuk tenant
+ * Pencarian dan filter kosan tersedia untuk tenant (Map-First UI)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,14 @@ import {
   Image,
   Modal,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import MapboxGL from '@rnmapbox/maps';
+import { DrawerActions } from '@react-navigation/native';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
@@ -28,6 +32,11 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { searchProperties, getAvailableCities } from '../../services/searchService';
 import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
+
+// Setup Mapbox Token
+console.log('Mapbox Token Configured:', process.env.EXPO_PUBLIC_MAPBOX_KEY ? 'Yes (starts with ' + process.env.EXPO_PUBLIC_MAPBOX_KEY.substring(0, 5) + ')' : 'No Token Found!');
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
+MapboxGL.setTelemetryEnabled(false);
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -76,18 +85,15 @@ const ROOM_TYPE_OPTIONS = [
 ];
 
 const PropertyCard = ({ property, onPress }) => {
-  // Ambil harga kamar termurah yang available
   const availableRooms = property.rooms?.filter((r) => r.status === 'available') ?? [];
   const minPrice = availableRooms.length > 0
     ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0)))
     : null;
   const availableCount = availableRooms.length;
-
   const facilities = property.general_facilities ?? [];
 
   return (
     <TouchableOpacity style={styles.propertyCard} onPress={onPress} activeOpacity={0.85}>
-      {/* Cover Photo */}
       <View style={styles.cardPhoto}>
         {property.cover_photo_url ? (
           <Image source={{ uri: property.cover_photo_url }} style={styles.cardImage} />
@@ -118,7 +124,6 @@ const PropertyCard = ({ property, onPress }) => {
         </View>
       </View>
 
-      {/* Info */}
       <View style={styles.cardBody}>
         <Text style={styles.propertyName} numberOfLines={1}>{property.name}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3] }}>
@@ -137,7 +142,6 @@ const PropertyCard = ({ property, onPress }) => {
           </View>
         )}
 
-        {/* Facilities */}
         {facilities.length > 0 && (
           <View style={styles.facilitiesRow}>
             {facilities.slice(0, 3).map((f, i) => (
@@ -153,7 +157,6 @@ const PropertyCard = ({ property, onPress }) => {
           </View>
         )}
 
-        {/* Price */}
         {minPrice != null ? (
           <Text style={styles.priceText}>
             Mulai <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>/bln
@@ -172,15 +175,17 @@ const SearchScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const mapCameraRef = useRef(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // View Mode & Location
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'map'
+  // View Mode: 'map' (default) | 'list'
+  const [viewMode, setViewMode] = useState('map'); 
   const [selectedMapProperty, setSelectedMapProperty] = useState(null);
+  
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatusText, setLocationStatusText] = useState('Mendeteksi lokasi GPS...');
@@ -221,6 +226,14 @@ const SearchScreen = ({ navigation }) => {
           longitude: coords.longitude,
         });
         setLocationStatusText('Lokasi terdeteksi · Diurutkan terdekat');
+        // If map is open, center camera on user
+        if (mapCameraRef.current) {
+           mapCameraRef.current.setCamera({
+             centerCoordinate: [coords.longitude, coords.latitude],
+             zoomLevel: 14,
+             animationDuration: 1000,
+           });
+        }
       } else {
         setLocationStatusText('Gagal mendeteksi lokasi saat ini');
       }
@@ -282,7 +295,6 @@ const SearchScreen = ({ navigation }) => {
     loadProperties();
   }, [loadProperties]);
 
-  // Auto-search saat query berubah
   useEffect(() => {
     const timer = setTimeout(() => {
       loadProperties();
@@ -306,13 +318,24 @@ const SearchScreen = ({ navigation }) => {
     loadProperties();
   };
 
-  return (
-    <View style={styles.container}>
-      <DrawerButton />
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cari Kosan</Text>
-        <Text style={styles.headerSubtitle}>Temukan kosan impian terdekat dari Anda</Text>
+  // Titik tengah default Jakarta
+  const defaultCenter = [106.8272, -6.1751];
+
+  return (    <View style={styles.container}>
+      {/* SOLID HEADER */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top + SPACING[4] }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING[4] }}>
+          <TouchableOpacity 
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            style={{ marginTop: 2, paddingRight: SPACING[3] }}
+          >
+            <Ionicons name="menu" size={28} color={COLORS.white} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Cari Kosan</Text>
+            <Text style={styles.headerSubtitle}>Temukan kosan impian terdekat dari Anda</Text>
+          </View>
+        </View>
 
         {/* Search Bar */}
         <View style={styles.searchBar}>
@@ -327,182 +350,113 @@ const SearchScreen = ({ navigation }) => {
             onSubmitEditing={loadProperties}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
               <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
 
         {/* Action Buttons Row: Filter & Map Toggle */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING[2] }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING[3] }}>
           <TouchableOpacity
             style={[styles.filterBtn, hasActiveFilter && styles.filterBtnActive]}
             onPress={() => setShowFilter(true)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.filterBtnText, hasActiveFilter && { color: COLORS.accent }]}>
-              Filter {hasActiveFilter && 'Aktif'}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color={hasActiveFilter ? COLORS.accent : COLORS.white} style={{ marginLeft: 4 }} />
+            <Text style={styles.filterBtnText}>Filter {hasActiveFilter && 'Aktif'}</Text>
+            <Ionicons name="chevron-down" size={16} color={COLORS.white} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterBtn, viewMode === 'map' && styles.filterBtnActive]}
+            style={styles.filterBtn}
             onPress={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
             activeOpacity={0.7}
           >
             <Ionicons
               name={viewMode === 'list' ? 'map-outline' : 'list-outline'}
               size={16}
-              color={viewMode === 'map' ? COLORS.primary : COLORS.white}
+              color={COLORS.white}
               style={{ marginRight: 6 }}
             />
-            <Text style={[styles.filterBtnText, viewMode === 'map' && { color: COLORS.primary, fontWeight: FONT_WEIGHT.bold }]}>
-              {viewMode === 'list' ? 'Lihat Peta' : 'Daftar List'}
+            <Text style={styles.filterBtnText}>
+              {viewMode === 'list' ? 'Lihat Peta' : 'Daftar List Kosan'}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Location GPS Status Bar */}
-      <View style={styles.locationBar}>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }} onPress={handleGetLocation} activeOpacity={0.7}>
-          <Ionicons
-            name={userLocation ? 'navigate-circle' : 'location-outline'}
-            size={18}
-            color={userLocation ? COLORS.primary : COLORS.textTertiary}
-            style={{ marginRight: SPACING[2] }}
-          />
-          <Text style={styles.locationBarText} numberOfLines={1}>
-            {locationStatusText}
-          </Text>
-          {locationLoading && <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: 8 }} />}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleGetLocation} style={styles.refreshLocBtn}>
-          <Ionicons name="refresh" size={16} color={COLORS.primary} />
+      {/* LOCATION STATUS BAR */}
+      <View style={styles.locationStatusBar}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <Ionicons name="navigate-circle" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+          <Text style={styles.locationStatusText} numberOfLines={1}>{locationStatusText}</Text>
+        </View>
+        <TouchableOpacity onPress={handleGetLocation} style={{ padding: 4 }}>
+          {locationLoading ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Ionicons name="refresh" size={20} color={COLORS.primary} />
+          )}
         </TouchableOpacity>
       </View>
 
-      {/* Results Count */}
-      {viewMode === 'list' && !isLoading && (
-        <View style={styles.resultsCount}>
-          <Text style={styles.resultsCountText}>
-            {properties.length} kosan ditemukan
-          </Text>
-          {hasActiveFilter && (
-            <TouchableOpacity onPress={resetFilters}>
-              <Text style={styles.resetFilterText}>Reset Filter</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
-      {/* Content: List or Map View */}
+      {/* LIST OR MAP CONTENT */}
       {viewMode === 'map' ? (
-        <View style={{ flex: 1, backgroundColor: '#0D1B2A' }}>
-          {process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY &&
-            process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY !== 'your-google-maps-api-key' &&
-            process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.trim() !== '' ? (
-            <MapView
-              style={{ flex: 1, width: '100%' }}
-              initialRegion={{
-                latitude: userLocation?.latitude ?? properties.find((p) => p.latitude != null)?.latitude ?? -6.2641,
-                longitude: userLocation?.longitude ?? properties.find((p) => p.longitude != null)?.longitude ?? 106.7944,
-                latitudeDelta: 0.08,
-                longitudeDelta: 0.08,
+        <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+          <MapboxGL.MapView
+            style={{ flex: 1 }}
+            styleURL={MapboxGL.StyleURL.Street}
+            zoomEnabled={true}
+            scrollEnabled={true}
+            logoEnabled={true}
+            attributionEnabled={true}
+            onPress={() => setSelectedMapProperty(null)}
+          >
+            <MapboxGL.Camera
+              ref={mapCameraRef}
+              defaultSettings={{
+                centerCoordinate: userLocation ? [userLocation.longitude, userLocation.latitude] : defaultCenter,
+                zoomLevel: 13,
               }}
-              showsUserLocation={Boolean(userLocation)}
-              showsMyLocationButton={true}
-            >
-              {properties.map((prop) => {
-                if (prop.latitude == null || prop.longitude == null) return null;
-                return (
-                  <Marker
-                    key={prop.id}
-                    coordinate={{
-                      latitude: parseFloat(prop.latitude),
-                      longitude: parseFloat(prop.longitude),
-                    }}
-                    title={prop.name}
-                    description={prop.address_line}
-                    onPress={() => setSelectedMapProperty(prop)}
-                  />
-                );
-              })}
-            </MapView>
-          ) : (
-            <View style={{ flex: 1, position: 'relative' }}>
-              <WebView
-                source={{
-                  html: `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                      <meta charset="utf-8" />
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-                      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-                      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-                      <style>
-                        body, html, #map {
-                          width: 100%;
-                          height: 100%;
-                          margin: 0;
-                          padding: 0;
-                          background-color: #0D1B2A;
-                        }
-                      </style>
-                    </head>
-                    <body>
-                      <div id="map"></div>
-                      <script>
-                        var map = L.map('map', { zoomControl: true }).setView([${userLocation?.latitude ?? properties.find((p) => p.latitude != null)?.latitude ?? -6.2641}, ${userLocation?.longitude ?? properties.find((p) => p.longitude != null)?.longitude ?? 106.7944}], 14);
-                        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                          maxZoom: 19,
-                          attribution: '© OpenStreetMap KosanKu'
-                        }).addTo(map);
+            />
 
-                        ${userLocation ? `
-                          var userIcon = L.divIcon({
-                            className: 'custom-user-icon',
-                            html: '<div style="background-color:#00B4D8;width:18px;height:18px;border-radius:9px;border:3px solid #fff;box-shadow:0 0 10px #00B4D8;"></div>',
-                            iconSize: [24, 24]
-                          });
-                          L.marker([${userLocation.latitude}, ${userLocation.longitude}], { icon: userIcon }).addTo(map).bindPopup("📍 Posisi GPS Anda");
-                        ` : ''}
-
-                        ${properties.filter(p => p.latitude != null && p.longitude != null).map(p => `
-                          var m_${String(p.id).replace(/[^a-zA-Z0-9]/g, '')} = L.marker([${p.latitude}, ${p.longitude}]).addTo(map);
-                          m_${String(p.id).replace(/[^a-zA-Z0-9]/g, '')}.bindPopup("<b>${p.name}</b><br/>${p.city || ''}");
-                          m_${String(p.id).replace(/[^a-zA-Z0-9]/g, '')}.on('click', function() {
-                            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'selectProperty', id: '${p.id}' }));
-                          });
-                        `).join('\n')}
-                      </script>
-                    </body>
-                    </html>
-                  `
-                }}
-                onMessage={(event) => {
-                  try {
-                    const data = JSON.parse(event.nativeEvent.data);
-                    if (data.type === 'selectProperty') {
-                      const found = properties.find(p => String(p.id) === String(data.id));
-                      if (found) setSelectedMapProperty(found);
-                    }
-                  } catch (err) {
-                    console.warn('WebView Message Error:', err);
-                  }
-                }}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                style={{ flex: 1 }}
+            {/* Titik Lokasi Pengguna Saat ini (GPS) */}
+            {userLocation && (
+              <MapboxGL.UserLocation 
+                visible={true}
+                showsUserHeadingIndicator={true}
               />
-            </View>
-          )}
+            )}
 
-          {/* Floating Property Preview Card when pin is tapped */}
+            {/* Pin Kosan */}
+            {properties.map((prop) => {
+              if (prop.latitude == null || prop.longitude == null) return null;
+              const isSelected = selectedMapProperty?.id === prop.id;
+              return (
+                <MapboxGL.PointAnnotation
+                  key={prop.id}
+                  id={`marker-${prop.id}`}
+                  coordinate={[parseFloat(prop.longitude), parseFloat(prop.latitude)]}
+                  onSelected={() => {
+                     setSelectedMapProperty(prop);
+                     mapCameraRef.current?.setCamera({
+                       centerCoordinate: [parseFloat(prop.longitude), parseFloat(prop.latitude)],
+                       zoomLevel: 15,
+                       animationDuration: 500,
+                     });
+                  }}
+                >
+                  <View style={[styles.mapMarker, isSelected && styles.mapMarkerSelected]}>
+                    <Ionicons name="home" size={isSelected ? 20 : 16} color={isSelected ? COLORS.white : COLORS.primary} />
+                  </View>
+                </MapboxGL.PointAnnotation>
+              );
+            })}
+          </MapboxGL.MapView>
+
+          {/* Selected Property Preview Modal (Floating Bottom) */}
           {selectedMapProperty && (
-            <View style={styles.mapPreviewContainer}>
+            <View style={[styles.mapPreviewContainer, { paddingBottom: insets.bottom + SPACING[4] }]}>
               <TouchableOpacity
                 style={styles.mapPreviewCard}
                 onPress={() => {
@@ -545,48 +499,48 @@ const SearchScreen = ({ navigation }) => {
             </View>
           )}
         </View>
-      ) : isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Mencari kosan...</Text>
-        </View>
       ) : (
-        <FlatList
-          data={properties}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={() => { setIsRefreshing(true); loadProperties(true); }}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
-            />
-          }
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-              <Text style={styles.emptyTitle}>Kosan Tidak Ditemukan</Text>
-              <Text style={styles.emptySubtitle}>
-                Coba ubah kata kunci atau filter pencarian Anda
-              </Text>
-              {hasActiveFilter && (
-                <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
-                  <Text style={styles.resetBtnText}>Reset Filter</Text>
-                </TouchableOpacity>
-              )}
+        <View style={{ flex: 1 }}>
+          <View style={{ paddingHorizontal: SPACING[5], paddingTop: SPACING[4], paddingBottom: SPACING[2] }}>
+            <Text style={{ fontSize: FONT_SIZE.md, color: COLORS.textSecondary }}>
+              {properties.length} kosan ditemukan
+            </Text>
+          </View>
+          {isLoading ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
             </View>
-          )}
-          renderItem={({ item }) => (
-            <PropertyCard
-              property={item}
-              onPress={() =>
-                navigation.navigate(TENANT_SCREENS.PROPERTY_DETAIL, { property: item })
-              }
+          ) : (
+            <FlatList
+              data={properties}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={{ paddingHorizontal: SPACING[5], paddingBottom: insets.bottom + 100 }}
+              refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); loadProperties(true); }} colors={[COLORS.primary]} />}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="search-outline" size={64} color={COLORS.border} />
+                  <Text style={styles.emptyTitle}>Tidak ada kosan ditemukan</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Coba ubah kata kunci atau filter pencarian Anda
+                  </Text>
+                  {hasActiveFilter && (
+                    <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
+                      <Text style={styles.resetBtnText}>Reset Filter</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+              renderItem={({ item }) => (
+                <PropertyCard
+                  property={item}
+                  onPress={() =>
+                    navigation.navigate(TENANT_SCREENS.PROPERTY_DETAIL, { property: item })
+                  }
+                />
+              )}
             />
           )}
-        />
+        </View>
       )}
 
       {/* Filter Modal */}
@@ -705,24 +659,20 @@ const SearchScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
+  headerContainer: {
     backgroundColor: COLORS.primary,
-    paddingTop: SPACING[14],
-    paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
+    paddingBottom: SPACING[4],
   },
   headerTitle: {
-    fontSize: FONT_SIZE['2xl'],
+    fontSize: FONT_SIZE['xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
   },
   headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primaryLight,
+    fontSize: FONT_SIZE.xs,
+    color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
-    marginBottom: SPACING[4],
-    marginLeft: 48, // subtitle margin
   },
   searchBar: {
     flexDirection: 'row',
@@ -735,21 +685,113 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: SPACING[2] },
   searchInput: {
     flex: 1,
-    paddingVertical: SPACING[3],
-    fontSize: FONT_SIZE.base,
+    paddingVertical: SPACING[2],
+    fontSize: FONT_SIZE.sm,
     color: COLORS.textPrimary,
   },
   filterBtn: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)', // Semi-transparent white
     paddingHorizontal: SPACING[4],
     paddingVertical: SPACING[2],
     borderRadius: BORDER_RADIUS.full,
   },
-  filterBtnActive: { backgroundColor: COLORS.white },
+  filterBtnActive: { backgroundColor: 'rgba(255, 255, 255, 0.45)' },
   filterBtnText: { fontSize: FONT_SIZE.sm, color: COLORS.white, fontWeight: FONT_WEIGHT.medium },
+  
+  locationStatusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: SPACING[5],
+    paddingVertical: SPACING[3],
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  locationStatusText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  
+  // Map Elements
+  mapMarker: {
+    backgroundColor: COLORS.white,
+    padding: 6,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    ...SHADOW.sm,
+  },
+  mapMarkerSelected: {
+    backgroundColor: COLORS.accent,
+    borderColor: COLORS.white,
+    transform: [{ scale: 1.2 }],
+  },
+  // mapStatusFloating removed since it's now in the header bar
+  mapPreviewContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: SPACING[4],
+    backgroundColor: 'transparent',
+  },
+  mapPreviewCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS['2xl'],
+    padding: SPACING[3],
+    ...SHADOW.lg,
+  },
+  mapPreviewCloseBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 10,
+    padding: 4,
+  },
+  mapPreviewImage: {
+    width: 70,
+    height: 70,
+    borderRadius: BORDER_RADIUS.xl,
+  },
+  mapPreviewTitle: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  mapPreviewAddress: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  mapPreviewDistance: {
+    fontSize: 10,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  mapPreviewAction: {
+    marginTop: SPACING[3],
+    paddingTop: SPACING[3],
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    alignItems: 'center',
+  },
+  mapPreviewActionText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
+  },
+  
+  // List Elements
+  listContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   resultsCount: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -789,7 +831,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardImagePlaceholderText: { fontSize: 56 },
   availableTag: {
     position: 'absolute',
     bottom: SPACING[3],
@@ -799,233 +840,112 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
   },
-  availableTagText: { fontSize: FONT_SIZE.xs, color: COLORS.white, fontWeight: FONT_WEIGHT.bold },
+  availableTagText: { color: COLORS.white, fontSize: 10, fontWeight: FONT_WEIGHT.bold },
   genderTag: {
     position: 'absolute',
     top: SPACING[3],
     right: SPACING[3],
     backgroundColor: 'rgba(0,0,0,0.6)',
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: SPACING[2],
     paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  genderTagText: { fontSize: FONT_SIZE.xs, color: COLORS.white },
-  cardBody: { padding: SPACING[4] },
-  propertyName: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  propertyAddress: { flex: 1, fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
-  facilitiesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING[1],
-    marginBottom: SPACING[3],
-  },
-  facilityTag: {
-    backgroundColor: COLORS.grey100,
-    paddingHorizontal: SPACING[2],
-    paddingVertical: 3,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  facilityTagText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary },
-  priceText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
-  priceValue: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-  },
-  locationBar: {
+    borderRadius: BORDER_RADIUS.full,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.primarySurface,
-    paddingHorizontal: SPACING[5],
-    paddingVertical: SPACING[3],
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
-  locationBarText: {
-    flex: 1,
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.primary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  refreshLocBtn: {
-    paddingLeft: SPACING[3],
-  },
+  genderTagText: { color: COLORS.white, fontSize: 10, fontWeight: FONT_WEIGHT.medium },
+  cardBody: { padding: SPACING[4] },
+  propertyName: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginBottom: SPACING[1] },
+  propertyAddress: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, flex: 1 },
   distanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: COLORS.primarySurface,
     alignSelf: 'flex-start',
-    backgroundColor: `${COLORS.primary}15`,
     paddingHorizontal: SPACING[2],
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
     marginBottom: SPACING[3],
   },
-  distanceBadgeText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.primary,
-  },
-  // Map Preview Card
-  mapPreviewContainer: {
-    position: 'absolute',
-    bottom: SPACING[5],
-    left: SPACING[4],
-    right: SPACING[4],
-    ...SHADOW.lg,
-  },
-  mapPreviewCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
-    overflow: 'hidden',
+  distanceBadgeText: { fontSize: 10, color: COLORS.primary, fontWeight: FONT_WEIGHT.medium },
+  facilitiesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING[2], marginBottom: SPACING[4] },
+  facilityTag: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING[2],
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  mapPreviewCloseBtn: {
-    position: 'absolute',
-    top: SPACING[2],
-    right: SPACING[2],
-    zIndex: 10,
-  },
-  mapPreviewImage: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.md,
-    resizeMode: 'cover',
-  },
-  mapPreviewTitle: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  mapPreviewAddress: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  mapPreviewDistance: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-    marginTop: 4,
-  },
-  mapPreviewAction: {
-    marginTop: SPACING[3],
-    paddingTop: SPACING[2],
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    alignItems: 'center',
-  },
-  mapPreviewActionText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.accent,
-  },
-  emptyContainer: { alignItems: 'center', paddingVertical: SPACING[12] },
-  emptyIcon: { marginBottom: SPACING[3] },
-  emptyTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING[1],
-  },
-  emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING[4],
-  },
-  resetBtn: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING[5],
-    paddingVertical: SPACING[3],
-    borderRadius: BORDER_RADIUS.md,
-  },
-  resetBtnText: { color: COLORS.white, fontWeight: FONT_WEIGHT.semiBold },
-  // Filter Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: COLORS.overlay,
-    justifyContent: 'flex-end',
-  },
+  facilityTagText: { fontSize: 10, color: COLORS.textSecondary },
+  priceText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
+  priceValue: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: SPACING[10] },
+  emptyIcon: { marginBottom: SPACING[4] },
+  emptyTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginBottom: SPACING[2] },
+  emptySubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: SPACING[10], marginBottom: SPACING[6] },
+  resetBtn: { backgroundColor: COLORS.primarySurface, paddingHorizontal: SPACING[6], paddingVertical: SPACING[3], borderRadius: BORDER_RADIUS.xl },
+  resetBtnText: { color: COLORS.primary, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm },
+
+  // Modal Filters
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   filterModal: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: BORDER_RADIUS['3xl'],
     borderTopRightRadius: BORDER_RADIUS['3xl'],
-    padding: SPACING[6],
+    padding: SPACING[5],
     maxHeight: '85%',
   },
-  filterModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING[5],
-  },
-  filterModalTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  filterLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING[2],
-    marginTop: SPACING[4],
-  },
+  filterModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[6] },
+  filterModalTitle: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
+  filterLabel: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginBottom: SPACING[3], marginTop: SPACING[4] },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING[2] },
   chip: {
     paddingHorizontal: SPACING[4],
     paddingVertical: SPACING[2],
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.grey100,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
   },
-  chipActive: { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primary },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
-  chipTextActive: { color: COLORS.primary, fontWeight: FONT_WEIGHT.semiBold },
+  chipTextActive: { color: COLORS.white, fontWeight: FONT_WEIGHT.medium },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING[3] },
   priceInput: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING[3],
+    borderRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: SPACING[4],
+    paddingVertical: SPACING[3],
     fontSize: FONT_SIZE.base,
     color: COLORS.textPrimary,
-    backgroundColor: COLORS.grey50,
   },
-  priceSeparator: { fontSize: FONT_SIZE.lg, color: COLORS.textSecondary },
+  priceSeparator: { fontSize: FONT_SIZE.base, color: COLORS.textSecondary },
   filterActions: {
     flexDirection: 'row',
     gap: SPACING[3],
-    marginTop: SPACING[6],
-    paddingBottom: SPACING[4],
+    marginTop: SPACING[8],
+    paddingTop: SPACING[4],
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
   resetFilterBtn: {
     flex: 1,
-    backgroundColor: COLORS.grey100,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING[4],
+    paddingVertical: SPACING[4],
+    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: COLORS.background,
     alignItems: 'center',
   },
-  resetFilterBtnText: { color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.semiBold },
+  resetFilterBtnText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary },
   applyFilterBtn: {
     flex: 2,
-    backgroundColor: COLORS.accent,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING[4],
+    paddingVertical: SPACING[4],
+    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
+    ...SHADOW.md,
   },
-  applyFilterBtnText: { color: COLORS.white, fontWeight: FONT_WEIGHT.semiBold },
+  applyFilterBtnText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.white },
 });
 
 export default SearchScreen;
