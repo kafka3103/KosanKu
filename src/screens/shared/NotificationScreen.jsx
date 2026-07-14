@@ -378,12 +378,24 @@ const NotificationScreen = () => {
     );
   }
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate(currentUser?.role === 'owner' ? 'OwnerDashboard' : 'SearchStack');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <DrawerButton />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifikasi</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={handleBack} style={{ marginRight: SPACING[4], padding: 4 }}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { marginLeft: 0 }]}>Notifikasi</Text>
+        </View>
         {unreadCount > 0 && (
           <Text style={styles.headerSubtitle}>{unreadCount} belum dibaca</Text>
         )}
@@ -442,13 +454,11 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
-    marginLeft: 48, // Added for DrawerButton
   },
   headerSubtitle: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
     marginTop: 2,
-    marginLeft: 48, // subtitle margin
   },
   markAllBtn: {
     alignSelf: 'flex-start',
