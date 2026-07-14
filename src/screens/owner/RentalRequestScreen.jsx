@@ -32,6 +32,9 @@ import {
   getOwnerRentalRequests,
   approveRentalRequest,
   rejectRentalRequest,
+  getPendingFacilityRequests,
+  approveFacilityRequest,
+  rejectFacilityRequest,
 } from '../../services/propertyService';
 
 const STATUS_CONFIG = {
@@ -177,21 +180,32 @@ const RentalRequestScreen = ({ navigation }) => {
   const { currentUser } = useAuthStore();
 
   const [requests, setRequests] = useState([]);
+  const [facilityRequests, setFacilityRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('pending');
+  const [activeTab, setActiveTab] = useState('rental'); // 'rental' | 'facility'
+  const [activeFilter, setActiveFilter] = useState('pending'); // Hanya untuk rental
   const insets = useSafeAreaInsets();
 
-  // Reject modal
+  // Reject modal (Rental)
   const [rejectModal, setRejectModal] = useState({ visible: false, request: null });
   const [rejectReason, setRejectReason] = useState('');
+  
+  // Approve modal (Facility)
+  const [approveFacilityModal, setApproveFacilityModal] = useState({ visible: false, request: null });
+  const [facilityPrice, setFacilityPrice] = useState('');
+  
   const [isProcessing, setIsProcessing] = useState(false);
 
   const loadRequests = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
-    const { data, error } = await getOwnerRentalRequests(currentUser.id, 'all');
-    if (!error && data) setRequests(data);
+    const [rentalRes, facilityRes] = await Promise.all([
+      getOwnerRentalRequests(currentUser.id, 'all'),
+      getPendingFacilityRequests(currentUser.id)
+    ]);
+    if (!rentalRes.error && rentalRes.data) setRequests(rentalRes.data);
+    if (!facilityRes.error && facilityRes.data) setFacilityRequests(facilityRes.data);
     setIsLoading(false);
     setIsRefreshing(false);
   }, [currentUser?.id]);
@@ -258,6 +272,43 @@ const RentalRequestScreen = ({ navigation }) => {
     }
   };
 
+  // Facility Actions
+  const handleApproveFacility = (request) => {
+    setApproveFacilityModal({ visible: true, request });
+    setFacilityPrice('');
+  };
+
+  const confirmApproveFacility = async () => {
+    const price = parseInt(facilityPrice.replace(/\D/g, ''), 10);
+    if (isNaN(price) || price < 0) {
+      Alert.alert('Error', 'Harga valid wajib diisi');
+      return;
+    }
+    setIsProcessing(true);
+    const { error } = await approveFacilityRequest(approveFacilityModal.request.id, price);
+    setIsProcessing(false);
+    if (error) {
+      Alert.alert('Gagal', error.message);
+    } else {
+      setFacilityRequests(prev => prev.filter(r => r.id !== approveFacilityModal.request.id));
+      setApproveFacilityModal({ visible: false, request: null });
+      Alert.alert('Berhasil', 'Fasilitas disetujui, tagihan akan bertambah di bulan berikutnya.');
+    }
+  };
+
+  const handleRejectFacility = (request) => {
+    Alert.alert('Tolak Pengajuan', 'Yakin ingin menolak pengajuan fasilitas ini?', [
+      { text: 'Batal', style: 'cancel' },
+      { text: 'Tolak', style: 'destructive', onPress: async () => {
+        setIsProcessing(true);
+        const { error } = await rejectFacilityRequest(request.id);
+        setIsProcessing(false);
+        if (error) Alert.alert('Gagal', error.message);
+        else setFacilityRequests(prev => prev.filter(r => r.id !== request.id));
+      }}
+    ]);
+  };
+
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const filters = [
     { key: 'pending', label: 'Menunggu', count: pendingCount },
@@ -288,33 +339,60 @@ const RentalRequestScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('rental.list.ownerTitle')}</Text>
-        {pendingCount > 0 && (
+        {pendingCount > 0 && activeTab === 'rental' && (
           <Text style={styles.headerSubtitle}>{pendingCount} pengajuan menunggu konfirmasi</Text>
+        )}
+        {facilityRequests.length > 0 && activeTab === 'facility' && (
+          <Text style={styles.headerSubtitle}>{facilityRequests.length} fasilitas perlu persetujuan</Text>
         )}
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        <FlatList
-          data={filters}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.filterList}
-          renderItem={({ item }) => (
-            <FilterTab
-              label={item.label}
-              isActive={activeFilter === item.key}
-              count={item.count}
-              onPress={() => setActiveFilter(item.key)}
-            />
+      {/* Main Tabs (Sewa Kos vs Fasilitas) */}
+      <View style={styles.mainTabsContainer}>
+        <TouchableOpacity 
+          style={[styles.mainTab, activeTab === 'rental' && styles.mainTabActive]}
+          onPress={() => setActiveTab('rental')}
+        >
+          <Text style={[styles.mainTabText, activeTab === 'rental' && styles.mainTabTextActive]}>Sewa Kos</Text>
+          {pendingCount > 0 && (
+            <View style={styles.mainTabBadge}><Text style={styles.mainTabBadgeText}>{pendingCount}</Text></View>
           )}
-        />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.mainTab, activeTab === 'facility' && styles.mainTabActive]}
+          onPress={() => setActiveTab('facility')}
+        >
+          <Text style={[styles.mainTabText, activeTab === 'facility' && styles.mainTabTextActive]}>Fasilitas Opsional</Text>
+          {facilityRequests.length > 0 && (
+            <View style={styles.mainTabBadge}><Text style={styles.mainTabBadgeText}>{facilityRequests.length}</Text></View>
+          )}
+        </TouchableOpacity>
       </View>
+
+      {/* Filter Tabs (hanya untuk rental) */}
+      {activeTab === 'rental' && (
+        <View style={styles.filterContainer}>
+          <FlatList
+            data={filters}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.key}
+            contentContainerStyle={styles.filterList}
+            renderItem={({ item }) => (
+              <FilterTab
+                label={item.label}
+                isActive={activeFilter === item.key}
+                count={item.count}
+                onPress={() => setActiveFilter(item.key)}
+              />
+            )}
+          />
+        </View>
+      )}
 
       {/* Requests List */}
       <FlatList
-        data={filteredRequests}
+        data={activeTab === 'rental' ? filteredRequests : facilityRequests}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
@@ -328,18 +406,54 @@ const RentalRequestScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Ionicons name="mail-open-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>{t('rental.list.emptyTitle')}</Text>
-            <Text style={styles.emptySubtitle}>{t('rental.list.emptySubtitle')}</Text>
+            <Ionicons name={activeTab === 'rental' ? "mail-open-outline" : "sparkles-outline"} size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
+            <Text style={styles.emptyTitle}>{activeTab === 'rental' ? t('rental.list.emptyTitle') : 'Tidak Ada Pengajuan'}</Text>
+            <Text style={styles.emptySubtitle}>{activeTab === 'rental' ? t('rental.list.emptySubtitle') : 'Belum ada tenant yang mengajukan fasilitas tambahan.'}</Text>
           </View>
         )}
-        renderItem={({ item }) => (
-          <RequestCard
-            request={item}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
-        )}
+        renderItem={({ item }) => {
+          if (activeTab === 'rental') {
+            return (
+              <RequestCard
+                request={item}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            );
+          } else {
+            // Facility Request Card
+            const tenant = item.contracts?.users;
+            const room = item.contracts?.rooms;
+            const property = room?.properties;
+            return (
+              <View style={styles.card}>
+                <View style={[styles.cardStatusBadge, { backgroundColor: COLORS.warningLight }]}>
+                  <Text style={[styles.cardStatusText, { color: COLORS.warning }]}>Menunggu</Text>
+                </View>
+                <View style={styles.tenantRow}>
+                  <View style={styles.tenantAvatar}><Text style={styles.tenantAvatarText}>{tenant?.full_name?.[0]?.toUpperCase() ?? 'T'}</Text></View>
+                  <View style={styles.tenantInfo}>
+                    <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
+                    <Text style={styles.tenantPhone}>{tenant?.phone_number ?? '—'}</Text>
+                  </View>
+                </View>
+                <View style={styles.roomInfoBox}>
+                  <Text style={styles.infoRow}><Text style={styles.infoBold}>{property?.name}</Text> · Kamar {room?.room_number}</Text>
+                  <Text style={[styles.infoRow, { marginTop: 4 }]}><Text style={styles.infoBold}>Fasilitas:</Text> {item.facility_master?.name}</Text>
+                  <Text style={[styles.infoRow, { marginTop: 4 }]}><Text style={styles.infoBold}>Diajukan:</Text> {formatDate(item.created_at)}</Text>
+                </View>
+                <View style={styles.cardActions}>
+                  <TouchableOpacity style={styles.rejectBtn} onPress={() => handleRejectFacility(item)}>
+                    <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} /><Text style={styles.rejectBtnText}>Tolak</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.approveBtn} onPress={() => handleApproveFacility(item)}>
+                    <Ionicons name="checkmark" size={16} color={COLORS.white} style={{ marginRight: 4 }} /><Text style={styles.approveBtnText}>Set Harga & Setujui</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }
+        }}
       />
 
       {/* Reject Modal */}
@@ -387,6 +501,54 @@ const RentalRequestScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+      {/* Approve Facility Modal */}
+      <Modal
+        visible={approveFacilityModal.visible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setApproveFacilityModal({ visible: false, request: null })}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Setujui Fasilitas Tambahan</Text>
+            <Text style={styles.modalSubtitle}>
+              Tentukan harga sewa per bulan untuk fasilitas {approveFacilityModal.request?.facility_master?.name}:
+            </Text>
+            <View style={styles.priceInputContainer}>
+              <Text style={styles.currencyPrefix}>Rp</Text>
+              <TextInput
+                style={styles.priceInput}
+                placeholder="0"
+                keyboardType="number-pad"
+                value={facilityPrice}
+                onChangeText={(text) => {
+                  const num = text.replace(/\D/g, '');
+                  setFacilityPrice(num ? parseInt(num, 10).toLocaleString('id-ID') : '');
+                }}
+              />
+            </View>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setApproveFacilityModal({ visible: false, request: null })}
+              >
+                <Text style={styles.modalCancelText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalApproveBtn, isProcessing && { opacity: 0.7 }]}
+                onPress={confirmApproveFacility}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator color={COLORS.white} size="small" />
+                ) : (
+                  <Text style={styles.modalApproveText}>Setujui</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -412,7 +574,54 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
   },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primaryLight,
+    marginTop: 2,
+    marginLeft: 28,
+  },
+  // Main Tabs
+  mainTabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING[4],
+    marginTop: SPACING[4],
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING[1],
+    ...SHADOW.sm,
+  },
+  mainTab: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: SPACING[3],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BORDER_RADIUS.md,
+  },
+  mainTabActive: {
+    backgroundColor: COLORS.primarySurface,
+  },
+  mainTabText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textSecondary,
+  },
+  mainTabTextActive: {
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  mainTabBadge: {
+    backgroundColor: COLORS.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.full,
+    marginLeft: 6,
+  },
+  mainTabBadgeText: {
+    fontSize: 10,
+    color: COLORS.white,
+    fontWeight: FONT_WEIGHT.bold,
+  },
   filterContainer: {
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
@@ -619,8 +828,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalRejectText: {
+    fontSize: FONT_SIZE.sm,
     color: COLORS.white,
     fontWeight: FONT_WEIGHT.semiBold,
+  },
+  modalApproveBtn: {
+    flex: 1,
+    backgroundColor: COLORS.success,
+    paddingVertical: SPACING[3],
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+  },
+  modalApproveText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.white,
+    fontWeight: FONT_WEIGHT.semiBold,
+  },
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: SPACING[4],
+    marginBottom: SPACING[5],
+    backgroundColor: COLORS.grey50,
+  },
+  currencyPrefix: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textSecondary,
+    marginRight: SPACING[2],
+  },
+  priceInput: {
+    flex: 1,
+    paddingVertical: SPACING[3],
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
   },
 });
 

@@ -23,7 +23,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { getPropertyRooms, deleteRoom } from '../../services/propertyService';
-import { OWNER_SCREENS } from '../../navigation/OwnerNavigator';
+import { OWNER_SCREENS } from '../../constants/screenNames';
 
 const STATUS_CONFIG = {
   available: { color: COLORS.success, bg: COLORS.successLight, label: 'Tersedia', icon: 'checkmark-circle' },

@@ -26,7 +26,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerProperties, deleteProperty } from '../../services/propertyService';
-import { OWNER_SCREENS } from '../../navigation/OwnerNavigator';
+import { OWNER_SCREENS } from '../../constants/screenNames';
 
 const StatusBadge = ({ isActive }) => (
   <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>

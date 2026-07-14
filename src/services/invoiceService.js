@@ -5,8 +5,10 @@
  */
 
 import supabaseClient from './supabaseClient';
+import { sendNotification } from './notificationService';
 
 // ─── Invoices ─────────────────────────────────────────────────
+
 
 /**
  * Ambil semua invoice milik owner (dengan filter status)
@@ -90,6 +92,10 @@ export const getTenantActiveContract = async (tenantId) => {
     .from('contracts')
     .select(`
       *,
+      contract_facilities(
+        *,
+        facility_master(name, icon_name)
+      ),
       rooms(
         room_number,
         base_price,
@@ -129,6 +135,10 @@ export const getOwnerContracts = async (ownerId) => {
     .from('contracts')
     .select(`
       *,
+      contract_facilities(
+        *,
+        facility_master(name, icon_name)
+      ),
       rooms(room_number, properties(name)),
       users!contracts_tenant_id_fkey(full_name, phone_number)
     `)
@@ -148,6 +158,10 @@ export const getContractById = async (contractId) => {
     .from('contracts')
     .select(`
       *,
+      contract_facilities(
+        *,
+        facility_master(name, icon_name)
+      ),
       rooms(
         *,
         room_facilities(facility_master(name, icon_name)),
@@ -182,6 +196,81 @@ export const endContract = async (contractId, endStatus, reason) => {
     .eq('id', contractId)
     .select()
     .single();
+
+  return { data, error };
+};
+
+/**
+ * Ambil daftar fasilitas tambahan yang disewa pada sebuah kontrak
+ *
+ * @param {string} contractId
+ */
+export const getContractFacilities = async (contractId) => {
+  const { data, error } = await supabaseClient
+    .from('contract_facilities')
+    .select(`
+      *,
+      facility_master(name, icon_name)
+    `)
+    .eq('contract_id', contractId)
+    .order('created_at', { ascending: true });
+
+  return { data, error };
+};
+
+/**
+ * Tambahkan fasilitas opsional ke kontrak sewa berjalan via RPC Smart Billing
+ *
+ * @param {Object} params
+ * @param {string} params.contractId
+ * @param {string|null} params.facilityId
+ * @param {string|null} params.customName
+ * @param {number} params.pricePerMonth
+ * @param {'next_invoice'|'bill_immediately'} params.billingMode
+ */
+export const addContractFacility = async ({
+  contractId,
+  facilityId = null,
+  customName = null,
+  pricePerMonth = 0,
+  billingMode = 'next_invoice',
+}) => {
+  const { data, error } = await supabaseClient.rpc('add_facility_to_contract', {
+    p_contract_id: contractId,
+    p_facility_id: facilityId,
+    p_custom_name: customName,
+    p_price_per_month: pricePerMonth,
+    p_billing_mode: billingMode,
+  });
+
+  // Kirim notifikasi dari FE untuk menghindari RLS violation dari dalam fungsi DB
+  if (!error && data?.billing_action === 'invoice_created' && data?.tenant_id) {
+    await sendNotification({
+      userId: data.tenant_id,
+      title: 'Tagihan Fasilitas Tambahan Baru ❄️',
+      body: `Tagihan sebesar Rp ${pricePerMonth.toLocaleString('id-ID')} untuk pemasangan ${data.facility_name ?? customName ?? 'fasilitas tambahan'} telah tersedia. Silakan lakukan pembayaran.`,
+      type: 'invoice_generated',
+      referenceId: data.invoice_id,
+      referenceType: 'invoice',
+    });
+  }
+
+  return { data, error };
+};
+
+
+/**
+ * Ubah status fasilitas tambahan pada kontrak (misal nonaktif/berhenti sewa)
+ *
+ * @param {string} contractFacilityId
+ * @param {'active'|'inactive'|'cancelled'} status
+ */
+export const updateContractFacilityStatus = async (contractFacilityId, status) => {
+  const { data, error } = await supabaseClient.rpc('update_contract_facility_status', {
+    p_contract_facility_id: contractFacilityId,
+    p_new_status: status,
+    p_end_date: new Date().toISOString().split('T')[0],
+  });
 
   return { data, error };
 };

@@ -23,7 +23,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { getInvoiceDetail } from '../../services/invoiceService';
 import { subscribeToInvoiceRealtime } from '../../services/xenditService';
-import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -55,29 +55,46 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
 
   const [invoice, setInvoice] = useState(invoiceParam);
   const [isLoading, setIsLoading] = useState(!invoiceParam);
+  const isMountedRef = React.useRef(true);
+
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   const loadDetail = useCallback(async (id, silent = false) => {
     if (!silent) setIsLoading(true);
     const { data, error } = await getInvoiceDetail(id);
-    if (!error && data) {
+    if (isMountedRef.current && !error && data) {
       setInvoice(data);
     }
-    if (!silent) setIsLoading(false);
+    if (!silent && isMountedRef.current) setIsLoading(false);
   }, []);
 
+  // Load data saat pertama kali mount
+  useEffect(() => {
+    if (invoiceIdParam) {
+      loadDetail(invoiceIdParam, !!invoiceParam);
+    } else {
+      setIsLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceIdParam]);
+
+  // Reload data ringan saat screen refocus (tanpa membuat subscription baru)
   useFocusEffect(
     useCallback(() => {
-      if (invoiceIdParam) {
-        loadDetail(invoiceIdParam, !!invoice);
-      } else {
-        setIsLoading(false);
+      if (invoiceIdParam && invoice) {
+        loadDetail(invoiceIdParam, true); // silent = true → tidak reset loading state
       }
-    }, [invoiceIdParam, loadDetail, invoice])
+    }, [invoiceIdParam, invoice, loadDetail])
   );
 
+  // Satu subscription Realtime per mount — tidak diulang saat refocus
   useEffect(() => {
     if (!invoiceIdParam) return;
     const sub = subscribeToInvoiceRealtime(invoiceIdParam, (updated) => {
+      if (!isMountedRef.current) return;
       setInvoice((prev) => (prev ? { ...prev, ...updated } : prev));
       if (updated.status === 'paid') {
         loadDetail(invoiceIdParam, true);
@@ -86,7 +103,10 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
     return () => {
       if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
     };
-  }, [invoiceIdParam, loadDetail]);
+  // Hanya bergantung pada invoiceIdParam — TIDAK include loadDetail agar tidak re-subscribe
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceIdParam]);
+
 
   if (isLoading) {
     return (

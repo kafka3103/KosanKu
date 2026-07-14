@@ -697,3 +697,130 @@ export const getOwnerActiveTenants = async (ownerId) => {
 
   return { data, error };
 };
+
+// ─── Facility Master CRUD (Owner) ─────────────────────────────
+// getFacilityMaster sudah ada di atas (line ~351), di sini hanya tambah Write operations
+
+/**
+ * Tambahkan fasilitas baru ke master fasilitas
+ *
+ * @param {Object} facilityData - { name, icon_name, description, category }
+ */
+export const createFacilityMaster = async (facilityData) => {
+  const { data, error } = await supabaseClient
+    .from('facility_master')
+    .insert(facilityData)
+    .select()
+    .single();
+
+  return { data, error };
+};
+
+/**
+ * Perbarui data fasilitas master
+ *
+ * @param {string} facilityId
+ * @param {Object} updates - { name, icon_name, description, category }
+ */
+export const updateFacilityMaster = async (facilityId, updates) => {
+  const { data, error } = await supabaseClient
+    .from('facility_master')
+    .update(updates)
+    .eq('id', facilityId)
+    .select()
+    .single();
+
+  return { data, error };
+};
+
+/**
+ * Hapus fasilitas dari master (hanya jika tidak sedang digunakan)
+ *
+ * @param {string} facilityId
+ */
+export const deleteFacilityMaster = async (facilityId) => {
+  const { data, error } = await supabaseClient
+    .from('facility_master')
+    .delete()
+    .eq('id', facilityId);
+
+  return { data, error };
+};
+
+// ─── Optional Facility Request Workflow ────────────────────────
+
+/**
+ * Tenant mengajukan fasilitas opsional ke kontraknya
+ */
+export const requestOptionalFacility = async (contractId, facilityId) => {
+  const { data, error } = await supabaseClient
+    .from('contract_facilities')
+    .insert({
+      contract_id: contractId,
+      facility_id: facilityId,
+      status: 'requested',
+      price_per_month: 0, // Harga akan ditentukan oleh owner saat approval
+    })
+    .select()
+    .single();
+
+  return { data, error };
+};
+
+/**
+ * Owner mengambil daftar pengajuan fasilitas opsional yang statusnya 'requested'
+ */
+export const getPendingFacilityRequests = async (ownerId) => {
+  // Join dengan contracts untuk mengecek owner_id, 
+  // lalu ambil detail fasilitas dan tenant
+  const { data, error } = await supabaseClient
+    .from('contract_facilities')
+    .select(`
+      *,
+      facility_master(*),
+      contracts!inner(
+        id, owner_id, room_id, tenant_id,
+        rooms(room_number, properties(name)),
+        users!contracts_tenant_id_fkey(full_name, phone_number, avatar_url)
+      )
+    `)
+    .eq('status', 'requested')
+    .eq('contracts.owner_id', ownerId)
+    .order('created_at', { ascending: false });
+
+  return { data, error };
+};
+
+/**
+ * Owner menyetujui pengajuan fasilitas opsional dan mematok harga per bulan
+ */
+export const approveFacilityRequest = async (contractFacilityId, pricePerMonth) => {
+  const { data, error } = await supabaseClient
+    .from('contract_facilities')
+    .update({
+      status: 'active',
+      price_per_month: pricePerMonth,
+      start_date: new Date().toISOString().split('T')[0], // Mulai aktif hari ini
+    })
+    .eq('id', contractFacilityId)
+    .select()
+    .single();
+
+  return { data, error };
+};
+
+/**
+ * Owner menolak pengajuan fasilitas opsional
+ */
+export const rejectFacilityRequest = async (contractFacilityId) => {
+  const { data, error } = await supabaseClient
+    .from('contract_facilities')
+    .update({
+      status: 'cancelled',
+    })
+    .eq('id', contractFacilityId)
+    .select()
+    .single();
+
+  return { data, error };
+};

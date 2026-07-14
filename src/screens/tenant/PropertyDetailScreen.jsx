@@ -30,7 +30,7 @@ import {
   toggleFavorite,
   checkIsFavorite,
 } from '../../services/searchService';
-import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {

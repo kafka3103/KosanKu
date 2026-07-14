@@ -28,6 +28,10 @@ import { FONT_SIZE, FONT_WEIGHT } from '../constants/typography';
 import { SPACING } from '../constants/spacing';
 import useAuthStore from '../store/authStore';
 import { logout } from '../services/authService';
+import { OWNER_SCREENS } from '../constants/screenNames';
+
+export { OWNER_SCREENS }; // re-export untuk backward compatibility sementara
+
 
 // Owner Screens
 import DashboardScreen from '../screens/owner/DashboardScreen';
@@ -40,6 +44,8 @@ import RentalRequestScreen from '../screens/owner/RentalRequestScreen';
 import InvoiceListScreen from '../screens/owner/InvoiceListScreen';
 import ReportScreen from '../screens/owner/ReportScreen';
 import ContractScreen from '../screens/owner/ContractScreen';
+import FacilityMasterScreen from '../screens/owner/FacilityMasterScreen';
+
 
 // Shared Screens
 import NotificationScreen from '../screens/shared/NotificationScreen';
@@ -54,27 +60,9 @@ const DashboardStack = createStackNavigator();
 
 /**
  * Screen name constants untuk mencegah typo
+ * (diekspor dari screenNames.js, di-re-export di sini untuk kompatibilitas)
  */
-export const OWNER_SCREENS = {
-  // Bottom Tabs
-  DASHBOARD: 'OwnerDashboard',
-  PROPERTY_STACK: 'PropertyStack',
-  INVOICE_LIST: 'OwnerInvoiceList',
-  NOTIFICATIONS: 'OwnerNotifications',
-  PROFILE_TAB: 'OwnerProfileTab',
-  // Stack di dalam Property
-  PROPERTY_LIST: 'PropertyList',
-  PROPERTY_FORM: 'PropertyForm',
-  ROOM_LIST: 'RoomList',
-  ROOM_FORM: 'RoomForm',
-  RENTAL_REQUEST: 'RentalRequest',
-  CONTRACT: 'Contract',
-  // Drawer Items
-  TENANT_LIST: 'TenantList',
-  REPORT: 'Report',
-  PROFILE: 'OwnerProfile',
-  SETTINGS: 'OwnerSettings',
-};
+
 
 /**
  * Stack navigator untuk alur properti:
@@ -89,9 +77,11 @@ const PropertyStackNavigator = () => {
       <PropertyStack.Screen name={OWNER_SCREENS.ROOM_FORM} component={RoomFormScreen} />
       <PropertyStack.Screen name={OWNER_SCREENS.RENTAL_REQUEST} component={RentalRequestScreen} />
       <PropertyStack.Screen name={OWNER_SCREENS.CONTRACT} component={ContractScreen} />
+      <PropertyStack.Screen name={OWNER_SCREENS.FACILITY_MASTER} component={FacilityMasterScreen} />
     </PropertyStack.Navigator>
   );
 };
+
 
 /**
  * Stack navigator untuk alur Dashboard agar tidak melompat ke tab Properti:
@@ -103,6 +93,7 @@ const DashboardStackNavigator = () => {
       <DashboardStack.Screen name="DashboardMain" component={DashboardScreen} />
       <DashboardStack.Screen name={OWNER_SCREENS.RENTAL_REQUEST} component={RentalRequestScreen} />
       <DashboardStack.Screen name={OWNER_SCREENS.PROPERTY_FORM} component={PropertyFormScreen} />
+      <DashboardStack.Screen name={OWNER_SCREENS.FACILITY_MASTER} component={FacilityMasterScreen} />
     </DashboardStack.Navigator>
   );
 };
@@ -163,6 +154,7 @@ const OwnerDrawerContent = ({ navigation }) => {
     { label: t('navigation.owner.profile'), screen: OWNER_SCREENS.PROFILE, icon: '👤' },
     { label: t('navigation.owner.settings'), screen: OWNER_SCREENS.SETTINGS, icon: '⚙️' },
   ];
+
 
   return (
     <View style={styles.drawerContainer}>
@@ -242,6 +234,11 @@ const OwnerNavigator = () => {
       <OwnerDrawer.Screen
         name={OWNER_SCREENS.SETTINGS}
         component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.FACILITY_MASTER}
+        component={FacilityMasterScreen}
         options={{ headerShown: false }}
       />
     </OwnerDrawer.Navigator>

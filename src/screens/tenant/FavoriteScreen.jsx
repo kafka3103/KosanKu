@@ -26,7 +26,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getTenantFavorites, toggleFavorite } from '../../services/searchService';
-import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {

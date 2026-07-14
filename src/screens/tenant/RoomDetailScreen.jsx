@@ -22,7 +22,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getTenantActiveContract } from '../../services/invoiceService';
-import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const FACILITY_ICON_MAP = {
   'air-conditioner': 'snow',

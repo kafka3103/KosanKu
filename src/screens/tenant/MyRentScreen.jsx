@@ -16,6 +16,7 @@ import {
   Image,
   Linking,
   Alert,
+  Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +34,8 @@ import { getTenantActiveContract } from '../../services/invoiceService';
 import { getTenantInvoices } from '../../services/invoiceService';
 import { getTenantRentalRequests } from '../../services/searchService';
 import { subscribeToUserInvoicesRealtime } from '../../services/xenditService';
-import { TENANT_SCREENS } from '../../navigation/TenantNavigator';
+import { getFacilityMaster, requestOptionalFacility } from '../../services/propertyService';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -86,6 +88,11 @@ const MyRentScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // States for Requesting Facility
+  const [showFacilityModal, setShowFacilityModal] = useState(false);
+  const [masterFacilities, setMasterFacilities] = useState([]);
+  const [isRequesting, setIsRequesting] = useState(false);
+
   const loadData = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
@@ -102,6 +109,12 @@ const MyRentScreen = ({ navigation }) => {
     }
     if (!requestsResult.error && requestsResult.data) {
       setRentalRequests(requestsResult.data.filter((r) => ['pending', 'approved'].includes(r.status)));
+    }
+
+    // Load master facilities if modal is to be opened or pre-fetch
+    const facilityRes = await getFacilityMaster();
+    if (!facilityRes.error && facilityRes.data) {
+      setMasterFacilities(facilityRes.data.filter((f) => f.category !== 'room')); // Tampilkan umum & opsional
     }
 
     setIsLoading(false);
@@ -129,6 +142,21 @@ const MyRentScreen = ({ navigation }) => {
     Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() =>
       Alert.alert('Gagal', 'Tidak bisa membuka aplikasi telepon')
     );
+  };
+
+  const handleRequestFacility = async (facilityId) => {
+    if (!contract?.id) return;
+    setIsRequesting(true);
+    const { error } = await requestOptionalFacility(contract.id, facilityId);
+    setIsRequesting(false);
+    
+    if (error) {
+      Alert.alert('Gagal', error.message || 'Terjadi kesalahan saat mengajukan fasilitas.');
+    } else {
+      setShowFacilityModal(false);
+      Alert.alert('Berhasil', 'Pengajuan fasilitas terkirim. Menunggu persetujuan pemilik.');
+      loadData(true);
+    }
   };
 
   if (isLoading) {
@@ -183,6 +211,8 @@ const MyRentScreen = ({ navigation }) => {
   const property = room?.properties;
   const owner = property?.users;
   const facilities = room?.room_facilities?.map((rf) => rf.facility_master?.name).filter(Boolean) ?? [];
+  const activeContractFacilities = (contract?.contract_facilities || []).filter((f) => f.status === 'active');
+  const requestedContractFacilities = (contract?.contract_facilities || []).filter((f) => f.status === 'requested');
 
   return (
     <>
@@ -300,7 +330,51 @@ const MyRentScreen = ({ navigation }) => {
                 </View>
               </View>
             )}
+
+            {/* Optional Facilities */}
+            {(activeContractFacilities.length > 0 || requestedContractFacilities.length > 0) && (
+              <View style={styles.optionalFacilitiesBox}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="sparkles" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                    <Text style={styles.optionalFacilitiesTitle}>Fasilitas Tambahan</Text>
+                  </View>
+                </View>
+
+                {activeContractFacilities.map((cf) => (
+                  <View key={cf.id} style={styles.optionalFacilityItem}>
+                    <Text style={styles.optionalFacilityName}>
+                      {cf.custom_facility_name || cf.facility_master?.name || 'Fasilitas Opsional'}
+                    </Text>
+                    <Text style={styles.optionalFacilityPrice}>
+                      {formatCurrency(cf.price_per_month)}/bulan
+                    </Text>
+                  </View>
+                ))}
+
+                {requestedContractFacilities.map((cf) => (
+                  <View key={cf.id} style={styles.optionalFacilityItem}>
+                    <Text style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
+                      {cf.custom_facility_name || cf.facility_master?.name || 'Fasilitas Opsional'}
+                    </Text>
+                    <View style={styles.requestBadgeInline}>
+                      <Text style={styles.requestBadgeTextInline}>Menunggu Konfirmasi</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.addFacilityBtn}
+              onPress={() => setShowFacilityModal(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.addFacilityBtnText}>Ajukan Fasilitas Tambahan</Text>
+            </TouchableOpacity>
           </View>
+
 
           {/* Owner Contact */}
           {owner && (
@@ -371,6 +445,57 @@ const MyRentScreen = ({ navigation }) => {
         </>
       )}
     </ScrollView>
+
+      {/* Facility Request Modal */}
+      <Modal
+        visible={showFacilityModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFacilityModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Ajukan Fasilitas</Text>
+              <TouchableOpacity onPress={() => setShowFacilityModal(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>Pilih fasilitas tambahan yang ingin Anda pasang di kamar ini.</Text>
+
+            <ScrollView style={styles.facilityList}>
+              {masterFacilities.map((facility) => {
+                const isAlreadyActive = activeContractFacilities.some(cf => cf.facility_id === facility.id);
+                const isAlreadyRequested = requestedContractFacilities.some(cf => cf.facility_id === facility.id);
+                const disabled = isAlreadyActive || isAlreadyRequested || isRequesting;
+
+                return (
+                  <TouchableOpacity
+                    key={facility.id}
+                    style={[styles.facilityOption, disabled && styles.facilityOptionDisabled]}
+                    disabled={disabled}
+                    onPress={() => handleRequestFacility(facility.id)}
+                  >
+                    <View style={styles.facilityOptionLeft}>
+                      <Ionicons name={facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
+                      <View style={{ marginLeft: 12 }}>
+                        <Text style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</Text>
+                        {isAlreadyActive ? (
+                          <Text style={styles.facilityOptionStatus}>Sudah terpasang</Text>
+                        ) : isAlreadyRequested ? (
+                          <Text style={styles.facilityOptionStatus}>Menunggu persetujuan</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={disabled ? COLORS.grey200 : COLORS.grey400} />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -617,6 +742,122 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   emptyInvoiceText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
+  // Optional Facilities
+  optionalFacilitiesBox: {
+    backgroundColor: COLORS.primarySurface,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING[3],
+    marginTop: SPACING[3],
+  },
+  optionalFacilitiesTitle: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
+  },
+  optionalFacilityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  optionalFacilityName: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textPrimary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  optionalFacilityPrice: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  requestBadgeInline: {
+    backgroundColor: COLORS.warningLight,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  requestBadgeTextInline: {
+    fontSize: 10,
+    color: COLORS.warning,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  addFacilityBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySurface,
+    paddingVertical: SPACING[3],
+    borderRadius: BORDER_RADIUS.md,
+    marginTop: SPACING[3],
+    borderWidth: 1,
+    borderColor: COLORS.primaryLight,
+    borderStyle: 'dashed',
+  },
+  addFacilityBtnText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semiBold,
+    color: COLORS.primary,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: BORDER_RADIUS['2xl'],
+    borderTopRightRadius: BORDER_RADIUS['2xl'],
+    padding: SPACING[5],
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING[2],
+  },
+  modalTitle: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  modalCloseBtn: { padding: 4 },
+  modalSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING[4],
+  },
+  facilityList: {
+    paddingBottom: SPACING[5],
+  },
+  facilityOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING[3],
+    paddingHorizontal: SPACING[2],
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  facilityOptionDisabled: {
+    opacity: 0.6,
+  },
+  facilityOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  facilityOptionName: {
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textPrimary,
+  },
+  facilityOptionStatus: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.warning,
+    marginTop: 2,
+    fontWeight: FONT_WEIGHT.medium,
+  },
 });
 
 export default MyRentScreen;

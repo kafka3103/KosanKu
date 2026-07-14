@@ -97,6 +97,13 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
     return () => { isMounted = false; };
   }, [state.index, currentUser?.id, currentUser?.role]);
 
+  // Sembunyikan tab bar jika layar yang aktif meminta display: 'none'
+  const activeRoute = state.routes[state.index];
+  const { options } = descriptors[activeRoute.key];
+  if (options.tabBarStyle?.display === 'none') {
+    return null;
+  }
+
   return (
     <View
       style={{

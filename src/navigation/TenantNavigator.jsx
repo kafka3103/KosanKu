@@ -11,6 +11,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
 import COLORS from '../constants/colors';
@@ -18,6 +19,10 @@ import { FONT_SIZE, FONT_WEIGHT } from '../constants/typography';
 import { SPACING } from '../constants/spacing';
 import useAuthStore from '../store/authStore';
 import { logout } from '../services/authService';
+import { TENANT_SCREENS } from '../constants/screenNames';
+
+export { TENANT_SCREENS }; // re-export untuk backward compatibility sementara
+
 
 // Tenant Screens
 import SearchScreen from '../screens/tenant/SearchScreen';
@@ -42,27 +47,9 @@ const MyRentStack = createStackNavigator();
 
 /**
  * Screen name constants
+ * (diekspor dari screenNames.js, di-re-export di sini untuk kompatibilitas)
  */
-export const TENANT_SCREENS = {
-  // Bottom Tabs
-  SEARCH_STACK: 'SearchStack',
-  FAVORITES: 'Favorites',
-  MY_RENT_STACK: 'MyRentStack',
-  NOTIFICATIONS: 'TenantNotifications',
-  PROFILE_TAB: 'TenantProfileTab',
-  // Stack di dalam Search
-  SEARCH: 'Search',
-  PROPERTY_DETAIL: 'PropertyDetail',
-  ROOM_DETAIL: 'RoomDetail',
-  RENTAL_REQUEST_FORM: 'RentalRequestForm',
-  // Stack di dalam MyRent
-  MY_RENT: 'MyRent',
-  INVOICE_DETAIL: 'InvoiceDetail',
-  PAYMENT: 'Payment',
-  // Drawer Items
-  PROFILE: 'TenantProfile',
-  SETTINGS: 'TenantSettings',
-};
+
 
 /**
  * Stack Navigator untuk alur pencarian dan detail:
@@ -113,6 +100,16 @@ const TenantBottomTabNavigator = () => {
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.MY_RENT_STACK}
         component={MyRentStackNavigator}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? TENANT_SCREENS.MY_RENT;
+          if (
+            routeName === TENANT_SCREENS.INVOICE_DETAIL ||
+            routeName === TENANT_SCREENS.PAYMENT
+          ) {
+            return { tabBarStyle: { display: 'none' } };
+          }
+          return {};
+        }}
       />
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.NOTIFICATIONS}

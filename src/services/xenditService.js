@@ -121,8 +121,21 @@ export const createXenditCheckout = async (invoiceId) => {
  * @returns {Object} Realtime channel subscription yang bisa di-remove saat component unmount
  */
 export const subscribeToInvoiceRealtime = (invoiceId, onStatusChange) => {
+  const channelName = `xendit-realtime-inv-${invoiceId}`;
+
+  // Hapus channel lama dengan nama yang sama sebelum membuat subscription baru.
+  // Ini mencegah error "cannot add callbacks after subscribe()" yang terjadi
+  // ketika React reconnect cycle (Strict Mode / Fast Refresh) menjalankan effect ulang.
+  const existingChannels = supabaseClient.getChannels();
+  const existingChannel = existingChannels.find(
+    (ch) => ch.topic === `realtime:${channelName}`
+  );
+  if (existingChannel) {
+    supabaseClient.removeChannel(existingChannel);
+  }
+
   const subscription = supabaseClient
-    .channel(`xendit-realtime-inv-${invoiceId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       {
@@ -143,6 +156,7 @@ export const subscribeToInvoiceRealtime = (invoiceId, onStatusChange) => {
   return subscription;
 };
 
+
 /**
  * Berlangganan (Subscribe) perubahan semua invoice milik seorang user (tenant atau owner)
  * Mencegah tampilan stale/outdated di layar MyRentScreen atau OwnerInvoiceList
@@ -154,8 +168,19 @@ export const subscribeToInvoiceRealtime = (invoiceId, onStatusChange) => {
  */
 export const subscribeToUserInvoicesRealtime = (userId, role = 'tenant', onAnyChange) => {
   const filterColumn = role === 'owner' ? 'owner_id' : 'tenant_id';
+  const channelName = `invoices-user-${userId}`;
+
+  // Hapus channel lama jika sudah ada (cegah duplicate subscribe error)
+  const existingChannels = supabaseClient.getChannels();
+  const existingChannel = existingChannels.find(
+    (ch) => ch.topic === `realtime:${channelName}`
+  );
+  if (existingChannel) {
+    supabaseClient.removeChannel(existingChannel);
+  }
+
   const subscription = supabaseClient
-    .channel(`invoices-user-${userId}`)
+    .channel(channelName)
     .on(
       'postgres_changes',
       {
@@ -173,3 +198,4 @@ export const subscribeToUserInvoicesRealtime = (userId, role = 'tenant', onAnyCh
 
   return subscription;
 };
+

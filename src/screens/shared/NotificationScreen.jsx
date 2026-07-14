@@ -86,10 +86,10 @@ const NotificationScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { currentUser } = useAuthStore();
-  const { setUnreadCount } = useNotificationStore();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
 
   const loadNotifications = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
@@ -286,11 +286,12 @@ const NotificationScreen = () => {
     mergedList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     setNotifications(mergedList);
     const unread = mergedList.filter((n) => !n.is_read).length;
-    setUnreadCount(unread);
+    // Gunakan getState() bukan hook untuk menghindari setState saat render komponen lain
     useNotificationStore.getState().setUnreadCount(unread);
     setIsLoading(false);
     setIsRefreshing(false);
   }, [currentUser?.id, currentUser?.role]);
+
 
   useFocusEffect(
     useCallback(() => {
@@ -302,20 +303,24 @@ const NotificationScreen = () => {
     if (String(notifId).startsWith('req_') || String(notifId).startsWith('inv_')) {
       await useNotificationStore.getState().markVirtualAsRead([notifId]);
     } else {
-      await supabaseClient
+      const { error } = await supabaseClient
         .from('notifications')
-        .update({ is_read: true, read_at: new Date().toISOString() })
+        .update({ is_read: true })
         .eq('id', notifId);
+      
+      if (error) {
+        console.error('Failed to mark notification as read:', error.message);
+      }
     }
 
     setNotifications((prev) => {
       const updated = prev.map((n) => (n.id === notifId ? { ...n, is_read: true } : n));
       const unread = updated.filter((n) => !n.is_read).length;
-      setUnreadCount(unread);
       useNotificationStore.getState().setUnreadCount(unread);
       return updated;
     });
   };
+
 
   const handleNotifPress = async (notif) => {
     if (!notif.is_read) {
@@ -353,12 +358,12 @@ const NotificationScreen = () => {
     await useNotificationStore.getState().markVirtualAsRead(virtualIdsToMark);
 
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    setUnreadCount(0);
     useNotificationStore.getState().setUnreadCount(0);
+
 
     await supabaseClient
       .from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
+      .update({ is_read: true })
       .eq('user_id', currentUser.id)
       .eq('is_read', false);
   };

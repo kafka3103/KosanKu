@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING } from '../../constants/spacing';
-import { AUTH_SCREENS } from '../../navigation/AuthNavigator';
+import { AUTH_SCREENS } from '../../constants/screenNames';
 import { sendPasswordResetEmail } from '../../services/authService';
 
 const OtpVerificationScreen = ({ route, navigation }) => {

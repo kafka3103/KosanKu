@@ -13,21 +13,14 @@ import ForgotPasswordScreen from '../screens/shared/ForgotPasswordScreen';
 import OtpVerificationScreen from '../screens/shared/OtpVerificationScreen';
 import ResetPasswordScreen from '../screens/shared/ResetPasswordScreen';
 import COLORS from '../constants/colors';
+import { AUTH_SCREENS } from '../constants/screenNames';
+
+export { AUTH_SCREENS }; // re-export untuk backward compatibility sementara
 
 const AuthStack = createStackNavigator();
 
-/**
- * Screen names — definisikan sebagai konstanta untuk mencegah typo
- */
-export const AUTH_SCREENS = {
-  LOGIN: 'Login',
-  REGISTER: 'Register',
-  FORGOT_PASSWORD: 'ForgotPassword',
-  OTP_VERIFICATION: 'OtpVerification',
-  RESET_PASSWORD: 'ResetPassword',
-};
-
 const AuthNavigator = () => {
+
   return (
     <AuthStack.Navigator
       initialRouteName={AUTH_SCREENS.LOGIN}

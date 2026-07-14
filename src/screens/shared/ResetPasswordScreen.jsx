@@ -6,7 +6,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS } from '../../constants/spacing';
 import { verifyPasswordResetOtp, updatePassword, logout } from '../../services/authService';
-import { AUTH_SCREENS } from '../../navigation/AuthNavigator';
+import { AUTH_SCREENS } from '../../constants/screenNames';
 import useAuthStore from '../../store/authStore';
 
 const ResetPasswordScreen = ({ route, navigation }) => {

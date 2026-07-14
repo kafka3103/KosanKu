@@ -17,6 +17,7 @@ import {
   Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
@@ -72,11 +73,23 @@ const PaymentScreen = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInvoicePaid, setIsInvoicePaid] = useState(initialInvoice?.status === 'paid');
 
+  // Simpan invoiceId awal sebagai ref — TIDAK berubah meski invoice state di-update
+  // Ini mencegah useEffect subscription ter-trigger ulang setiap kali status berubah
+  const invoiceIdRef = React.useRef(initialInvoice?.id);
+  const isMountedRef = React.useRef(true);
+  const insets = useSafeAreaInsets();
+
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   // Xendit automated payment result state
   const [xenditResult, setXenditResult] = useState(null);
 
   const unpaidAmount =
     parseFloat(invoice?.total_amount ?? 0) - parseFloat(invoice?.paid_amount ?? 0);
+
 
   // 1. Cek langsung status tagihan di database saat layar dibuka / fokus
   const checkStatusNow = useCallback(async () => {
@@ -98,10 +111,15 @@ const PaymentScreen = ({ navigation, route }) => {
   );
 
   // 2. Dengarkan perubahan status invoice secara Real-Time via Supabase
+  // Dependency array KOSONG [] → subscription hanya dibuat SEKALI saat mount.
+  // invoiceIdRef.current stabil (tidak berubah), sehingga tidak memicu re-subscribe
+  // saat invoice state di-update oleh callback realtime itu sendiri.
   useEffect(() => {
-    if (!invoice?.id) return;
+    const invoiceId = invoiceIdRef.current;
+    if (!invoiceId) return;
 
-    const subscription = subscribeToInvoiceRealtime(invoice.id, (updatedInvoice) => {
+    const subscription = subscribeToInvoiceRealtime(invoiceId, (updatedInvoice) => {
+      if (!isMountedRef.current) return;
       setInvoice((prev) => ({ ...prev, ...updatedInvoice }));
       if (updatedInvoice.status === 'paid') {
         setIsInvoicePaid(true);
@@ -119,7 +137,9 @@ const PaymentScreen = ({ navigation, route }) => {
         subscription.unsubscribe();
       }
     };
-  }, [invoice?.id, navigation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // [] = hanya mount/unmount, bukan setiap invoice state berubah
+
 
   const handlePay = () => {
     if (isInvoicePaid || invoice?.status === 'paid') {
@@ -221,7 +241,7 @@ const PaymentScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING[4] }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 4 }} />
@@ -336,7 +356,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
       {/* Pay Button jika belum lunas */}
       {!isInvoicePaid && (
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + SPACING[4] }]}>
           <TouchableOpacity
             style={[styles.payBtn, isLoading && styles.payBtnDisabled]}
             onPress={handlePay}
@@ -454,7 +474,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING[3],
-    overflow: 'hidden',
     ...SHADOW.sm,
   },
   methodHeader: {
@@ -462,6 +481,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: SPACING[3],
     gap: SPACING[3],
+    borderRadius: BORDER_RADIUS.lg, // Ensure rounded corners since overflow hidden is removed
   },
   methodHeaderSelected: { backgroundColor: `${COLORS.primary}05` },
   iconWrapper: {

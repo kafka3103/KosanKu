@@ -26,7 +26,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerDashboardStats } from '../../services/propertyService';
-import { OWNER_SCREENS } from '../../navigation/OwnerNavigator';
+import { OWNER_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) => {
   if (!amount) return 'Rp 0';
@@ -312,6 +312,15 @@ const DashboardScreen = ({ navigation }) => {
               <Ionicons name="card-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
               <Text style={styles.quickActionLabel}>Tagihan</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAction}
+              onPress={() => navigation.navigate(OWNER_SCREENS.FACILITY_MASTER)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="sparkles-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
+              <Text style={styles.quickActionLabel}>Master Fasilitas</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -537,9 +546,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: SPACING[2],
+    flexWrap: 'wrap',
   },
   quickAction: {
-    flex: 1,
+    width: '23%', // roughly 1/4 of screen
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING[3],
