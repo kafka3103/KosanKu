@@ -24,12 +24,15 @@ GoogleSignin.configure({
  * @param {string} params.role - 'owner' | 'tenant'
  * @returns {Promise<{data, error}>}
  */
-export const registerWithEmail = async ({ email, password, role }) => {
+export const registerWithEmail = async ({ email, password, role, fullName }) => {
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
-      data: { role },
+      data: { 
+        role,
+        full_name: fullName 
+      },
     },
   });
 

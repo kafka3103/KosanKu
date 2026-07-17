@@ -61,6 +61,7 @@ const RegisterScreen = ({ navigation }) => {
       email: email.trim().toLowerCase(),
       password,
       role: selectedRole,
+      fullName: fullName.trim(),
     });
     setIsLoading(false);
 
@@ -72,18 +73,27 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    Alert.alert(
-      'Registrasi Berhasil! 🎉',
-      'Akun Anda berhasil dibuat. Anda sekarang masuk.',
-      [{ text: 'Lanjutkan', onPress: () => {} }] // AppNavigator will auto route on auth state change
-    );
+    // Jika Supabase mengaktifkan "Confirm Email", session akan null
+    if (!data?.session) {
+      Alert.alert(
+        'Registrasi Berhasil!',
+        'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.',
+        [{ text: 'OK', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
+      );
+    } else {
+      Alert.alert(
+        'Registrasi Berhasil! 🎉',
+        'Akun Anda berhasil dibuat. Anda sekarang masuk.',
+        [{ text: 'Lanjutkan', onPress: () => { } }] // AppNavigator will auto route
+      );
+    }
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const { error } = await signInWithGoogle(selectedRole);
     setIsLoading(false);
-    
+
     if (error) {
       if (error.code === 'ALREADY_REGISTERED') {
         Alert.alert(
@@ -91,9 +101,9 @@ const RegisterScreen = ({ navigation }) => {
           error.message,
           [
             { text: 'Batal', style: 'cancel' },
-            { 
-              text: 'Masuk (Login)', 
-              onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) 
+            {
+              text: 'Masuk (Login)',
+              onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN)
             }
           ]
         );
@@ -134,16 +144,16 @@ const RegisterScreen = ({ navigation }) => {
       >
         {/* Header */}
         <View style={styles.headerContainer}>
-          <Image 
-            source={require('../../../assets/logo.png')} 
-            style={styles.logoImage} 
+          <Image
+            source={require('../../../assets/logo.png')}
+            style={styles.logoImage}
             resizeMode="contain"
           />
           <Text style={styles.title}>{t('auth.register.title') || 'Create Account'}</Text>
           <Text style={styles.subtitle}>{t('auth.register.subtitle') || 'Sign up and explore KosanKu'}</Text>
         </View>
 
-          <View style={styles.formContainer}>
+        <View style={styles.formContainer}>
           {/* Role Selector */}
           <View style={[styles.roleRow, { flexWrap: 'wrap' }]}>
             <RoleCard
@@ -253,9 +263,9 @@ const RegisterScreen = ({ navigation }) => {
 
           <View style={styles.socialLoginContainer}>
             <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
-              <Image 
-                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
-                style={styles.socialIcon} 
+              <Image
+                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
+                style={styles.socialIcon}
               />
               <Text style={styles.socialButtonText}>Sign up with Google</Text>
             </TouchableOpacity>
@@ -289,8 +299,8 @@ const styles = StyleSheet.create({
     marginTop: SPACING[10],
     marginBottom: SPACING[6],
   },
-  logoImage: { 
-    width: 200, 
+  logoImage: {
+    width: 200,
     height: 120
   },
   title: {

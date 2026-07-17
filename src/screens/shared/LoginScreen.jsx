@@ -18,14 +18,26 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', t('common.errors.required'));
+      Alert.alert('Error', t('common.errors.required') || 'Email dan password wajib diisi');
       return;
     }
+
+    // Validasi format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Format email tidak valid. Pastikan Anda menggunakan format email yang benar (contoh: nama@email.com)');
+      return;
+    }
+
     setIsLoading(true);
     const { error } = await loginWithEmail({ email, password });
     setIsLoading(false);
     if (error) {
-      Alert.alert('Login Gagal', error.message);
+      let errorMessage = error.message;
+      if (errorMessage.toLowerCase().includes('invalid login credentials')) {
+        errorMessage = 'Akun tidak terdaftar atau kombinasi email dan password salah.';
+      }
+      Alert.alert('Login Gagal', errorMessage);
     }
     // Jika berhasil, AppNavigator akan otomatis redirect via auth state
   };
