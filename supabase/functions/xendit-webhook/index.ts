@@ -9,6 +9,22 @@ const XENDIT_CALLBACK_TOKEN = Deno.env.get("XENDIT_CALLBACK_TOKEN") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+// Helper: Kirim push notification via Edge Function send-notification (fire-and-forget)
+const triggerPushNotification = async (userId: string, title: string, body: string, data: Record<string, string> = {}) => {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ userId, title, body, data }),
+    });
+  } catch (err) {
+    console.warn("⚠️ Gagal trigger push notification:", err);
+  }
+};
+
 serve(async (req) => {
   // Hanya terima method POST dari server Xendit
   if (req.method !== "POST") {
@@ -147,6 +163,23 @@ serve(async (req) => {
 
       await supabaseAdmin.from("notifications").insert(notifications);
       console.log(`🔔 Notifikasi & invoice lunas telah dikirim ke Tenant (${invoice.tenant_id}) dan Owner (${invoice.owner_id})`);
+
+      // 6. Kirim Push Notification (FCM) ke device Tenant & Owner
+      await Promise.all([
+        triggerPushNotification(
+          invoice.tenant_id,
+          notifications[0].title,
+          notifications[0].body,
+          { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
+        ),
+        triggerPushNotification(
+          invoice.owner_id,
+          notifications[1].title,
+          notifications[1].body,
+          { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
+        ),
+      ]);
+      console.log(`📲 Push notification FCM terkirim ke Tenant & Owner`);
     }
 
     // Selalu balikan HTTP 200 OK agar server Xendit tahu webhook berhasil diterima
