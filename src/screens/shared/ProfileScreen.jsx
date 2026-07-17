@@ -72,6 +72,8 @@ const ProfileScreen = ({ navigation }) => {
 
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [gender, setGender] = useState('');
+  const [homeCity, setHomeCity] = useState('');
 
   const isOwner = userRole === USER_ROLE.OWNER;
 
@@ -82,6 +84,8 @@ const ProfileScreen = ({ navigation }) => {
       setProfile(data);
       setFullName(data.full_name || '');
       setPhoneNumber(data.phone_number || '');
+      setGender(data.gender || '');
+      setHomeCity(data.home_city || '');
     }
     if (!silent) setIsRefreshing(false);
   }, [currentUser?.id, userRole]);
@@ -186,6 +190,8 @@ const ProfileScreen = ({ navigation }) => {
     const { data, error } = await updateUserProfile(currentUser.id, {
       full_name: fullName.trim(),
       phone_number: phoneNumber.trim() || null,
+      gender: gender.trim() || null,
+      home_city: homeCity.trim() || null,
       is_profile_complete: true,
     });
     setIsSaving(false);
@@ -199,25 +205,26 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const handleUpgradeRole = () => {
+  const handleSwitchRole = () => {
+    const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
     const targetRoleText = isOwner ? 'Pencari Kosan' : 'Pemilik Kosan';
     Alert.alert(
-      'Aktifkan Peran Ganda',
-      `Apakah Anda ingin mengaktifkan fitur sebagai ${targetRoleText} sekaligus? Anda bisa beralih mode kapan saja di menu utama.`,
+      'Beralih Peran',
+      `Apakah Anda ingin beralih mode aplikasi menjadi ${targetRoleText}?`,
       [
         { text: 'Batal', style: 'cancel' },
         {
-          text: 'Aktifkan',
+          text: 'Beralih',
           onPress: async () => {
             setIsSaving(true);
             const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.BOTH,
+              role: targetRole,
             });
             setIsSaving(false);
             if (error) {
               Alert.alert('Gagal', error.message);
             } else if (data) {
-              Alert.alert('Berhasil', `Fitur ${targetRoleText} berhasil diaktifkan!`);
+              Alert.alert('Berhasil', `Anda sekarang berada di mode ${targetRoleText}.`);
               setProfile(data);
               setAuthenticatedUser(currentSession, data);
             }
@@ -309,6 +316,20 @@ const ProfileScreen = ({ navigation }) => {
           placeholder="Contoh: +628123456789"
           keyboardType="phone-pad"
         />
+        <EditableInfoRow
+          label="Jenis Kelamin"
+          value={gender}
+          onChangeText={setGender}
+          icon="male-female-outline"
+          placeholder="Opsional (contoh: Laki-laki / Perempuan)"
+        />
+        <EditableInfoRow
+          label="Kota Asal"
+          value={homeCity}
+          onChangeText={setHomeCity}
+          icon="location-outline"
+          placeholder="Opsional (contoh: Jakarta)"
+        />
         <InfoRow
           label="Status Profil"
           value={profile?.is_profile_complete ? 'Lengkap' : 'Belum Lengkap'}
@@ -323,29 +344,27 @@ const ProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Upgrade Role Section */}
-      {currentUser?.role !== USER_ROLE.BOTH && (
-        <View style={[styles.section, { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primaryLight, borderWidth: 1 }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="star" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
-            <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>Peran Ganda</Text>
-          </View>
-          <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
-            {isOwner
-              ? 'Ingin mencari kosan juga? Aktifkan fitur Pencari Kosan untuk menelusuri properti lain.'
-              : 'Punya properti kosan? Aktifkan fitur Pemilik Kosan untuk mulai mengelola kosan Anda.'}
-          </Text>
-          <TouchableOpacity
-            style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
-            onPress={handleUpgradeRole}
-            disabled={isSaving}
-          >
-            <Text style={styles.saveProfileBtnText}>
-              {isOwner ? 'Aktifkan Fitur Pencari Kosan' : 'Aktifkan Fitur Pemilik Kosan'}
-            </Text>
-          </TouchableOpacity>
+      {/* Switch Role Section */}
+      <View style={[styles.section, { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primaryLight, borderWidth: 1 }]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="swap-horizontal" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>Beralih Peran</Text>
         </View>
-      )}
+        <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
+          {isOwner
+            ? 'Ingin mencari kosan? Anda bisa mengubah mode akun Anda ke mode Pencari Kosan sekarang.'
+            : 'Punya properti kosan? Anda bisa beralih ke mode Pemilik Kosan untuk mulai mengelola properti.'}
+        </Text>
+        <TouchableOpacity
+          style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
+          onPress={handleSwitchRole}
+          disabled={isSaving}
+        >
+          <Text style={styles.saveProfileBtnText}>
+            {isOwner ? 'Beralih ke Pencari Kosan' : 'Beralih ke Pemilik Kosan'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* About App */}
       <View style={styles.section}>

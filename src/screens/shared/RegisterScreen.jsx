@@ -25,6 +25,7 @@ const RegisterScreen = ({ navigation }) => {
   const { t } = useTranslation();
 
   const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,7 +35,7 @@ const RegisterScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
-    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+    if (!fullName.trim() || !phoneNumber.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert('Error', t('common.errors.required'));
       return false;
     }
@@ -62,14 +63,24 @@ const RegisterScreen = ({ navigation }) => {
       password,
       role: selectedRole,
       fullName: fullName.trim(),
+      phoneNumber: phoneNumber.trim(),
     });
     setIsLoading(false);
 
     if (error) {
-      const msg = error.message?.includes('already registered')
-        ? t('auth.errors.emailAlreadyUsed')
-        : error.message;
-      Alert.alert('Registrasi Gagal', msg);
+      const isAlreadyRegistered = error.message?.toLowerCase().includes('already registered') || error.code === 'user_already_exists';
+      if (isAlreadyRegistered) {
+        Alert.alert(
+          'Akun Sudah Terdaftar',
+          t('auth.errors.emailAlreadyUsed') || 'Email ini sudah terdaftar. Silakan gunakan menu Login.',
+          [
+            { text: 'Batal', style: 'cancel' },
+            { text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
+          ]
+        );
+      } else {
+        Alert.alert('Registrasi Gagal', error.message);
+      }
       return;
     }
 
@@ -168,12 +179,6 @@ const RegisterScreen = ({ navigation }) => {
               description="Kelola properti"
               style={{ minWidth: '47%' }}
             />
-            <RoleCard
-              role={USER_ROLE.BOTH}
-              label="Keduanya"
-              description="Pencari sekaligus Pemilik"
-              style={{ minWidth: '100%', marginTop: SPACING[1] }}
-            />
           </View>
 
           {/* Nama Lengkap */}
@@ -185,6 +190,19 @@ const RegisterScreen = ({ navigation }) => {
               value={fullName}
               onChangeText={setFullName}
               autoCapitalize="words"
+              placeholderTextColor={COLORS.textTertiary}
+            />
+          </View>
+
+          {/* Nomor Handphone */}
+          <Text style={styles.label}>Nomor Handphone</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Contoh: 08123456789"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
               placeholderTextColor={COLORS.textTertiary}
             />
           </View>

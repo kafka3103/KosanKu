@@ -33,11 +33,18 @@ const LoginScreen = ({ navigation }) => {
     const { error } = await loginWithEmail({ email, password });
     setIsLoading(false);
     if (error) {
-      let errorMessage = error.message;
-      if (errorMessage.toLowerCase().includes('invalid login credentials')) {
-        errorMessage = 'Akun tidak terdaftar atau kombinasi email dan password salah.';
+      if (error.message.toLowerCase().includes('invalid login credentials')) {
+        Alert.alert(
+          'Login Gagal',
+          'Akun tidak terdaftar atau kombinasi email dan password salah.',
+          [
+            { text: 'Coba Lagi', style: 'cancel' },
+            { text: 'Daftar Sekarang', onPress: () => navigation.navigate(AUTH_SCREENS.REGISTER) }
+          ]
+        );
+      } else {
+        Alert.alert('Login Gagal', error.message);
       }
-      Alert.alert('Login Gagal', errorMessage);
     }
     // Jika berhasil, AppNavigator akan otomatis redirect via auth state
   };

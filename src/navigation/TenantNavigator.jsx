@@ -145,6 +145,33 @@ const TenantDrawerContent = ({ navigation }) => {
     { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: '⚙️' },
   ];
 
+  const handleSwitchRole = () => {
+    Alert.alert(
+      'Beralih Peran',
+      'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Beralih',
+          onPress: async () => {
+            const { updateUserProfile } = require('../services/userService');
+            const { data, error } = await updateUserProfile(currentUser.id, {
+              role: USER_ROLE.OWNER,
+            });
+            if (error) {
+              Alert.alert('Gagal', error.message);
+            } else if (data) {
+              useAuthStore.getState().setAuthenticatedUser(
+                useAuthStore.getState().currentSession,
+                data
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={[styles.drawerContainer, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
       <View style={styles.drawerHeader}>
@@ -170,11 +197,9 @@ const TenantDrawerContent = ({ navigation }) => {
         ))}
       </View>
 
-      {currentUser?.role === USER_ROLE.BOTH && (
-        <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={switchRole}>
-          <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Owner</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pemilik</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t('profile.logoutButton')}</Text>

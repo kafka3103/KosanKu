@@ -24,14 +24,15 @@ GoogleSignin.configure({
  * @param {string} params.role - 'owner' | 'tenant'
  * @returns {Promise<{data, error}>}
  */
-export const registerWithEmail = async ({ email, password, role, fullName }) => {
+export const registerWithEmail = async ({ email, password, role, fullName, phoneNumber }) => {
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
       data: { 
         role,
-        full_name: fullName 
+        full_name: fullName,
+        phone: phoneNumber
       },
     },
   });
@@ -96,6 +97,10 @@ export const signInWithGoogle = async (role = null) => {
     const googleName = userInfo?.data?.user?.name || userInfo?.user?.name || null;
 
     if (idToken) {
+      // SET isAuthValidating = true agar AppNavigator tidak flicker ke menu utama
+      const useAuthStore = require('../store/authStore').default;
+      useAuthStore.getState().setIsAuthValidating(true);
+
       const { data, error } = await supabaseClient.auth.signInWithIdToken({
         provider: 'google',
         token: idToken,
@@ -107,7 +112,7 @@ export const signInWithGoogle = async (role = null) => {
         // Cek apakah profil user sudah ada di public.users
         const { data: existingUser } = await supabaseClient
           .from('users')
-          .select('role, full_name')
+          .select('role, full_name, created_at')
           .eq('id', userId)
           .single();
 
@@ -118,21 +123,27 @@ export const signInWithGoogle = async (role = null) => {
           updated_at: new Date().toISOString(),
         };
 
-        // Jika user belum punya role, berarti belum terdaftar di KosanKu
-        if (!existingUser?.role) {
+        // Karena trigger database otomatis memasukkan user baru ke public.users dengan role 'tenant',
+        // kita mendeteksi user baru berdasarkan kapan akunnya dibuat (dalam 15 detik terakhir)
+        const userCreatedAt = existingUser?.created_at ? new Date(existingUser.created_at).getTime() : 0;
+        const isNewUser = (new Date().getTime() - userCreatedAt) < 15000;
+
+        if (isNewUser) {
           if (role) {
-            // Berasal dari RegisterScreen, kita set role-nya
+            // Berasal dari RegisterScreen, perbarui role sesuai yang dipilih (owner/tenant)
             upsertData.role = role;
           } else {
-            // Berasal dari LoginScreen, tolak login dan paksa sign out dari sesi sementara ini
+            // Berasal dari LoginScreen tapi belum pernah daftar, tolak login
             await supabaseClient.auth.signOut();
+            useAuthStore.getState().setIsAuthValidating(false);
             return { error: { code: 'NOT_REGISTERED', message: 'Akun Anda belum terdaftar. Silakan Sign Up terlebih dahulu.' } };
           }
         } else {
-          // User SUDAH punya role (sudah terdaftar sebelumnya)
+          // User SUDAH punya akun (sudah pernah daftar sebelumnya)
           if (role) {
             // Berasal dari RegisterScreen tapi mencoba daftar ulang, tolak!
             await supabaseClient.auth.signOut();
+            useAuthStore.getState().setIsAuthValidating(false);
             return { error: { code: 'ALREADY_REGISTERED', message: 'Akun Google ini sudah terdaftar. Silakan gunakan menu Login.' } };
           }
         }
@@ -170,6 +181,9 @@ export const signInWithGoogle = async (role = null) => {
   } catch (error) {
     console.error('Error signing in with Google:', error);
     return { error };
+  } finally {
+    const useAuthStore = require('../store/authStore').default;
+    useAuthStore.getState().setIsAuthValidating(false);
   }
 };
 

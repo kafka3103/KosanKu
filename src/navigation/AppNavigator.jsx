@@ -37,6 +37,7 @@ const SplashScreen = () => (
 const AppNavigator = () => {
   const {
     isLoading,
+    isAuthValidating,
     isAuthenticated,
     userRole,
     setAuthenticatedUser,
@@ -104,6 +105,9 @@ const AppNavigator = () => {
    * 4. Authenticated, role tenant → TenantNavigator
    */
   const renderNavigator = () => {
+    if (isLoading || isAuthValidating) {
+      return <SplashScreen />;
+    }
     if (!isAuthenticated) {
       return <AuthNavigator />;
     }

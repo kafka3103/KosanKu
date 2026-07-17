@@ -15,8 +15,11 @@ const useAuthStore = create((set, get) => ({
   isAuthenticated: false,
   isLoading: true,            // Loading awal saat cek sesi
   isProfileComplete: false,   // Apakah profil sudah lengkap
+  isAuthValidating: false,    // Mencegah flicker saat Google Sign In
 
   // ── Actions ──
+
+  setIsAuthValidating: (val) => set({ isAuthValidating: val }),
 
   /**
    * Set sesi dan user setelah login/register berhasil
