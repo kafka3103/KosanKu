@@ -31,6 +31,7 @@ import {
   toggleFavorite,
   checkIsFavorite,
 } from '../../services/searchService';
+import { getPropertyRatingSummary, getPropertyReviews } from '../../services/reviewService';
 import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) =>
@@ -47,7 +48,7 @@ const STATUS_CONFIG = {
   maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Perawatan' },
 };
 
-const TABS = ['Kamar', 'Informasi', 'Fasilitas'];
+const TABS = ['Kamar', 'Informasi', 'Fasilitas', 'Ulasan'];
 
 const PropertyDetailScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -59,6 +60,9 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState('Kamar');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  
+  const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 });
+  const [reviews, setReviews] = useState([]);
 
   const photos = [
     ...(property?.cover_photo_url ? [property.cover_photo_url] : []),
@@ -72,8 +76,16 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       // Load full detail
       loadDetail();
       checkFavorite();
+      loadReviews();
     }
   }, [propertyParam?.id]);
+
+  const loadReviews = async () => {
+    const summary = await getPropertyRatingSummary(propertyParam.id);
+    setRatingSummary(summary);
+    const { data } = await getPropertyReviews(propertyParam.id);
+    if (data) setReviews(data);
+  };
 
   const loadDetail = async () => {
     setIsLoading(true);
@@ -265,10 +277,24 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               {property?.users?.full_name?.[0]?.toUpperCase() ?? 'O'}
             </Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.ownerName}>{property?.users?.full_name ?? '—'}</Text>
             <Text style={styles.ownerPhone}>{property?.users?.phone_number ?? '—'}</Text>
           </View>
+          {property?.users?.phone_number && (
+            <TouchableOpacity 
+              style={{ backgroundColor: '#25D366', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
+              onPress={() => {
+                let phone = property.users.phone_number.replace(/\D/g, '');
+                if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                Linking.openURL(`whatsapp://send?phone=${phone}&text=Halo, saya tertarik dengan kosan ${property.name} yang ada di aplikasi KosanKu.`);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-whatsapp" size={16} color="#FFF" style={{ marginRight: 4 }} />
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>Chat WA</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -295,6 +321,49 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           </View>
           <Text style={styles.rulesText}>{property.rules}</Text>
         </View>
+      )}
+    </View>
+  );
+
+  const renderReviews = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.ratingSummaryCard}>
+        <View style={styles.ratingHeaderRow}>
+          <Text style={styles.ratingBigNumber}>{ratingSummary.average}</Text>
+          <View style={styles.ratingStars}>
+            <Ionicons name="star" size={24} color={COLORS.warning} />
+            <Text style={styles.ratingTotalText}>dari {ratingSummary.count} Ulasan</Text>
+          </View>
+        </View>
+      </View>
+      <TouchableOpacity 
+        style={styles.addReviewBtn}
+        onPress={() => navigation.navigate('AddReviewScreen', { propertyId: property.id })}
+      >
+        <Ionicons name="pencil" size={20} color={COLORS.white} />
+        <Text style={styles.addReviewBtnText}>Tulis Ulasan</Text>
+      </TouchableOpacity>
+      {reviews.length === 0 ? (
+        <Text style={styles.noDataText}>Belum ada ulasan untuk kosan ini.</Text>
+      ) : (
+        reviews.map((rev) => (
+          <View key={rev.id} style={styles.reviewCard}>
+            <View style={styles.reviewHeader}>
+              <View style={styles.reviewAvatar}>
+                <Text style={styles.ownerAvatarText}>{rev.users?.full_name?.[0]?.toUpperCase() ?? 'U'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.reviewName}>{rev.users?.full_name ?? 'Anonim'}</Text>
+                <Text style={styles.reviewDate}>{new Date(rev.created_at).toLocaleDateString('id-ID')}</Text>
+              </View>
+              <View style={styles.reviewStarBadge}>
+                <Ionicons name="star" size={14} color={COLORS.warning} style={{ marginRight: 4 }} />
+                <Text style={styles.reviewStarText}>{Number(rev.average_rating).toFixed(1)}</Text>
+              </View>
+            </View>
+            {rev.comment && <Text style={styles.reviewComment}>{rev.comment}</Text>}
+          </View>
+        ))
       )}
     </View>
   );
@@ -380,6 +449,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         {activeTab === 'Kamar' && renderRooms()}
         {activeTab === 'Informasi' && renderInfo()}
         {activeTab === 'Fasilitas' && renderFacilities()}
+        {activeTab === 'Ulasan' && renderReviews()}
       </ScrollView>
     </View>
   );
@@ -613,6 +683,98 @@ const styles = StyleSheet.create({
     marginBottom: SPACING[2],
   },
   rulesText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, lineHeight: 22 },
+  
+  // Reviews Tab
+  ratingSummaryCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING[4],
+    alignItems: 'center',
+    marginBottom: SPACING[4],
+    ...SHADOW.sm,
+  },
+  ratingHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING[3],
+  },
+  ratingBigNumber: {
+    fontSize: 48,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  ratingStars: {
+    justifyContent: 'center',
+  },
+  ratingTotalText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  addReviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    padding: SPACING[3],
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING[4],
+  },
+  addReviewBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.semiBold,
+    marginLeft: SPACING[2],
+  },
+  reviewCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING[4],
+    marginBottom: SPACING[3],
+    ...SHADOW.sm,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING[2],
+  },
+  reviewAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primarySurface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING[3],
+  },
+  reviewName: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.semiBold,
+    color: COLORS.textPrimary,
+  },
+  reviewDate: {
+    fontSize: 10,
+    color: COLORS.textTertiary,
+  },
+  reviewStarBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.warningLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  reviewStarText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.warning,
+  },
+  reviewComment: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    marginTop: SPACING[1],
+  },
 });
 
 export default PropertyDetailScreen;

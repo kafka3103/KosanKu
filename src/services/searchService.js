@@ -64,7 +64,8 @@ export const searchProperties = async (filters = {}) => {
           facility_master(name, icon_name)
         )
       ),
-      users!properties_owner_id_fkey(full_name, phone_number)
+      users!properties_owner_id_fkey(full_name, phone_number),
+      reviews(average_rating)
     `)
     .eq('is_active', true)
     .eq('is_deleted', false);

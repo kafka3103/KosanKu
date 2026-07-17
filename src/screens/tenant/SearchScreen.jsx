@@ -128,8 +128,18 @@ const PropertyCard = ({ property, onPress }) => {
       </View>
 
       <View style={styles.cardBody}>
-        <Text style={styles.propertyName} numberOfLines={1}>{property.name}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3] }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{property.name}</Text>
+          {property.reviews?.[0]?.average_rating && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+              <Ionicons name="star" size={12} color={COLORS.warning} style={{ marginRight: 2 }} />
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.warning }}>
+                {Number(property.reviews[0].average_rating).toFixed(1)}
+              </Text>
+            </View>
+          )}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3], marginTop: 2 }}>
           <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
           <Text style={styles.propertyAddress} numberOfLines={1}>
             {property.address_line}, {property.city}
@@ -509,7 +519,17 @@ const SearchScreen = ({ navigation }) => {
                     </View>
                   )}
                   <View style={{ flex: 1, marginLeft: SPACING[3], marginRight: SPACING[6] }}>
-                    <Text style={styles.mapPreviewTitle} numberOfLines={1}>{selectedMapProperty.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={[styles.mapPreviewTitle, { flex: 1 }]} numberOfLines={1}>{selectedMapProperty.name}</Text>
+                      {selectedMapProperty.reviews?.[0]?.average_rating && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
+                          <Ionicons name="star" size={10} color={COLORS.warning} style={{ marginRight: 2 }} />
+                          <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.warning }}>
+                            {Number(selectedMapProperty.reviews[0].average_rating).toFixed(1)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.mapPreviewAddress} numberOfLines={1}>{selectedMapProperty.address_line}, {selectedMapProperty.city}</Text>
                     {selectedMapProperty.distanceKm != null && (
                       <Text style={styles.mapPreviewDistance}>

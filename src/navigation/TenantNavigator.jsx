@@ -52,6 +52,8 @@ const MyRentStack = createStackNavigator();
  */
 
 
+import AddReviewScreen from '../screens/tenant/AddReviewScreen';
+
 /**
  * Stack Navigator untuk alur pencarian dan detail:
  * Search → PropertyDetail → RoomDetail → RentalRequestForm
@@ -62,6 +64,7 @@ const SearchStackNavigator = () => (
     <SearchStack.Screen name={TENANT_SCREENS.PROPERTY_DETAIL} component={PropertyDetailScreen} />
     <SearchStack.Screen name={TENANT_SCREENS.ROOM_DETAIL} component={RoomDetailScreen} />
     <SearchStack.Screen name={TENANT_SCREENS.RENTAL_REQUEST_FORM} component={RentalRequestFormScreen} />
+    <SearchStack.Screen name="AddReviewScreen" component={AddReviewScreen} />
   </SearchStack.Navigator>
 );
 
