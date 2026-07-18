@@ -21,6 +21,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -115,10 +116,24 @@ const OwnerBottomTabNavigator = () => {
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.DASHBOARD}
         component={DashboardStackNavigator}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'DashboardMain';
+          if (routeName !== 'DashboardMain') {
+            return { tabBarStyle: { display: 'none' } };
+          }
+          return {};
+        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.PROPERTY_STACK}
         component={PropertyStackNavigator}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? OWNER_SCREENS.PROPERTY_LIST;
+          if (routeName !== OWNER_SCREENS.PROPERTY_LIST) {
+            return { tabBarStyle: { display: 'none' } };
+          }
+          return {};
+        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.INVOICE_LIST}

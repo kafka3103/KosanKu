@@ -12,6 +12,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../constants/colors';
@@ -33,6 +34,7 @@ const RegisterScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const validate = () => {
     if (!fullName.trim() || !phoneNumber.trim() || !email.trim() || !password || !confirmPassword) {
@@ -144,14 +146,14 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardView}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: COLORS.background || '#EDF4F7' }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
+      <ScrollView 
+        contentContainerStyle={[styles.container, { paddingTop: Math.max((insets?.top || 0) + 16, 48), paddingBottom: Math.max((insets?.bottom || 0) + 16, 48) }]} 
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.headerContainer}>
@@ -309,8 +311,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    padding: SPACING[6],
-    paddingBottom: 80,
+    paddingHorizontal: SPACING[6],
   },
   headerContainer: {
     alignItems: 'center',

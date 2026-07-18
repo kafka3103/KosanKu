@@ -96,6 +96,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
+      <View style={{ height: insets.top, backgroundColor: COLORS.primary }} />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Photo Gallery */}
         <View style={styles.gallery}>
@@ -123,7 +124,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
           )}
 
           {/* Back Button */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={[styles.backBtn, { top: SPACING[4] }]} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={COLORS.white} />
           </TouchableOpacity>
 

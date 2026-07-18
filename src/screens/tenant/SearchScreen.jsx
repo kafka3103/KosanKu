@@ -130,14 +130,27 @@ const PropertyCard = ({ property, onPress }) => {
       <View style={styles.cardBody}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{property.name}</Text>
-          {property.reviews?.[0]?.average_rating && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
-              <Ionicons name="star" size={12} color={COLORS.warning} style={{ marginRight: 2 }} />
-              <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.warning }}>
-                {Number(property.reviews[0].average_rating).toFixed(1)}
-              </Text>
-            </View>
-          )}
+          {(() => {
+            const avgRating = (!property.reviews || property.reviews.length === 0) 
+              ? null 
+              : (property.reviews.reduce((sum, rev) => sum + Number(rev.average_rating || 0), 0) / property.reviews.length).toFixed(1);
+            
+            return avgRating ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                <Ionicons name="star" size={12} color={COLORS.warning} style={{ marginRight: 2 }} />
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.warning }}>
+                  {avgRating}
+                </Text>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceDark, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                <Ionicons name="star" size={12} color={COLORS.textTertiary} style={{ marginRight: 2 }} />
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.textTertiary }}>
+                  Baru
+                </Text>
+              </View>
+            );
+          })()}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3], marginTop: 2 }}>
           <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
@@ -521,14 +534,27 @@ const SearchScreen = ({ navigation }) => {
                   <View style={{ flex: 1, marginLeft: SPACING[3], marginRight: SPACING[6] }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={[styles.mapPreviewTitle, { flex: 1 }]} numberOfLines={1}>{selectedMapProperty.name}</Text>
-                      {selectedMapProperty.reviews?.[0]?.average_rating && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
-                          <Ionicons name="star" size={10} color={COLORS.warning} style={{ marginRight: 2 }} />
-                          <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.warning }}>
-                            {Number(selectedMapProperty.reviews[0].average_rating).toFixed(1)}
-                          </Text>
-                        </View>
-                      )}
+                      {(() => {
+                        const avgRating = (!selectedMapProperty.reviews || selectedMapProperty.reviews.length === 0) 
+                          ? null 
+                          : (selectedMapProperty.reviews.reduce((sum, rev) => sum + Number(rev.average_rating || 0), 0) / selectedMapProperty.reviews.length).toFixed(1);
+                        
+                        return avgRating ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
+                            <Ionicons name="star" size={10} color={COLORS.warning} style={{ marginRight: 2 }} />
+                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.warning }}>
+                              {avgRating}
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceDark, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
+                            <Ionicons name="star" size={10} color={COLORS.textTertiary} style={{ marginRight: 2 }} />
+                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.textTertiary }}>
+                              Baru
+                            </Text>
+                          </View>
+                        );
+                      })()}
                     </View>
                     <Text style={styles.mapPreviewAddress} numberOfLines={1}>{selectedMapProperty.address_line}, {selectedMapProperty.city}</Text>
                     {selectedMapProperty.distanceKm != null && (
@@ -620,7 +646,7 @@ const SearchScreen = ({ navigation }) => {
         onRequestClose={() => setShowFilter(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModal}>
+          <View style={[styles.filterModal, { paddingBottom: (insets?.bottom || 0) + SPACING[5] }]}>
             <View style={styles.filterModalHeader}>
               <Text style={styles.filterModalTitle}>Filter Pencarian</Text>
               <TouchableOpacity onPress={() => setShowFilter(false)}>

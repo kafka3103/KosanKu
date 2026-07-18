@@ -19,6 +19,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 
@@ -53,6 +54,7 @@ const TABS = ['Kamar', 'Informasi', 'Fasilitas', 'Ulasan'];
 const PropertyDetailScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const propertyParam = route.params?.property;
   const [property, setProperty] = useState(propertyParam);
@@ -370,6 +372,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
+      <View style={{ height: insets.top, backgroundColor: COLORS.primary }} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Photo Gallery */}
         <View style={styles.gallery}>
@@ -395,10 +398,10 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           )}
 
           {/* Back & Favorite */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={[styles.backBtn, { top: SPACING[4] }]} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={COLORS.white} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.favoriteBtn} onPress={handleToggleFavorite}>
+          <TouchableOpacity style={[styles.favoriteBtn, { top: SPACING[4] }]} onPress={handleToggleFavorite}>
             <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? COLORS.error : COLORS.white} />
           </TouchableOpacity>
 

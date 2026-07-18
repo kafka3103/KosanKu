@@ -496,7 +496,7 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
     .select(`
       *,
       rooms(room_number, base_price, properties(name, address_line, city)),
-      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, avatar_url)
+      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, email, avatar_url)
     `)
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
@@ -781,7 +781,7 @@ export const getPendingFacilityRequests = async (ownerId) => {
       contracts!inner(
         id, owner_id, room_id, tenant_id,
         rooms(room_number, properties(name)),
-        users!contracts_tenant_id_fkey(full_name, phone_number, avatar_url)
+        users!contracts_tenant_id_fkey(full_name, phone_number, email, avatar_url)
       )
     `)
     .eq('status', 'requested')

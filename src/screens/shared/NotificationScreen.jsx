@@ -110,7 +110,7 @@ const NotificationScreen = () => {
         .from('rental_requests')
         .select('*')
         .eq('owner_id', currentUser.id)
-        .eq('status', 'pending');
+        .in('status', ['pending', 'approved', 'rejected']);
 
       if (pendingReqs && pendingReqs.length > 0) {
         const roomIds = [...new Set(pendingReqs.map((r) => r.room_id).filter(Boolean))];
@@ -144,19 +144,49 @@ const NotificationScreen = () => {
           if (!existingRefIds.has(req.id)) {
             const rInfo = roomMap[req.room_id] || {};
             const uInfo = userMap[req.tenant_id] || {};
-            const virtualId = `req_pen_${req.id}`;
-            virtualNotifs.push({
-              id: virtualId,
-              user_id: currentUser.id,
-              title: 'Pengajuan Sewa Baru 📋',
-              body: `${uInfo.full_name ?? 'Penghuni baru'} mengajukan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} (${req.duration_months ?? 1} bulan). Tekan untuk meninjau/menyetujui.`,
-              type: 'rental_request_new',
-              reference_id: req.id,
-              reference_type: 'rental_request',
-              is_read: isVirtualRead(virtualId),
-              created_at: req.created_at,
-              is_virtual_request: true,
-            });
+            if (req.status === 'approved') {
+              const virtualId = `req_app_${req.id}`;
+              virtualNotifs.push({
+                id: virtualId,
+                user_id: currentUser.id,
+                title: 'Pengajuan Sewa Disetujui ✅',
+                body: `Anda telah menyetujui pengajuan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} dari ${uInfo.full_name ?? 'Penghuni'}.`,
+                type: 'rental_request_approved',
+                reference_id: req.id,
+                reference_type: 'rental_request',
+                is_read: isVirtualRead(virtualId),
+                created_at: req.reviewed_at || req.created_at,
+                is_virtual_request: true,
+              });
+            } else if (req.status === 'rejected') {
+              const virtualId = `req_rej_${req.id}`;
+              virtualNotifs.push({
+                id: virtualId,
+                user_id: currentUser.id,
+                title: 'Pengajuan Sewa Ditolak ❌',
+                body: `Anda telah menolak pengajuan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} dari ${uInfo.full_name ?? 'Penghuni'}.`,
+                type: 'rental_request_rejected',
+                reference_id: req.id,
+                reference_type: 'rental_request',
+                is_read: isVirtualRead(virtualId),
+                created_at: req.reviewed_at || req.created_at,
+                is_virtual_request: true,
+              });
+            } else if (req.status === 'pending') {
+              const virtualId = `req_pen_${req.id}`;
+              virtualNotifs.push({
+                id: virtualId,
+                user_id: currentUser.id,
+                title: 'Pengajuan Sewa Baru 📋',
+                body: `${uInfo.full_name ?? 'Penghuni baru'} mengajukan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} (${req.duration_months ?? 1} bulan). Tekan untuk meninjau/menyetujui.`,
+                type: 'rental_request_new',
+                reference_id: req.id,
+                reference_type: 'rental_request',
+                is_read: isVirtualRead(virtualId),
+                created_at: req.created_at,
+                is_virtual_request: true,
+              });
+            }
           }
         }
 

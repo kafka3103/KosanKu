@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../constants/colors';
@@ -15,6 +16,7 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -75,7 +77,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: Math.max((insets?.top || 0) + 16, 48), paddingBottom: Math.max((insets?.bottom || 0) + 16, 48) }]} keyboardShouldPersistTaps="handled">
       <View style={styles.headerContainer}>
         <Image 
           source={require('../../../assets/logo.png')} 
@@ -174,9 +176,8 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { 
     flexGrow: 1, 
-    backgroundColor: '#EDF4F7', 
-    padding: SPACING[6],
-    paddingBottom: 80,
+    backgroundColor: COLORS.white, 
+    paddingHorizontal: SPACING[6],
   },
   headerContainer: { 
     alignItems: 'center', 

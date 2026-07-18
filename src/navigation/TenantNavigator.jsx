@@ -96,6 +96,13 @@ const TenantBottomTabNavigator = () => {
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.SEARCH_STACK}
         component={SearchStackNavigator}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? TENANT_SCREENS.SEARCH;
+          if (routeName !== TENANT_SCREENS.SEARCH) {
+            return { tabBarStyle: { display: 'none' } };
+          }
+          return {};
+        }}
       />
       <TenantBottomTab.Screen
         name={TENANT_SCREENS.FAVORITES}
@@ -106,10 +113,7 @@ const TenantBottomTabNavigator = () => {
         component={MyRentStackNavigator}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? TENANT_SCREENS.MY_RENT;
-          if (
-            routeName === TENANT_SCREENS.INVOICE_DETAIL ||
-            routeName === TENANT_SCREENS.PAYMENT
-          ) {
+          if (routeName !== TENANT_SCREENS.MY_RENT) {
             return { tabBarStyle: { display: 'none' } };
           }
           return {};
