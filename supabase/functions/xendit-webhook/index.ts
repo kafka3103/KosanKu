@@ -73,6 +73,7 @@ serve(async (req) => {
           status: newStatus,
           paid_amount: newPaidAmount,
           payment_gateway_order_id: xendit_id || external_id,
+          paid_at: paid_at ? new Date(paid_at).toISOString() : new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", external_id);

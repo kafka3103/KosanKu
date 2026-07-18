@@ -114,9 +114,9 @@ const TenantBottomTabNavigator = () => {
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? TENANT_SCREENS.MY_RENT;
           if (routeName !== TENANT_SCREENS.MY_RENT) {
-            return { tabBarStyle: { display: 'none' } };
+            return { tabBarStyle: { display: 'none' }, unmountOnBlur: true };
           }
-          return {};
+          return { unmountOnBlur: true };
         }}
       />
       <TenantBottomTab.Screen
