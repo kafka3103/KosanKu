@@ -143,12 +143,17 @@ serve(async (req: Request) => {
             await supabaseAdmin.from('notifications').insert({
               user_id: invoice.tenant_id,
 <<<<<<< HEAD
+<<<<<<< HEAD
               title: notifTitle,
               body: notifBody,
 =======
               title: 'invoice_generated_title',
               body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
 >>>>>>> rijal
+=======
+              title: 'invoice_generated_title',
+              body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
+>>>>>>> 76b31cab6566d65008a3fd94717b52035b93ca9e
               type: 'invoice_generated',
               reference_id: invoice.id,
               reference_type: 'invoice',
