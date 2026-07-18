@@ -17,6 +17,8 @@ import {
   TextInput,
   Alert,
   Switch,
+  Modal,
+  FlatList,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -24,6 +26,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import DrawerButton from '../../components/navigation/DrawerButton';
+import REGIONS_DATA from '../../constants/cities.json';
+
+const ALL_CITIES = REGIONS_DATA.reduce((acc, region) => [...acc, ...region.kota], []).sort();
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -60,6 +65,19 @@ const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboa
   </View>
 );
 
+const SelectableInfoRow = ({ label, value, onPress, icon, placeholder }) => (
+  <TouchableOpacity style={styles.infoRow} onPress={onPress} activeOpacity={0.7}>
+    <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.infoIcon} />
+    <View style={styles.infoContent}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={[styles.infoInput, !value && { color: COLORS.textTertiary }]}>
+        {value || placeholder}
+      </Text>
+    </View>
+    <Ionicons name="chevron-down-outline" size={20} color={COLORS.textTertiary} />
+  </TouchableOpacity>
+);
+
 const ProfileScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -74,6 +92,12 @@ const ProfileScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [gender, setGender] = useState('');
   const [homeCity, setHomeCity] = useState('');
+
+  const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
+  const [isCityModalVisible, setIsCityModalVisible] = useState(false);
+  const [citySearchText, setCitySearchText] = useState('');
+
+  const filteredCities = ALL_CITIES.filter(city => city.toLowerCase().includes(citySearchText.toLowerCase()));
 
   const isOwner = userRole === USER_ROLE.OWNER;
 
@@ -316,19 +340,19 @@ const ProfileScreen = ({ navigation }) => {
           placeholder="Contoh: +628123456789"
           keyboardType="phone-pad"
         />
-        <EditableInfoRow
+        <SelectableInfoRow
           label="Jenis Kelamin"
           value={gender}
-          onChangeText={setGender}
+          onPress={() => setIsGenderModalVisible(true)}
           icon="male-female-outline"
-          placeholder="Opsional (contoh: Laki-laki / Perempuan)"
+          placeholder="Pilih Jenis Kelamin"
         />
-        <EditableInfoRow
+        <SelectableInfoRow
           label="Kota Asal"
           value={homeCity}
-          onChangeText={setHomeCity}
+          onPress={() => setIsCityModalVisible(true)}
           icon="location-outline"
-          placeholder="Opsional (contoh: Jakarta)"
+          placeholder="Cari Kota/Kabupaten"
         />
         <InfoRow
           label="Status Profil"
@@ -388,6 +412,66 @@ const ProfileScreen = ({ navigation }) => {
 
       <View style={{ height: insets.bottom + 100 }} />
     </ScrollView>
+
+    {/* Gender Modal */}
+    <Modal visible={isGenderModalVisible} transparent animationType="fade">
+      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsGenderModalVisible(false)}>
+        <View style={styles.actionSheet}>
+          <Text style={styles.actionSheetTitle}>Pilih Jenis Kelamin</Text>
+          <TouchableOpacity style={styles.actionSheetOption} onPress={() => { setGender('Laki-laki'); setIsGenderModalVisible(false); }}>
+            <Text style={styles.actionSheetOptionText}>Laki-laki</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionSheetOption, { borderBottomWidth: 0 }]} onPress={() => { setGender('Perempuan'); setIsGenderModalVisible(false); }}>
+            <Text style={styles.actionSheetOptionText}>Perempuan</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+
+    {/* City Modal */}
+    <Modal visible={isCityModalVisible} animationType="slide">
+      <View style={[styles.container, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={() => setIsCityModalVisible(false)}>
+            <Ionicons name="close" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>Pilih Kota Asal</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={COLORS.textTertiary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari kota atau kabupaten..."
+            value={citySearchText}
+            onChangeText={setCitySearchText}
+            autoFocus
+          />
+          {citySearchText ? (
+            <TouchableOpacity onPress={() => setCitySearchText('')}>
+              <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <FlatList
+          data={filteredCities}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.cityOption}
+              onPress={() => {
+                setHomeCity(item);
+                setIsCityModalVisible(false);
+                setCitySearchText('');
+              }}
+            >
+              <Text style={styles.cityOptionText}>{item}</Text>
+            </TouchableOpacity>
+          )}
+          keyboardShouldPersistTaps="handled"
+        />
+      </View>
+    </Modal>
     </>
   );
 };
@@ -589,6 +673,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.bold,
   },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  actionSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
+  actionSheetTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.text, marginBottom: 15, textAlign: 'center' },
+  actionSheetOption: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: COLORS.border, alignItems: 'center' },
+  actionSheetOptionText: { fontSize: FONT_SIZE.base, color: COLORS.primary, fontWeight: FONT_WEIGHT.medium },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  modalTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.text },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, margin: 15, paddingHorizontal: 15, borderRadius: BORDER_RADIUS.md, height: 45, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: FONT_SIZE.base, color: COLORS.text },
+  cityOption: { paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  cityOptionText: { fontSize: FONT_SIZE.base, color: COLORS.text },
 });
 
 export default ProfileScreen;
