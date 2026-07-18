@@ -22,7 +22,9 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getTenantActiveContract } from '../../services/invoiceService';
+import { checkTenantProfileExists } from '../../services/userService';
 import { TENANT_SCREENS } from '../../constants/screenNames';
+import USER_ROLE from '../../constants/userRole';
 
 const FACILITY_ICON_MAP = {
   'air-conditioner': 'snow',
@@ -81,6 +83,26 @@ const RoomDetailScreen = ({ navigation, route }) => {
   const categoryLabels = getCategoryLabels(t);
 
   const handleRequestRent = async () => {
+    // Cek kelengkapan profil tenant
+    const hasProfile = await checkTenantProfileExists(currentUser?.id);
+    if (!hasProfile) {
+      Alert.alert(
+        'Profil Belum Lengkap',
+        'Data pekerjaan dan kontak darurat wajib diisi sebelum Anda dapat mengajukan sewa kamar.',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Lengkapi Profil', 
+            onPress: () => navigation.navigate('RoleRegistrationScreen', { 
+              targetRole: USER_ROLE.TENANT, 
+              isCompletingProfile: true 
+            }) 
+          }
+        ]
+      );
+      return;
+    }
+
     // Cek apakah tenant sudah punya kontrak aktif
     const { data: activeContract } = await getTenantActiveContract(currentUser?.id);
     if (activeContract) {

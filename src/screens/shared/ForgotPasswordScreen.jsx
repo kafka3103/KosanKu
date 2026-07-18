@@ -32,8 +32,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.backButton} 
+      <TouchableOpacity
+        style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
         <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
@@ -46,7 +46,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         <Text style={styles.label}>{t('auth.login.forgotPassword.emailLabel') || 'Email'}</Text>
         <TextInput
           style={styles.input}
-          placeholder={t('auth.login.forgotPassword.emailPlaceholder') || 'uiuxrouf2202@gmail.com'}
+          placeholder={t('auth.login.forgotPassword.emailPlaceholder') || 'xxxx@gmail.com'}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"

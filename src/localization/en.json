@@ -21,7 +21,7 @@
       "title": "Enter Your Email to Proceed",
       "subtitle": "Please enter your registered email to continue.",
       "emailLabel": "Email",
-      "emailPlaceholder": "uiuxrouf2202@gmail.com",
+      "emailPlaceholder": "name@gmail.com",
       "sendOtpButton": "Send OTP",
       "otpTitle": "Enter OTP to Verify Your Identity",
       "otpSubtitle": "A one-time password (OTP) has been sent to your registered email address.",
