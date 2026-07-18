@@ -10,7 +10,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import useAuthStore from '../store/authStore';
-import { subscribeToAuthChanges, getUserProfile } from '../services/authService';
+import { subscribeToAuthChanges, getUserProfile, updateFcmToken } from '../services/authService';
+import { registerForPushNotificationsAsync } from '../utils/notificationUtils';
 import COLORS from '../constants/colors';
 
 import AuthNavigator from './AuthNavigator';
@@ -37,7 +38,6 @@ const SplashScreen = () => (
 const AppNavigator = () => {
   const {
     isLoading,
-    isAuthValidating,
     isAuthenticated,
     userRole,
     setAuthenticatedUser,
@@ -52,6 +52,12 @@ const AppNavigator = () => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         try {
           const { data: userProfile } = await getUserProfile(session.user.id);
+          
+          // Request and save FCM Token
+          const fcmToken = await registerForPushNotificationsAsync();
+          if (fcmToken) {
+            await updateFcmToken(session.user.id, fcmToken);
+          }
           
           // Mencegah race condition: jika authStore sudah keburu di-update oleh authService
           // dengan role yang benar, jangan timpa dengan data usang (role null) dari fetch ini.
@@ -105,9 +111,6 @@ const AppNavigator = () => {
    * 4. Authenticated, role tenant → TenantNavigator
    */
   const renderNavigator = () => {
-    if (isLoading || isAuthValidating) {
-      return <SplashScreen />;
-    }
     if (!isAuthenticated) {
       return <AuthNavigator />;
     }

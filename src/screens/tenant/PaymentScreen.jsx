@@ -110,7 +110,22 @@ const PaymentScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
+      // Cek status langsung saat screen refocus
       checkStatusNow();
+
+      // Saat user kembali dari browser Xendit, realtime subscription mungkin terputus.
+      // Poll beberapa kali untuk memastikan status ter-update.
+      const pollInterval = setInterval(() => {
+        checkStatusNow();
+      }, 3000); // Cek setiap 3 detik
+
+      // Berhenti polling setelah 30 detik atau saat screen kehilangan fokus
+      const stopTimeout = setTimeout(() => clearInterval(pollInterval), 30000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(stopTimeout);
+      };
     }, [checkStatusNow])
   );
 
