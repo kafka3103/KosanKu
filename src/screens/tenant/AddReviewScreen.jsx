@@ -7,6 +7,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { submitReview } from '../../services/reviewService';
 import useAuthStore from '../../store/authStore';
+import { useTranslation } from 'react-i18next';
 
 const RatingRow = ({ label, value, onChange }) => {
   return (
@@ -28,6 +29,7 @@ const RatingRow = ({ label, value, onChange }) => {
 };
 
 const AddReviewScreen = ({ route, navigation }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const propertyId = route.params?.propertyId;
@@ -49,7 +51,7 @@ const AddReviewScreen = ({ route, navigation }) => {
     // Validasi
     const values = Object.values(ratings);
     if (values.includes(0)) {
-      Alert.alert('Incomplete', 'Mohon isi semua kategori rating (1-5 bintang).');
+      Alert.alert('Incomplete', t('review.incompleteAlert', 'Mohon isi semua kategori rating (1-5 bintang).'));
       return;
     }
 
@@ -63,11 +65,11 @@ const AddReviewScreen = ({ route, navigation }) => {
     setIsLoading(false);
 
     if (result.success) {
-      Alert.alert('Sukses', 'Ulasan Anda berhasil dikirim!', [
+      Alert.alert(t('common.success', 'Sukses'), t('review.successAlert', 'Ulasan Anda berhasil dikirim!'), [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } else {
-      Alert.alert('Error', result.error || 'Gagal mengirim ulasan.');
+      Alert.alert(t('common.error', 'Error'), result.error || t('review.errorAlert', 'Gagal mengirim ulasan.'));
     }
   };
 
@@ -78,28 +80,28 @@ const AddReviewScreen = ({ route, navigation }) => {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tulis Ulasan</Text>
+        <Text style={styles.headerTitle}>{t('review.title', 'Tulis Ulasan')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.subtitle}>
-          Berikan penilaian jujur Anda untuk membantu pencari kosan lain.
+          {t('review.subtitle', 'Berikan penilaian jujur Anda untuk membantu pencari kosan lain.')}
         </Text>
 
         <View style={styles.card}>
-          <RatingRow label="Kebersihan" value={ratings.cleanliness} onChange={(v) => updateRating('cleanliness', v)} />
-          <RatingRow label="Kenyamanan" value={ratings.comfort} onChange={(v) => updateRating('comfort', v)} />
-          <RatingRow label="Keamanan" value={ratings.security} onChange={(v) => updateRating('security', v)} />
-          <RatingRow label="Harga (Value for Money)" value={ratings.price} onChange={(v) => updateRating('price', v)} />
-          <RatingRow label="Fasilitas Kamar" value={ratings.roomFacilities} onChange={(v) => updateRating('roomFacilities', v)} />
-          <RatingRow label="Fasilitas Umum" value={ratings.publicFacilities} onChange={(v) => updateRating('publicFacilities', v)} />
+          <RatingRow label={t('review.cleanliness', 'Kebersihan')} value={ratings.cleanliness} onChange={(v) => updateRating('cleanliness', v)} />
+          <RatingRow label={t('review.comfort', 'Kenyamanan')} value={ratings.comfort} onChange={(v) => updateRating('comfort', v)} />
+          <RatingRow label={t('review.security', 'Keamanan')} value={ratings.security} onChange={(v) => updateRating('security', v)} />
+          <RatingRow label={t('review.price', 'Harga (Value for Money)')} value={ratings.price} onChange={(v) => updateRating('price', v)} />
+          <RatingRow label={t('review.roomFacilities', 'Fasilitas Kamar')} value={ratings.roomFacilities} onChange={(v) => updateRating('roomFacilities', v)} />
+          <RatingRow label={t('review.publicFacilities', 'Fasilitas Umum')} value={ratings.publicFacilities} onChange={(v) => updateRating('publicFacilities', v)} />
         </View>
 
-        <Text style={styles.label}>Komentar (Opsional)</Text>
+        <Text style={styles.label}>{t('review.commentLabel', 'Komentar (Opsional)')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Ceritakan pengalaman Anda tinggal di kosan ini..."
+          placeholder={t('review.commentPlaceholder', 'Ceritakan pengalaman Anda tinggal di kosan ini...')}
           placeholderTextColor={COLORS.textTertiary}
           multiline
           numberOfLines={4}
@@ -120,7 +122,7 @@ const AddReviewScreen = ({ route, navigation }) => {
           {isLoading ? (
              <ActivityIndicator color={COLORS.white} />
           ) : (
-             <Text style={styles.submitBtnText}>Kirim Ulasan</Text>
+             <Text style={styles.submitBtnText}>{t('review.submitButton', 'Kirim Ulasan')}</Text>
           )}
         </TouchableOpacity>
       </View>

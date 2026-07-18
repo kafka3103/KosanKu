@@ -72,19 +72,19 @@ const formatDistance = (distKm) => {
   return `${distKm.toFixed(1)} km`;
 };
 
-const GENDER_OPTIONS = [
-  { value: 'all', label: 'Semua' },
-  { value: 'male', label: 'Putra' },
-  { value: 'female', label: 'Putri' },
-  { value: 'mixed', label: 'Campur' },
+const getGenderOptions = (t) => [
+  { value: 'all', label: t('searchScreen.genderOptions.all', 'Semua') },
+  { value: 'male', label: t('searchScreen.genderOptions.male', 'Putra') },
+  { value: 'female', label: t('searchScreen.genderOptions.female', 'Putri') },
+  { value: 'mixed', label: t('searchScreen.genderOptions.mixed', 'Campur') },
 ];
 
-const ROOM_TYPE_OPTIONS = [
-  { value: '', label: 'Semua Tipe' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'deluxe', label: 'Deluxe' },
-  { value: 'suite', label: 'Suite' },
-  { value: 'studio', label: 'Studio' },
+const getRoomTypeOptions = (t) => [
+  { value: '', label: t('searchScreen.roomTypeOptions.all', 'Semua Tipe') },
+  { value: 'standard', label: t('searchScreen.roomTypeOptions.standard', 'Standard') },
+  { value: 'deluxe', label: t('searchScreen.roomTypeOptions.deluxe', 'Deluxe') },
+  { value: 'suite', label: t('searchScreen.roomTypeOptions.suite', 'Suite') },
+  { value: 'studio', label: t('searchScreen.roomTypeOptions.studio', 'Studio') },
 ];
 
 const PropertyCard = ({ property, onPress }) => {
@@ -106,7 +106,7 @@ const PropertyCard = ({ property, onPress }) => {
           </View>
         )}
         <View style={styles.availableTag}>
-          <Text style={styles.availableTagText}>{availableCount} tersedia</Text>
+          <Text style={styles.availableTagText}>{t('searchScreen.availableCount', '{{count}} tersedia', { count: availableCount })}</Text>
         </View>
         <View style={styles.genderTag}>
           <Ionicons
@@ -120,9 +120,9 @@ const PropertyCard = ({ property, onPress }) => {
             style={{ marginRight: 4 }}
           />
           <Text style={styles.genderTagText}>
-            {property.gender_policy === 'male' ? 'Putra'
-              : property.gender_policy === 'female' ? 'Putri'
-                : 'Campur'}
+            {property.gender_policy === 'male' ? t('searchScreen.genderOptions.male', 'Putra')
+              : property.gender_policy === 'female' ? t('searchScreen.genderOptions.female', 'Putri')
+                : t('searchScreen.genderOptions.mixed', 'Campur')}
           </Text>
         </View>
       </View>
@@ -130,14 +130,27 @@ const PropertyCard = ({ property, onPress }) => {
       <View style={styles.cardBody}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{property.name}</Text>
-          {property.reviews?.[0]?.average_rating && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
-              <Ionicons name="star" size={12} color={COLORS.warning} style={{ marginRight: 2 }} />
-              <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.warning }}>
-                {Number(property.reviews[0].average_rating).toFixed(1)}
-              </Text>
-            </View>
-          )}
+          {(() => {
+            const avgRating = (!property.reviews || property.reviews.length === 0) 
+              ? null 
+              : (property.reviews.reduce((sum, rev) => sum + Number(rev.average_rating || 0), 0) / property.reviews.length).toFixed(1);
+            
+            return avgRating ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                <Ionicons name="star" size={12} color={COLORS.warning} style={{ marginRight: 2 }} />
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.warning }}>
+                  {avgRating}
+                </Text>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceDark, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                <Ionicons name="star" size={12} color={COLORS.textTertiary} style={{ marginRight: 2 }} />
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.textTertiary }}>
+                  {t('searchScreen.newBadge', 'Baru')}
+                </Text>
+              </View>
+            );
+          })()}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3], marginTop: 2 }}>
           <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
@@ -150,7 +163,7 @@ const PropertyCard = ({ property, onPress }) => {
           <View style={styles.distanceBadge}>
             <Ionicons name="navigate" size={12} color={COLORS.primary} style={{ marginRight: 4 }} />
             <Text style={styles.distanceBadgeText}>
-              {formatDistance(property.distanceKm)} dari lokasi Anda
+              {formatDistance(property.distanceKm)} {t('searchScreen.distance', 'dari lokasi Anda')}
             </Text>
           </View>
         )}
@@ -172,11 +185,11 @@ const PropertyCard = ({ property, onPress }) => {
 
         {minPrice != null ? (
           <Text style={styles.priceText}>
-            Mulai <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>/bln
+            {t('searchScreen.priceStart', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('searchScreen.perMonth', '/bln')}
           </Text>
         ) : (
           <Text style={[styles.priceText, { color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium }]}>
-            {property.rooms?.length > 0 ? 'Kamar Penuh / Belum Tersedia' : 'Belum Ada Kamar Ditambahkan'}
+            {property.rooms?.length > 0 ? t('searchScreen.roomsFull', 'Kamar Penuh / Belum Tersedia') : t('searchScreen.noRooms', 'Belum Ada Kamar Ditambahkan')}
           </Text>
         )}
       </View>
@@ -201,7 +214,7 @@ const SearchScreen = ({ navigation }) => {
   
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [locationStatusText, setLocationStatusText] = useState('Mendeteksi lokasi GPS...');
+  const [locationStatusKey, setLocationStatusKey] = useState('locDetecting');
 
   // Filters
   const [showFilter, setShowFilter] = useState(false);
@@ -215,10 +228,10 @@ const SearchScreen = ({ navigation }) => {
   const handleGetLocation = useCallback(async () => {
     try {
       setLocationLoading(true);
-      setLocationStatusText('Mendeteksi lokasi GPS...');
+      setLocationStatusKey('locDetecting');
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setLocationStatusText('Izin lokasi ditolak. Urutan standar aktif.');
+        setLocationStatusKey('locDenied');
         setLocationLoading(false);
         return;
       }
@@ -238,7 +251,7 @@ const SearchScreen = ({ navigation }) => {
           latitude: coords.latitude,
           longitude: coords.longitude,
         });
-        setLocationStatusText('Lokasi terdeteksi · Diurutkan terdekat');
+        setLocationStatusKey('locDetected');
         // If map is open, center camera on user
         if (mapCameraRef.current) {
            mapCameraRef.current.setCamera({
@@ -248,12 +261,12 @@ const SearchScreen = ({ navigation }) => {
            });
         }
       } else {
-        setLocationStatusText('Gagal mendeteksi lokasi saat ini');
+        setLocationStatusKey('locFailedCurrent');
       }
       setLocationLoading(false);
     } catch (err) {
       console.warn('Error getting location:', err);
-      setLocationStatusText('Gagal mendeteksi lokasi GPS');
+      setLocationStatusKey('locFailedGPS');
       setLocationLoading(false);
     }
   }, []);
@@ -345,8 +358,8 @@ const SearchScreen = ({ navigation }) => {
             <Ionicons name="menu" size={28} color={COLORS.white} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Cari Kosan</Text>
-            <Text style={styles.headerSubtitle}>Temukan kosan impian terdekat dari Anda</Text>
+            <Text style={styles.headerTitle}>{t('searchScreen.headerTitle', 'Cari Kosan')}</Text>
+            <Text style={styles.headerSubtitle}>{t('searchScreen.headerSubtitle', 'Temukan kosan impian terdekat dari Anda')}</Text>
           </View>
         </View>
 
@@ -355,7 +368,7 @@ const SearchScreen = ({ navigation }) => {
           <Ionicons name="search-outline" size={20} color={COLORS.textTertiary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari nama kosan atau kota..."
+            placeholder={t('searchScreen.searchPlaceholder', 'Cari nama kosan atau kota...')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={COLORS.textTertiary}
@@ -376,7 +389,7 @@ const SearchScreen = ({ navigation }) => {
             onPress={() => setShowFilter(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.filterBtnText}>Filter {hasActiveFilter && 'Aktif'}</Text>
+            <Text style={styles.filterBtnText}>{t('searchScreen.filterBtn', 'Filter')} {hasActiveFilter && t('searchScreen.filterActive', 'Aktif')}</Text>
             <Ionicons name="chevron-down" size={16} color={COLORS.white} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
 
@@ -392,7 +405,7 @@ const SearchScreen = ({ navigation }) => {
               style={{ marginRight: 6 }}
             />
             <Text style={styles.filterBtnText}>
-              {viewMode === 'list' ? 'Lihat Peta' : 'Daftar List Kosan'}
+              {viewMode === 'list' ? t('searchScreen.viewMap', 'Lihat Peta') : t('searchScreen.viewList', 'Daftar List Kosan')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -402,7 +415,7 @@ const SearchScreen = ({ navigation }) => {
       <View style={styles.locationStatusBar}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Ionicons name="navigate-circle" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={styles.locationStatusText} numberOfLines={1}>{locationStatusText}</Text>
+          <Text style={styles.locationStatusText} numberOfLines={1}>{t('searchScreen.' + locationStatusKey, 'Lokasi GPS')}</Text>
         </View>
         <TouchableOpacity onPress={handleGetLocation} style={{ padding: 4 }}>
           {locationLoading ? (
@@ -521,19 +534,32 @@ const SearchScreen = ({ navigation }) => {
                   <View style={{ flex: 1, marginLeft: SPACING[3], marginRight: SPACING[6] }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={[styles.mapPreviewTitle, { flex: 1 }]} numberOfLines={1}>{selectedMapProperty.name}</Text>
-                      {selectedMapProperty.reviews?.[0]?.average_rating && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
-                          <Ionicons name="star" size={10} color={COLORS.warning} style={{ marginRight: 2 }} />
-                          <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.warning }}>
-                            {Number(selectedMapProperty.reviews[0].average_rating).toFixed(1)}
-                          </Text>
-                        </View>
-                      )}
+                      {(() => {
+                        const avgRating = (!selectedMapProperty.reviews || selectedMapProperty.reviews.length === 0) 
+                          ? null 
+                          : (selectedMapProperty.reviews.reduce((sum, rev) => sum + Number(rev.average_rating || 0), 0) / selectedMapProperty.reviews.length).toFixed(1);
+                        
+                        return avgRating ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warningLight, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
+                            <Ionicons name="star" size={10} color={COLORS.warning} style={{ marginRight: 2 }} />
+                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.warning }}>
+                              {avgRating}
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceDark, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
+                            <Ionicons name="star" size={10} color={COLORS.textTertiary} style={{ marginRight: 2 }} />
+                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: COLORS.textTertiary }}>
+                              {t('searchScreen.newBadge', 'Baru')}
+                            </Text>
+                          </View>
+                        );
+                      })()}
                     </View>
                     <Text style={styles.mapPreviewAddress} numberOfLines={1}>{selectedMapProperty.address_line}, {selectedMapProperty.city}</Text>
                     {selectedMapProperty.distanceKm != null && (
                       <Text style={styles.mapPreviewDistance}>
-                        📍 {formatDistance(selectedMapProperty.distanceKm)} dari lokasi Anda
+                        📍 {formatDistance(selectedMapProperty.distanceKm)} {t('searchScreen.distance', 'dari lokasi Anda')}
                       </Text>
                     )}
                   </View>
@@ -546,11 +572,11 @@ const SearchScreen = ({ navigation }) => {
                        const lat = selectedMapProperty.latitude;
                        const lon = selectedMapProperty.longitude;
                        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-                       Linking.openURL(url).catch(() => Alert.alert('Error', 'Gagal membuka rute di peta.'));
+                       Linking.openURL(url).catch(() => Alert.alert(t('common.error', 'Error'), t('searchScreen.mapRouteError', 'Gagal membuka rute di peta.')));
                     }}
                   >
                     <Ionicons name="navigate" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                    <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: FONT_SIZE.xs }}>Rute Peta</Text>
+                    <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: FONT_SIZE.xs }}>{t('searchScreen.mapRoute', 'Rute Peta')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -561,7 +587,7 @@ const SearchScreen = ({ navigation }) => {
                       });
                     }}
                   >
-                    <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: FONT_SIZE.xs }}>Lihat Detail Kosan</Text>
+                    <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: FONT_SIZE.xs }}>{t('searchScreen.viewDetail', 'Lihat Detail Kosan')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -572,7 +598,7 @@ const SearchScreen = ({ navigation }) => {
         <View style={{ flex: 1 }}>
           <View style={{ paddingHorizontal: SPACING[5], paddingTop: SPACING[4], paddingBottom: SPACING[2] }}>
             <Text style={{ fontSize: FONT_SIZE.md, color: COLORS.textSecondary }}>
-              {properties.length} kosan ditemukan
+              {t('searchScreen.propertiesFound', '{{count}} kosan ditemukan', { count: properties.length })}
             </Text>
           </View>
           {isLoading ? (
@@ -588,13 +614,13 @@ const SearchScreen = ({ navigation }) => {
               ListEmptyComponent={() => (
                 <View style={styles.emptyContainer}>
                   <Ionicons name="search-outline" size={64} color={COLORS.border} />
-                  <Text style={styles.emptyTitle}>Tidak ada kosan ditemukan</Text>
+                  <Text style={styles.emptyTitle}>{t('searchScreen.noProperties', 'Tidak ada kosan ditemukan')}</Text>
                   <Text style={styles.emptySubtitle}>
-                    Coba ubah kata kunci atau filter pencarian Anda
+                    {t('searchScreen.tryChangeFilter', 'Coba ubah kata kunci atau filter pencarian Anda')}
                   </Text>
                   {hasActiveFilter && (
                     <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
-                      <Text style={styles.resetBtnText}>Reset Filter</Text>
+                      <Text style={styles.resetBtnText}>{t('searchScreen.resetFilter', 'Reset Filter')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -620,9 +646,9 @@ const SearchScreen = ({ navigation }) => {
         onRequestClose={() => setShowFilter(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.filterModal}>
+          <View style={[styles.filterModal, { paddingBottom: (insets?.bottom || 0) + SPACING[5] }]}>
             <View style={styles.filterModalHeader}>
-              <Text style={styles.filterModalTitle}>Filter Pencarian</Text>
+              <Text style={styles.filterModalTitle}>{t('searchScreen.filterTitle', 'Filter Pencarian')}</Text>
               <TouchableOpacity onPress={() => setShowFilter(false)}>
                 <Ionicons name="close" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
@@ -630,7 +656,7 @@ const SearchScreen = ({ navigation }) => {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Kota */}
-              <Text style={styles.filterLabel}>Kota</Text>
+              <Text style={styles.filterLabel}>{t('searchScreen.city', 'Kota')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.chipRow}>
                   <TouchableOpacity
@@ -638,7 +664,7 @@ const SearchScreen = ({ navigation }) => {
                     onPress={() => setFilterCity('')}
                   >
                     <Text style={[styles.chipText, !filterCity && styles.chipTextActive]}>
-                      Semua Kota
+                      {t('searchScreen.allCities', 'Semua Kota')}
                     </Text>
                   </TouchableOpacity>
                   {availableCities.map((city) => (
@@ -656,9 +682,9 @@ const SearchScreen = ({ navigation }) => {
               </ScrollView>
 
               {/* Gender */}
-              <Text style={styles.filterLabel}>Kebijakan Gender</Text>
+              <Text style={styles.filterLabel}>{t('searchScreen.genderPolicy', 'Kebijakan Gender')}</Text>
               <View style={styles.chipRow}>
-                {GENDER_OPTIONS.map((opt) => (
+                {getGenderOptions(t).map((opt) => (
                   <TouchableOpacity
                     key={opt.value}
                     style={[styles.chip, filterGender === opt.value && styles.chipActive]}
@@ -672,9 +698,9 @@ const SearchScreen = ({ navigation }) => {
               </View>
 
               {/* Room Type */}
-              <Text style={styles.filterLabel}>Tipe Kamar</Text>
+              <Text style={styles.filterLabel}>{t('searchScreen.roomType', 'Tipe Kamar')}</Text>
               <View style={styles.chipRow}>
-                {ROOM_TYPE_OPTIONS.map((opt) => (
+                {getRoomTypeOptions(t).map((opt) => (
                   <TouchableOpacity
                     key={opt.value}
                     style={[styles.chip, filterRoomType === opt.value && styles.chipActive]}
@@ -688,7 +714,7 @@ const SearchScreen = ({ navigation }) => {
               </View>
 
               {/* Harga */}
-              <Text style={styles.filterLabel}>Kisaran Harga (Rp/bulan)</Text>
+              <Text style={styles.filterLabel}>{t('searchScreen.priceRange', 'Kisaran Harga (Rp/bulan)')}</Text>
               <View style={styles.priceRow}>
                 <TextInput
                   style={[styles.priceInput, { flex: 1 }]}
@@ -713,10 +739,10 @@ const SearchScreen = ({ navigation }) => {
             {/* Actions */}
             <View style={styles.filterActions}>
               <TouchableOpacity style={styles.resetFilterBtn} onPress={resetFilters}>
-                <Text style={styles.resetFilterBtnText}>Reset</Text>
+                <Text style={styles.resetFilterBtnText}>{t('searchScreen.btnReset', 'Reset')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.applyFilterBtn} onPress={applyFilters}>
-                <Text style={styles.applyFilterBtnText}>Terapkan</Text>
+                <Text style={styles.applyFilterBtnText}>{t('searchScreen.btnApply', 'Terapkan')}</Text>
               </TouchableOpacity>
             </View>
           </View>

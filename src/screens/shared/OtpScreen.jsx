@@ -1,13 +1,16 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING } from '../../constants/spacing';
 
 const OtpScreen = () => {
+  const { t } = useTranslation();
+  
   return (
     <View style={styles.container}>
-      <Text style={styles.screenName}>OTP Verification</Text>
+      <Text style={styles.screenName}>{t('auth.otp.title', 'OTP Verification')}</Text>
       <Text style={styles.scopeLabel}>PROBIS-01</Text>
     </View>
   );

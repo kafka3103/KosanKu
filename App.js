@@ -7,6 +7,7 @@
  * 3. Setup gesture handler dan safe area
  * 4. Render AppNavigator sebagai root
  */
+import 'react-native-gesture-handler';
 
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';

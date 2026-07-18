@@ -12,6 +12,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../constants/colors';
@@ -33,6 +34,7 @@ const RegisterScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const validate = () => {
     if (!fullName.trim() || !phoneNumber.trim() || !email.trim() || !password || !confirmPassword) {
@@ -48,7 +50,7 @@ const RegisterScreen = ({ navigation }) => {
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', t('auth.errors.passwordMismatch') || 'Password mismatch');
+      Alert.alert(t('common.error', 'Error'), t('auth.errors.passwordMismatch', 'Password mismatch'));
       return false;
     }
     return true;
@@ -71,15 +73,15 @@ const RegisterScreen = ({ navigation }) => {
       const isAlreadyRegistered = error.message?.toLowerCase().includes('already registered') || error.code === 'user_already_exists';
       if (isAlreadyRegistered) {
         Alert.alert(
-          'Akun Sudah Terdaftar',
-          t('auth.errors.emailAlreadyUsed') || 'Email ini sudah terdaftar. Silakan gunakan menu Login.',
+          t('auth.notRegisteredTitle', 'Akun Sudah Terdaftar'),
+          t('auth.errors.emailAlreadyUsed', 'Email ini sudah terdaftar. Silakan gunakan menu Login.'),
           [
-            { text: 'Batal', style: 'cancel' },
-            { text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
+            { text: t('auth.loginNow', 'Masuk (Login)'), onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
           ]
         );
       } else {
-        Alert.alert('Registrasi Gagal', error.message);
+        Alert.alert(t('auth.registerFailedTitle', 'Registrasi Gagal'), error.message);
       }
       return;
     }
@@ -87,15 +89,15 @@ const RegisterScreen = ({ navigation }) => {
     // Jika Supabase mengaktifkan "Confirm Email", session akan null
     if (!data?.session) {
       Alert.alert(
-        'Registrasi Berhasil!',
-        'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.',
+        t('auth.registerSuccessTitle', 'Registrasi Berhasil!'),
+        t('auth.registerSuccessEmailMsg', 'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.'),
         [{ text: 'OK', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
       );
     } else {
       Alert.alert(
-        'Registrasi Berhasil! 🎉',
-        'Akun Anda berhasil dibuat. Anda sekarang masuk.',
-        [{ text: 'Lanjutkan', onPress: () => { } }] // AppNavigator will auto route
+        t('auth.registerSuccessTitle2', 'Registrasi Berhasil! 🎉'),
+        t('auth.registerSuccessMsg', 'Akun Anda berhasil dibuat. Anda sekarang masuk.'),
+        [{ text: t('common.buttons.next', 'Lanjutkan'), onPress: () => { } }] // AppNavigator will auto route
       );
     }
   };
@@ -108,18 +110,18 @@ const RegisterScreen = ({ navigation }) => {
     if (error) {
       if (error.code === 'ALREADY_REGISTERED') {
         Alert.alert(
-          'Akun Sudah Terdaftar',
+          t('auth.notRegisteredTitle', 'Akun Sudah Terdaftar'),
           error.message,
           [
-            { text: 'Batal', style: 'cancel' },
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
             {
-              text: 'Masuk (Login)',
+              text: t('auth.loginNow', 'Masuk (Login)'),
               onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN)
             }
           ]
         );
       } else {
-        Alert.alert(t('common.errors.error') || 'Error', error.message);
+        Alert.alert(t('common.error', 'Error'), error.message);
       }
     }
   };
@@ -144,14 +146,14 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardView}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: COLORS.background || '#EDF4F7' }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
+      <ScrollView 
+        contentContainerStyle={[styles.container, { paddingTop: Math.max((insets?.top || 0) + 16, 48), paddingBottom: Math.max((insets?.bottom || 0) + 16, 48) }]} 
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.headerContainer}>
@@ -309,8 +311,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    padding: SPACING[6],
-    paddingBottom: 80,
+    paddingHorizontal: SPACING[6],
   },
   headerContainer: {
     alignItems: 'center',

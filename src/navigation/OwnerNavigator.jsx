@@ -21,6 +21,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -116,10 +117,24 @@ const OwnerBottomTabNavigator = () => {
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.DASHBOARD}
         component={DashboardStackNavigator}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'DashboardMain';
+          if (routeName !== 'DashboardMain') {
+            return { tabBarStyle: { display: 'none' } };
+          }
+          return {};
+        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.PROPERTY_STACK}
         component={PropertyStackNavigator}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? OWNER_SCREENS.PROPERTY_LIST;
+          if (routeName !== OWNER_SCREENS.PROPERTY_LIST) {
+            return { tabBarStyle: { display: 'none' } };
+          }
+          return {};
+        }}
       />
       <OwnerBottomTab.Screen
         name={OWNER_SCREENS.INVOICE_LIST}
@@ -151,7 +166,7 @@ const OwnerDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: 'Pengajuan Masuk', screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
+    { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
     { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: '👥' },
     { label: t('navigation.owner.reports'), screen: OWNER_SCREENS.REPORT, icon: '📈' },
     { label: t('navigation.owner.profile'), screen: OWNER_SCREENS.PROFILE, icon: '👤' },
@@ -161,19 +176,19 @@ const OwnerDrawerContent = ({ navigation }) => {
 
   const handleSwitchRole = () => {
     Alert.alert(
-      'Beralih Peran',
-      'Apakah Anda ingin beralih mode aplikasi menjadi Pencari Kosan?',
+      t('navigation.switchRole.title', 'Beralih Peran'),
+      t('navigation.switchRole.toTenantMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pencari Kosan?'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Beralih',
+          text: t('navigation.switchRole.btnSwitch', 'Beralih'),
           onPress: async () => {
             const { updateUserProfile } = require('../services/userService');
             const { data, error } = await updateUserProfile(currentUser.id, {
               role: USER_ROLE.TENANT,
             });
             if (error) {
-              Alert.alert('Gagal', error.message);
+              Alert.alert(t('navigation.switchRole.failTitle', 'Gagal'), error.message);
             } else if (data) {
               useAuthStore.getState().setAuthenticatedUser(
                 useAuthStore.getState().currentSession,
@@ -215,7 +230,7 @@ const OwnerDrawerContent = ({ navigation }) => {
 
       {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pencari</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>{t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
