@@ -16,6 +16,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -85,6 +86,19 @@ const RequestCard = ({ request, onApprove, onReject }) => {
           <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
           <Text style={styles.tenantPhone}>{tenant?.phone_number ?? tenant?.email ?? '—'}</Text>
         </View>
+        {tenant?.phone_number && (
+          <TouchableOpacity
+            style={{ padding: 8, backgroundColor: '#E8F9F0', borderRadius: 20, marginLeft: 8 }}
+            onPress={() => {
+              let phone = tenant.phone_number.replace(/\D/g, '');
+              if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+              const url = `whatsapp://send?phone=${phone}&text=Halo ${tenant.full_name}, saya pemilik kosan ${property?.name}. Saya melihat Anda mengajukan sewa di aplikasi KosanKu.`;
+              Linking.openURL(url).catch(() => Alert.alert('Error', 'WhatsApp tidak terinstal'));
+            }}
+          >
+            <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Room Info */}

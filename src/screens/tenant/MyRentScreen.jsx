@@ -397,13 +397,27 @@ const MyRentScreen = ({ navigation }) => {
                   <Text style={styles.ownerPhone}>{owner.phone_number ?? 'Tidak tersedia'}</Text>
                 </View>
                 {owner.phone_number && (
-                  <TouchableOpacity
-                    style={styles.callBtn}
-                    onPress={() => handleCallOwner(owner.phone_number)}
-                  >
-                    <Ionicons name="call" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                    <Text style={styles.callBtnText}>Hubungi</Text>
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity
+                      style={[styles.callBtn, { marginRight: 8 }]}
+                      onPress={() => handleCallOwner(owner.phone_number)}
+                    >
+                      <Ionicons name="call" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                      <Text style={styles.callBtnText}>Hubungi</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.callBtn, { backgroundColor: '#25D366', borderColor: '#25D366' }]}
+                      onPress={() => {
+                        let phone = owner.phone_number.replace(/\D/g, '');
+                        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                        const url = `whatsapp://send?phone=${phone}&text=Halo Bapak/Ibu ${owner.full_name}, saya penyewa kosan Anda di aplikasi KosanKu.`;
+                        Linking.openURL(url).catch(() => Alert.alert('Error', 'WhatsApp tidak terinstal'));
+                      }}
+                    >
+                      <Ionicons name="logo-whatsapp" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                      <Text style={[styles.callBtnText, { color: '#FFF' }]}>WhatsApp</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             </View>
