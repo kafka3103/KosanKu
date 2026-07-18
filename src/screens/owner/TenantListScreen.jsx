@@ -45,7 +45,7 @@ const getDaysUntilEnd = (endDate) => {
   return diff;
 };
 
-const TenantCard = ({ contract, onCall }) => {
+const TenantCard = ({ contract, onCall, onWhatsApp }) => {
   const tenant = contract.users;
   const room = contract.rooms;
   const property = room?.properties;
@@ -83,13 +83,22 @@ const TenantCard = ({ contract, onCall }) => {
           <Text style={styles.tenantContact}>{tenant?.phone_number ?? tenant?.email ?? '—'}</Text>
         </View>
         {tenant?.phone_number && (
-          <TouchableOpacity
-            style={styles.callBtn}
-            onPress={() => onCall(tenant.phone_number)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="call" size={18} color={COLORS.success} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
+            <TouchableOpacity
+              style={[styles.callBtn, { backgroundColor: '#25D366' + '20' }]}
+              onPress={() => onWhatsApp(tenant.phone_number, tenant?.full_name ?? 'Tenant', property?.name ?? 'Kosan')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.callBtn}
+              onPress={() => onCall(tenant.phone_number)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="call" size={18} color={COLORS.success} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -163,6 +172,17 @@ const TenantListScreen = ({ navigation }) => {
     });
   };
 
+  const handleWhatsApp = (phoneNumber, tenantName, propertyName) => {
+    let cleaned = phoneNumber.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '62' + cleaned.substring(1);
+    }
+    const message = encodeURIComponent(`Halo ${tenantName}, ini pengurus ${propertyName}. Saya ingin menyampaikan informasi mengenai kos Anda.`);
+    Linking.openURL(`whatsapp://send?phone=${cleaned}&text=${message}`).catch(() => {
+      Alert.alert('Gagal', 'WhatsApp tidak terinstall atau gagal dibuka');
+    });
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -208,7 +228,11 @@ const TenantListScreen = ({ navigation }) => {
           </View>
         )}
         renderItem={({ item }) => (
-          <TenantCard contract={item} onCall={handleCall} />
+          <TenantCard 
+            contract={item} 
+            onCall={handleCall}
+            onWhatsApp={handleWhatsApp}
+          />
         )}
       />
     </View>

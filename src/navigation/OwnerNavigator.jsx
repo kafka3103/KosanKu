@@ -173,7 +173,25 @@ const OwnerDrawerContent = ({ navigation }) => {
   ];
 
 
+  const [hasTenantProfile, setHasTenantProfile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkProfile = async () => {
+      const { checkTenantProfileExists } = require('../services/userService');
+      const exists = await checkTenantProfileExists(currentUser.id);
+      setHasTenantProfile(exists);
+    };
+    if (currentUser?.id) {
+      checkProfile();
+    }
+  }, [currentUser?.id]);
+
   const handleSwitchRole = () => {
+    if (!hasTenantProfile) {
+      navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.TENANT });
+      return;
+    }
+
     Alert.alert(
       'Beralih Peran',
       'Apakah Anda ingin beralih mode aplikasi menjadi Pencari Kosan?',
@@ -229,7 +247,9 @@ const OwnerDrawerContent = ({ navigation }) => {
 
       {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pencari</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>
+          {hasTenantProfile ? 'Beralih ke Mode Pencari' : 'Daftar sebagai Pencari Kos'}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -238,6 +258,8 @@ const OwnerDrawerContent = ({ navigation }) => {
     </View>
   );
 };
+
+import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
 
 /**
  * Owner Root Navigator — Drawer yang membungkus Bottom Tab
@@ -272,6 +294,26 @@ const OwnerNavigator = () => {
       <OwnerDrawer.Screen
         name={OWNER_SCREENS.REPORT}
         component={ReportScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.PROPERTY_FORM}
+        component={PropertyFormScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.ROOM_FORM}
+        component={RoomFormScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.INVOICE_LIST}
+        component={InvoiceListScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name="RoleRegistrationScreen"
+        component={RoleRegistrationScreen}
         options={{ headerShown: false }}
       />
       <OwnerDrawer.Screen
