@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS } from '../../constants/spacing';
-import { verifyPasswordResetOtp, updatePassword, logout } from '../../services/authService';
+import { updatePassword, logout } from '../../services/authService';
 import { AUTH_SCREENS } from '../../constants/screenNames';
 import useAuthStore from '../../store/authStore';
 
@@ -32,16 +32,8 @@ const ResetPasswordScreen = ({ route, navigation }) => {
     }
 
     setIsLoading(true);
-    // Verifikasi OTP yang menandakan bahwa user berhak mereset (login dengan recovery token)
-    const { error: verifyError } = await verifyPasswordResetOtp({ email, otpCode: otp });
-    
-    if (verifyError) {
-      setIsLoading(false);
-      Alert.alert('Error', verifyError.message);
-      return;
-    }
 
-    // Update password
+    // Update password. Session was already created in OTPVerificationScreen
     const { error: updateError } = await updatePassword({ newPassword: password });
     setIsLoading(false);
 

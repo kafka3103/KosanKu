@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -159,7 +159,7 @@ const TenantDrawerContent = ({ navigation }) => {
     if (currentUser?.id) {
       checkProfile();
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   const handleSwitchRole = () => {
     if (!hasOwnerProfile) {
@@ -174,19 +174,8 @@ const TenantDrawerContent = ({ navigation }) => {
         { text: 'Batal', style: 'cancel' },
         {
           text: 'Beralih',
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.OWNER,
-            });
-            if (error) {
-              Alert.alert('Gagal', error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          onPress: () => {
+            switchRole();
           },
         },
       ]
