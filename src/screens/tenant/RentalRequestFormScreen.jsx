@@ -62,7 +62,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const pickFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto KTP.');
+      Alert.alert(t('rental.request.permCamera', 'Izin Diperlukan'), t('rental.request.permCameraMsg', 'Akses kamera diperlukan untuk mengambil foto KTP.'));
       return;
     }
 
@@ -80,7 +80,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan untuk upload KTP.');
+      Alert.alert(t('rental.request.permCamera', 'Izin Diperlukan'), t('rental.request.permGalleryMsg', 'Akses galeri foto diperlukan untuk upload KTP.'));
       return;
     }
 
@@ -97,12 +97,12 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
   const handlePickKtp = () => {
     Alert.alert(
-      'Upload Foto KTP',
-      'Pilih sumber foto KTP Anda',
+      t('rental.request.uploadKtp', 'Upload Foto KTP'),
+      t('rental.request.chooseSource', 'Pilih sumber foto KTP Anda'),
       [
-        { text: 'Kamera', onPress: pickFromCamera },
-        { text: 'Galeri', onPress: pickFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('rental.request.camera', 'Kamera'), onPress: pickFromCamera },
+        { text: t('rental.request.gallery', 'Galeri'), onPress: pickFromGallery },
+        { text: t('rental.request.cancel', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -110,12 +110,12 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
   const handleSubmit = async () => {
     Alert.alert(
-      'Konfirmasi Pengajuan',
-      `Ajukan sewa kamar ${room?.room_number} di ${property?.name} selama ${durationMonths} bulan?`,
+      t('rental.request.confirmTitle', 'Konfirmasi Pengajuan'),
+      t('rental.request.confirmMsg', `Ajukan sewa kamar ${room?.room_number} di ${property?.name} selama ${durationMonths} bulan?`, { room: room?.room_number, property: property?.name, months: durationMonths }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('rental.request.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Kirim Pengajuan',
+          text: t('rental.request.submitButton', 'Kirim Pengajuan'),
           onPress: async () => {
             setIsLoading(true);
             try {
@@ -144,18 +144,18 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 // Cek error unique constraint (sudah ada pengajuan pending)
                 if (error.code === '23505') {
                   Alert.alert(
-                    'Pengajuan Duplikat',
-                    'Kamar ini sudah memiliki pengajuan sewa yang sedang diproses.'
+                    t('rental.request.duplicateTitle', 'Pengajuan Duplikat'),
+                    t('rental.request.duplicateMsg', 'Kamar ini sudah memiliki pengajuan sewa yang sedang diproses.')
                   );
                 } else {
-                  Alert.alert('Gagal', error.message);
+                  Alert.alert(t('rental.request.failTitle', 'Gagal'), error.message);
                 }
                 return;
               }
 
               Alert.alert(
-                'Pengajuan Dikirim! 🎉',
-                'Pengajuan sewa Anda berhasil dikirim. Pemilik kos akan membalas dalam 3 hari kerja.',
+                t('rental.request.sentTitle', 'Pengajuan Dikirim! 🎉'),
+                t('rental.request.sentMsg', 'Pengajuan sewa Anda berhasil dikirim. Pemilik kos akan membalas dalam 3 hari kerja.'),
                 [
                   {
                     text: 'OK',
@@ -167,7 +167,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 ]
               );
             } catch (err) {
-              Alert.alert('Error', 'Terjadi kesalahan, coba lagi.');
+              Alert.alert(t('rental.request.errorTitle', 'Error'), t('rental.request.errorMsg', 'Terjadi kesalahan, coba lagi.'));
             } finally {
               setIsLoading(false);
             }
@@ -235,7 +235,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                     durationMonths === months && styles.durationLabelSelected,
                   ]}
                 >
-                  {months} {months === 1 ? 'Bulan' : 'Bulan'}
+                  {months} {months === 1 ? t('roomDetail.perMonth', 'bulan').replace('per ', '') : t('roomDetail.perMonth', 'bulan').replace('per ', '')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -243,7 +243,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
           {/* Custom duration */}
           <View style={styles.customDuration}>
-            <Text style={styles.customDurationLabel}>Atau masukkan manual:</Text>
+            <Text style={styles.customDurationLabel}>{t('rental.request.manualInput', 'Atau masukkan manual:')}</Text>
             <TextInput
               style={styles.customDurationInput}
               value={String(durationMonths)}
@@ -252,7 +252,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 if (!isNaN(n) && n > 0 && n <= 24) setDurationMonths(n);
               }}
               keyboardType="numeric"
-              placeholder="Jumlah bulan"
+              placeholder={t('rental.request.monthsPlaceholder', 'Jumlah bulan')}
               placeholderTextColor={COLORS.textTertiary}
             />
           </View>
@@ -262,16 +262,16 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
             <Ionicons name="calendar-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Periode Sewa</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.rentalPeriod', 'Periode Sewa')}</Text>
           </View>
           <View style={styles.dateRow}>
             <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>Mulai</Text>
+              <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')}</Text>
               <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
             </View>
             <Text style={styles.dateSep}>→</Text>
             <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>Selesai</Text>
+              <Text style={styles.dateLabel}>{t('rental.request.endDateLabel', 'Selesai')}</Text>
               <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
             </View>
           </View>
@@ -291,7 +291,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
             ) : (
               <View style={styles.ktpPlaceholder}>
                 <Ionicons name="camera-outline" size={40} color={COLORS.textTertiary} />
-                <Text style={styles.ktpPlaceholderText}>Ketuk untuk ambil / pilih foto KTP</Text>
+                <Text style={styles.ktpPlaceholderText}>{t('rental.request.tapToUpload', 'Ketuk untuk ambil / pilih foto KTP')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -299,7 +299,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
             <TouchableOpacity onPress={() => setKtpUri(null)} style={styles.removeKtp}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
-                <Text style={styles.removeKtpText}>Hapus Foto</Text>
+                <Text style={styles.removeKtpText}>{t('rental.request.removePhoto', 'Hapus Foto')}</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -325,14 +325,14 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
         {/* Summary */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Ringkasan Pengajuan</Text>
+          <Text style={styles.summaryTitle}>{t('rental.request.summaryTitle', 'Ringkasan Pengajuan')}</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Harga/bulan</Text>
+            <Text style={styles.summaryLabel}>{t('roomDetail.priceLabel', 'Harga/bulan')}</Text>
             <Text style={styles.summaryValue}>{formatCurrency(room?.base_price)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Durasi</Text>
-            <Text style={styles.summaryValue}>{durationMonths} bulan</Text>
+            <Text style={styles.summaryLabel}>{t('rental.request.durationLabel', 'Durasi')}</Text>
+            <Text style={styles.summaryValue}>{t('rental.request.durationMonths', '{{count}} Bulan', { count: durationMonths })}</Text>
           </View>
           <View style={[styles.summaryRow, styles.summaryRowTotal]}>
             <Text style={styles.summaryTotalLabel}>{t('rental.request.totalCost')}</Text>

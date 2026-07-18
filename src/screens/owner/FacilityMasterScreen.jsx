@@ -34,6 +34,7 @@ import {
   updateFacilityMaster,
   deleteFacilityMaster,
 } from '../../services/propertyService';
+import { useTranslation } from 'react-i18next';
 
 // Ikon bawaan yang umum dipakai untuk fasilitas kos
 const ICON_OPTIONS = [
@@ -61,6 +62,7 @@ const INITIAL_FORM = {
 };
 
 const FacilityMasterScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [facilities, setFacilities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,7 +101,7 @@ const FacilityMasterScreen = ({ navigation }) => {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      Alert.alert('Perhatian', 'Nama fasilitas wajib diisi.');
+      Alert.alert('Error', t('facilityMaster.validationNameReq', 'Nama fasilitas wajib diisi.'));
       return;
     }
 
@@ -121,7 +123,7 @@ const FacilityMasterScreen = ({ navigation }) => {
     setIsSaving(false);
 
     if (result.error) {
-      Alert.alert('Gagal', result.error.message || 'Terjadi kesalahan.');
+      Alert.alert('Error', result.error.message || t('facilityMaster.errorGeneric', 'Terjadi kesalahan.'));
     } else {
       setIsModalVisible(false);
       load(true);
@@ -130,17 +132,17 @@ const FacilityMasterScreen = ({ navigation }) => {
 
   const handleDelete = (facility) => {
     Alert.alert(
-      'Hapus Fasilitas',
-      `Yakin ingin menghapus "${facility.name}" dari master fasilitas?\n\nFasilitas yang sedang digunakan di kamar atau kontrak tidak akan terpengaruh.`,
+      t('facilityMaster.deleteTitle', 'Hapus Fasilitas'),
+      t('facilityMaster.deleteMsg', 'Yakin ingin menghapus "{{name}}" dari master fasilitas?\n\nFasilitas yang sedang digunakan di kamar atau kontrak tidak akan terpengaruh.', { name: facility.name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('common.buttons.delete', 'Hapus'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await deleteFacilityMaster(facility.id);
             if (error) {
-              Alert.alert('Gagal', error.message || 'Tidak bisa menghapus fasilitas yang masih digunakan.');
+              Alert.alert('Error', error.message || t('facilityMaster.deleteErrorInUse', 'Tidak bisa menghapus fasilitas yang masih digunakan.'));
             } else {
               setFacilities((prev) => prev.filter((f) => f.id !== facility.id));
             }
@@ -164,17 +166,17 @@ const FacilityMasterScreen = ({ navigation }) => {
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={22} color={COLORS.primaryLight} />
-          <Text style={styles.backBtnText}>Kembali</Text>
+          <Text style={styles.backBtnText}>{t('common.buttons.back', 'Kembali')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Master Fasilitas</Text>
-        <Text style={styles.headerSubtitle}>{facilities.length} fasilitas terdaftar</Text>
+        <Text style={styles.headerTitle}>{t('facilityMaster.headerTitle', 'Master Fasilitas')}</Text>
+        <Text style={styles.headerSubtitle}>{t('facilityMaster.headerSubtitle', '{{count}} fasilitas terdaftar', { count: facilities.length })}</Text>
       </View>
 
       {/* Info Banner */}
       <View style={styles.infoBanner}>
         <Ionicons name="information-circle-outline" size={18} color={COLORS.info} style={{ marginRight: 8 }} />
         <Text style={styles.infoText}>
-          Fasilitas di sini digunakan sebagai pilihan saat menambahkan fasilitas opsional ke kontrak sewa penghuni.
+          {t('facilityMaster.infoBanner', 'Fasilitas di sini digunakan sebagai pilihan saat menambahkan fasilitas opsional ke kontrak sewa penghuni.')}
         </Text>
       </View>
 
@@ -193,8 +195,8 @@ const FacilityMasterScreen = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="apps-outline" size={56} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>Belum Ada Master Fasilitas</Text>
-            <Text style={styles.emptySubtitle}>Tambahkan fasilitas seperti WiFi, AC, Parkir untuk ditawarkan ke penghuni</Text>
+            <Text style={styles.emptyTitle}>{t('facilityMaster.emptyTitle', 'Belum Ada Master Fasilitas')}</Text>
+            <Text style={styles.emptySubtitle}>{t('facilityMaster.emptySubtitle', 'Tambahkan fasilitas seperti WiFi, AC, Parkir untuk ditawarkan ke penghuni')}</Text>
           </View>
         )}
         renderItem={({ item }) => {
@@ -207,7 +209,11 @@ const FacilityMasterScreen = ({ navigation }) => {
               <View style={styles.facilityInfo}>
                 <Text style={styles.facilityName}>{item.name}</Text>
                 <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{item.category ?? 'general'}</Text>
+                  <Text style={styles.categoryText}>
+                    {item.category === 'general' ? t('facilityMaster.catGeneral', 'Umum') : 
+                     item.category === 'optional' ? t('facilityMaster.catOptional', 'Opsional') : 
+                     item.category === 'room' ? t('facilityMaster.catRoom', 'Kamar') : item.category}
+                  </Text>
                 </View>
               </View>
               <View style={styles.facilityActions}>
@@ -242,7 +248,7 @@ const FacilityMasterScreen = ({ navigation }) => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingFacility ? 'Edit Fasilitas' : 'Tambah Fasilitas Baru'}
+                {editingFacility ? t('facilityMaster.editTitle', 'Edit Fasilitas') : t('facilityMaster.addTitle', 'Tambah Fasilitas Baru')}
               </Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={22} color={COLORS.textSecondary} />
@@ -250,19 +256,17 @@ const FacilityMasterScreen = ({ navigation }) => {
             </View>
 
             {/* Nama */}
-            <Text style={styles.fieldLabel}>Nama Fasilitas *</Text>
+            <Text style={styles.fieldLabel}>{t('facilityMaster.nameLabel', 'Nama Fasilitas *')}</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Misal: WiFi 100 Mbps, AC 1 PK, dll"
+              placeholder={t('facilityMaster.namePlaceholder', 'Misal: WiFi 100 Mbps, AC 1 PK, dll')}
               placeholderTextColor={COLORS.textTertiary}
               value={form.name}
               onChangeText={(v) => setForm((p) => ({ ...p, name: v }))}
             />
 
-            {/* Deskripsi (Removed to match DB schema) */}
-
             {/* Kategori */}
-            <Text style={styles.fieldLabel}>Kategori</Text>
+            <Text style={styles.fieldLabel}>{t('facilityMaster.categoryLabel', 'Kategori')}</Text>
             <View style={styles.categoryRow}>
               {['general', 'optional', 'room'].map((cat) => (
                 <TouchableOpacity
@@ -271,21 +275,21 @@ const FacilityMasterScreen = ({ navigation }) => {
                   onPress={() => setForm((p) => ({ ...p, category: cat }))}
                 >
                   <Text style={[styles.categoryChipText, form.category === cat && styles.categoryChipTextActive]}>
-                    {cat === 'general' ? 'Umum' : cat === 'optional' ? 'Opsional' : 'Kamar'}
+                    {cat === 'general' ? t('facilityMaster.catGeneral', 'Umum') : cat === 'optional' ? t('facilityMaster.catOptional', 'Opsional') : t('facilityMaster.catRoom', 'Kamar')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Ikon */}
-            <Text style={styles.fieldLabel}>Ikon</Text>
+            <Text style={styles.fieldLabel}>{t('facilityMaster.iconLabel', 'Ikon')}</Text>
             <TouchableOpacity
               style={styles.iconPickerBtn}
               onPress={() => setShowIconPicker((p) => !p)}
             >
               <Ionicons name={form.icon_name ?? 'apps'} size={22} color={COLORS.primary} />
               <Text style={styles.iconPickerLabel}>
-                {ICON_OPTIONS.find((i) => i.value === form.icon_name)?.label ?? 'Lainnya'}
+                {ICON_OPTIONS.find((i) => i.value === form.icon_name)?.label ?? t('facilityMaster.iconOther', 'Lainnya')}
               </Text>
               <Ionicons name={showIconPicker ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textSecondary} />
             </TouchableOpacity>
@@ -312,7 +316,7 @@ const FacilityMasterScreen = ({ navigation }) => {
                 onPress={() => setIsModalVisible(false)}
                 disabled={isSaving}
               >
-                <Text style={styles.cancelBtnText}>Batal</Text>
+                <Text style={styles.cancelBtnText}>{t('common.buttons.cancel', 'Batal')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.saveBtn}
@@ -322,7 +326,7 @@ const FacilityMasterScreen = ({ navigation }) => {
                 {isSaving ? (
                   <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
-                  <Text style={styles.saveBtnText}>{editingFacility ? 'Simpan Perubahan' : 'Tambahkan'}</Text>
+                  <Text style={styles.saveBtnText}>{editingFacility ? t('facilityMaster.saveEditBtn', 'Simpan Perubahan') : t('facilityMaster.saveAddBtn', 'Tambahkan')}</Text>
                 )}
               </TouchableOpacity>
             </View>

@@ -24,7 +24,8 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -38,10 +39,10 @@ import {
 } from '../../services/invoiceService';
 import { getFacilityMaster } from '../../services/propertyService';
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, isEn) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMM yyyy', { locale: isEn ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
@@ -54,15 +55,18 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const STATUS_CONFIG = {
-  active: { color: COLORS.success, bg: COLORS.successLight, label: 'Aktif', icon: 'checkmark-circle' },
-  completed: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Selesai', icon: 'flag' },
-  terminated: { color: COLORS.error, bg: COLORS.errorLight, label: 'Dihentikan', icon: 'stop-circle' },
-  early_exit: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Keluar Lebih Awal', icon: 'flash' },
-};
+const getStatusConfig = (t) => ({
+  active: { color: COLORS.success, bg: COLORS.successLight, label: t('contractScreen.statusActive', 'Aktif'), icon: 'checkmark-circle' },
+  completed: { color: COLORS.grey500, bg: COLORS.grey100, label: t('contractScreen.statusCompleted', 'Selesai'), icon: 'flag' },
+  terminated: { color: COLORS.error, bg: COLORS.errorLight, label: t('contractScreen.statusTerminated', 'Dihentikan'), icon: 'stop-circle' },
+  early_exit: { color: COLORS.warning, bg: COLORS.warningLight, label: t('contractScreen.statusEarly', 'Keluar Lebih Awal'), icon: 'flash' },
+});
 
 const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }) => {
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
   const insets = useSafeAreaInsets();
+  const STATUS_CONFIG = getStatusConfig(t);
   const status = STATUS_CONFIG[contract.status] ?? STATUS_CONFIG.completed;
   const tenant = contract.users;
   const room = contract.rooms;
@@ -88,17 +92,17 @@ const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }
 
       <View style={styles.datesRow}>
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Mulai</Text>
-          <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
+          <Text style={styles.dateLabel}>{t('contractScreen.dateStart', 'Mulai')}</Text>
+          <Text style={styles.dateValue}>{formatDate(contract.start_date, isEn)}</Text>
         </View>
         <View style={styles.dateSep} />
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Selesai</Text>
-          <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
+          <Text style={styles.dateLabel}>{t('contractScreen.dateEnd', 'Selesai')}</Text>
+          <Text style={styles.dateValue}>{formatDate(contract.end_date, isEn)}</Text>
         </View>
         <View style={styles.dateSep} />
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Sewa/Bulan</Text>
+          <Text style={styles.dateLabel}>{t('contractScreen.monthlyRent', 'Sewa/Bulan')}</Text>
           <Text style={styles.dateValue}>{formatCurrency(contract.monthly_rate)}</Text>
         </View>
       </View>
@@ -106,17 +110,17 @@ const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }
       {/* Fasilitas Opsional Aktif */}
       {activeFacilities.length > 0 && (
         <View style={styles.facilitySection}>
-          <Text style={styles.facilitySectionTitle}>Fasilitas Opsional Berjalan:</Text>
+          <Text style={styles.facilitySectionTitle}>{t('contractScreen.activeFacilities', 'Fasilitas Opsional Berjalan:')}</Text>
           {activeFacilities.map((cf) => (
             <View key={cf.id} style={styles.facilityItemRow}>
               <View style={styles.facilityItemLeft}>
                 <Ionicons name="sparkles" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
                 <Text style={styles.facilityItemName}>
-                  {cf.custom_facility_name || cf.facility_master?.name || 'Fasilitas Tambahan'}
+                  {cf.custom_facility_name || cf.facility_master?.name || t('contractScreen.extraFacility', 'Fasilitas Tambahan')}
                 </Text>
               </View>
               <View style={styles.facilityItemRight}>
-                <Text style={styles.facilityItemPrice}>{formatCurrency(cf.price_per_month)}/bln</Text>
+                <Text style={styles.facilityItemPrice}>{formatCurrency(cf.price_per_month)}/{t('contractScreen.monthAbbr', 'bln')}</Text>
                 {contract.status === 'active' && (
                   <TouchableOpacity
                     style={styles.removeFacilityBtn}
@@ -139,7 +143,7 @@ const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }
             activeOpacity={0.7}
           >
             <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} style={{ marginRight: 4 }} />
-            <Text style={styles.addFacilityBtnText}>+ Fasilitas Opsional</Text>
+            <Text style={styles.addFacilityBtnText}>{t('contractScreen.addFacility', '+ Fasilitas Opsional')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -147,7 +151,7 @@ const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }
             onPress={() => onTerminate(contract)}
             activeOpacity={0.7}
           >
-            <Text style={styles.terminateBtnText}>Hentikan</Text>
+            <Text style={styles.terminateBtnText}>{t('contractScreen.btnTerminate', 'Hentikan')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -156,6 +160,7 @@ const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }
 };
 
 const ContractScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const { currentUser } = useAuthStore();
   const [contracts, setContracts] = useState([]);
   const [masterFacilities, setMasterFacilities] = useState([]);
@@ -190,17 +195,17 @@ const ContractScreen = ({ navigation }) => {
 
   const handleTerminate = (contract) => {
     Alert.alert(
-      'Hentikan Kontrak',
-      `Yakin ingin menghentikan kontrak untuk ${contract.users?.full_name}?`,
+      t('contractScreen.terminateAlertTitle', 'Hentikan Kontrak'),
+      t('contractScreen.terminateAlertMsg', 'Yakin ingin menghentikan kontrak untuk {{name}}?', { name: contract.users?.full_name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hentikan',
+          text: t('contractScreen.btnTerminate', 'Hentikan'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await endContract(contract.id, 'terminated', 'Dihentikan oleh pemilik');
             if (error) {
-              Alert.alert('Gagal', error.message);
+              Alert.alert('Error', error.message);
             } else {
               setContracts((prev) => prev.map((c) => c.id === contract.id ? { ...c, status: 'terminated' } : c));
             }
@@ -223,11 +228,11 @@ const ContractScreen = ({ navigation }) => {
   const handleSaveFacility = async () => {
     if (!selectedContract) return;
     if (isCustomName && !customName.trim()) {
-      Alert.alert('Perhatian', 'Nama fasilitas custom wajib diisi.');
+      Alert.alert('Error', t('contractScreen.validationCustomName', 'Nama fasilitas custom wajib diisi.'));
       return;
     }
     if (!pricePerMonth || isNaN(parseFloat(pricePerMonth)) || parseFloat(pricePerMonth) < 0) {
-      Alert.alert('Perhatian', 'Biaya per bulan wajib diisi dengan angka valid.');
+      Alert.alert('Error', t('contractScreen.validationPrice', 'Biaya per bulan wajib diisi dengan angka valid.'));
       return;
     }
 
@@ -244,29 +249,29 @@ const ContractScreen = ({ navigation }) => {
     setIsSubmittingFacility(false);
 
     if (error) {
-      Alert.alert('Gagal Menambahkan', error.message);
+      Alert.alert('Error', error.message);
     } else {
       setIsModalVisible(false);
-      Alert.alert('Berhasil! 🎉', data?.message ?? 'Fasilitas opsional berhasil ditambahkan ke kontrak.', [
+      Alert.alert(t('contractScreen.successAddTitle', 'Berhasil! 🎉'), data?.message ?? t('contractScreen.successAddMsg', 'Fasilitas opsional berhasil ditambahkan ke kontrak.'), [
         { text: 'OK', onPress: () => loadContracts(true) },
       ]);
     }
   };
 
   const handleRemoveFacility = (cf) => {
-    const name = cf.custom_facility_name || cf.facility_master?.name || 'Fasilitas ini';
+    const name = cf.custom_facility_name || cf.facility_master?.name || t('contractScreen.thisFacility', 'Fasilitas ini');
     Alert.alert(
-      'Hentikan Fasilitas',
-      `Yakin ingin menghentikan langganan ${name} (Rp ${cf.price_per_month.toLocaleString('id-ID')}/bln)?\n\nPenghuni tidak akan dikenakan biaya fasilitas ini pada periode tagihan berikutnya.`,
+      t('contractScreen.stopFacilityTitle', 'Hentikan Fasilitas'),
+      t('contractScreen.stopFacilityMsg', 'Yakin ingin menghentikan langganan {{name}} (Rp {{price}}/bln)?\n\nPenghuni tidak akan dikenakan biaya fasilitas ini pada periode tagihan berikutnya.', { name, price: cf.price_per_month.toLocaleString('id-ID') }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hentikan',
+          text: t('contractScreen.btnTerminate', 'Hentikan'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await updateContractFacilityStatus(cf.id, 'inactive');
             if (error) {
-              Alert.alert('Gagal', error.message);
+              Alert.alert('Error', error.message);
             } else {
               loadContracts(true);
             }
@@ -277,10 +282,10 @@ const ContractScreen = ({ navigation }) => {
   };
 
   const filters = [
-    { key: 'active', label: 'Aktif' },
-    { key: 'completed', label: 'Selesai' },
-    { key: 'terminated', label: 'Dihentikan' },
-    { key: 'all', label: 'Semua' },
+    { key: 'active', label: t('contractScreen.filterActive', 'Aktif') },
+    { key: 'completed', label: t('contractScreen.filterCompleted', 'Selesai') },
+    { key: 'terminated', label: t('contractScreen.filterTerminated', 'Dihentikan') },
+    { key: 'all', label: t('contractScreen.filterAll', 'Semua') },
   ];
 
   const filteredContracts = activeFilter === 'all' ? contracts : contracts.filter((c) => c.status === activeFilter);
@@ -297,10 +302,11 @@ const ContractScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          
+          <Ionicons name="chevron-back" size={22} color={COLORS.primaryLight} />
+          <Text style={styles.backBtnText}>{t('common.buttons.back', 'Kembali')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Kontrak Sewa</Text>
-        <Text style={styles.headerSubtitle}>{contracts.length} kontrak total</Text>
+        <Text style={styles.headerTitle}>{t('contractScreen.headerTitle', 'Kontrak Sewa')}</Text>
+        <Text style={styles.headerSubtitle}>{t('contractScreen.headerSubtitle', '{{count}} kontrak total', { count: contracts.length })}</Text>
       </View>
       <View style={styles.filterRow}>
         {filters.map((f) => (
@@ -327,7 +333,7 @@ const ContractScreen = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="document-text-outline" size={56} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Tidak Ada Kontrak</Text>
+            <Text style={styles.emptyTitle}>{t('contractScreen.emptyTitle', 'Tidak Ada Kontrak')}</Text>
           </View>
         )}
         renderItem={({ item }) => (
@@ -353,19 +359,19 @@ const ContractScreen = ({ navigation }) => {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>+ Fasilitas Opsional</Text>
+              <Text style={styles.modalTitle}>{t('contractScreen.addFacility', '+ Fasilitas Opsional')}</Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <Text style={styles.modalSubtitle}>
-              Penghuni: {selectedContract?.users?.full_name} · Kamar {selectedContract?.rooms?.room_number}
+              {t('contractScreen.tenant', 'Penghuni')}: {selectedContract?.users?.full_name} · {t('contractScreen.room', 'Kamar')} {selectedContract?.rooms?.room_number}
             </Text>
 
             <ScrollView contentContainerStyle={styles.modalScroll}>
               <View style={styles.switchRow}>
-                <Text style={styles.fieldLabel}>Gunakan Nama Custom</Text>
+                <Text style={styles.fieldLabel}>{t('contractScreen.useCustomName', 'Gunakan Nama Custom')}</Text>
                 <Switch
                   value={isCustomName}
                   onValueChange={(val) => setIsCustomName(val)}
@@ -376,10 +382,10 @@ const ContractScreen = ({ navigation }) => {
 
               {isCustomName ? (
                 <View style={styles.formGroup}>
-                  <Text style={styles.fieldLabel}>Nama Fasilitas Custom</Text>
+                  <Text style={styles.fieldLabel}>{t('contractScreen.customFacilityName', 'Nama Fasilitas Custom')}</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Misal: Sewa AC Portabel / Parkir Mobil"
+                    placeholder={t('contractScreen.customNamePlaceholder', 'Misal: Sewa AC Portabel / Parkir Mobil')}
                     placeholderTextColor={COLORS.textTertiary}
                     value={customName}
                     onChangeText={setCustomName}
@@ -387,7 +393,7 @@ const ContractScreen = ({ navigation }) => {
                 </View>
               ) : (
                 <View style={styles.formGroup}>
-                  <Text style={styles.fieldLabel}>Pilih dari Master Fasilitas</Text>
+                  <Text style={styles.fieldLabel}>{t('contractScreen.selectFromMaster', 'Pilih dari Master Fasilitas')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
                     {masterFacilities.map((item) => {
                       const isSelected = selectedFacilityId === item.id;
@@ -406,7 +412,7 @@ const ContractScreen = ({ navigation }) => {
               )}
 
               <View style={styles.formGroup}>
-                <Text style={styles.fieldLabel}>Biaya Tambahan Per Bulan (Rp)</Text>
+                <Text style={styles.fieldLabel}>{t('contractScreen.monthlyAddFee', 'Biaya Tambahan Per Bulan (Rp)')}</Text>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Misal: 150000"
@@ -418,7 +424,7 @@ const ContractScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.fieldLabel}>Metode Penyatuan Tagihan</Text>
+                <Text style={styles.fieldLabel}>{t('contractScreen.billingMode', 'Metode Penyatuan Tagihan')}</Text>
                 
                 <TouchableOpacity
                   style={[styles.modeCard, billingMode === 'next_invoice' && styles.modeCardActive]}
@@ -431,10 +437,10 @@ const ContractScreen = ({ navigation }) => {
                       size={20}
                       color={billingMode === 'next_invoice' ? COLORS.primary : COLORS.grey400}
                     />
-                    <Text style={styles.modeCardTitle}>Disatukan dengan Tagihan Kos</Text>
+                    <Text style={styles.modeCardTitle}>{t('contractScreen.modeNextInvoice', 'Disatukan dengan Tagihan Kos')}</Text>
                   </View>
                   <Text style={styles.modeCardDesc}>
-                    Jika ada tagihan kos bulan ini yang belum dibayar, otomatis digabungkan sekarang. Jika sudah lunas, akan disatukan dengan uang kos bulan depan.
+                    {t('contractScreen.modeNextInvoiceDesc', 'Jika ada tagihan kos bulan ini yang belum dibayar, otomatis digabungkan sekarang. Jika sudah lunas, akan disatukan dengan uang kos bulan depan.')}
                   </Text>
                 </TouchableOpacity>
 
@@ -449,10 +455,10 @@ const ContractScreen = ({ navigation }) => {
                       size={20}
                       color={billingMode === 'bill_immediately' ? COLORS.primary : COLORS.grey400}
                     />
-                    <Text style={styles.modeCardTitle}>Buat Tagihan Khusus Hari Ini</Text>
+                    <Text style={styles.modeCardTitle}>{t('contractScreen.modeImmediate', 'Buat Tagihan Khusus Hari Ini')}</Text>
                   </View>
                   <Text style={styles.modeCardDesc}>
-                    Langsung buat invoice baru hari ini khusus biaya fasilitas opsional ini dan kirim notifikasi pembayaran ke penghuni.
+                    {t('contractScreen.modeImmediateDesc', 'Langsung buat invoice baru hari ini khusus biaya fasilitas opsional ini dan kirim notifikasi pembayaran ke penghuni.')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -464,7 +470,7 @@ const ContractScreen = ({ navigation }) => {
                 onPress={() => setIsModalVisible(false)}
                 disabled={isSubmittingFacility}
               >
-                <Text style={styles.cancelBtnText}>Batal</Text>
+                <Text style={styles.cancelBtnText}>{t('common.buttons.cancel', 'Batal')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.saveBtn}
@@ -474,7 +480,7 @@ const ContractScreen = ({ navigation }) => {
                 {isSubmittingFacility ? (
                   <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Simpan Fasilitas</Text>
+                  <Text style={styles.saveBtnText}>{t('contractScreen.saveFacilityBtn', 'Simpan Fasilitas')}</Text>
                 )}
               </TouchableOpacity>
             </View>

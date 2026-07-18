@@ -62,20 +62,20 @@ const formatPeriod = (dateStr) => {
   }
 };
 
-const INVOICE_STATUS_CONFIG = {
-  unpaid: { color: COLORS.warning, label: 'Belum Bayar', icon: 'time' },
-  paid: { color: COLORS.success, label: 'Lunas', icon: 'checkmark-circle' },
-  overdue: { color: COLORS.error, label: 'Terlambat', icon: 'close-circle' },
-  partial: { color: COLORS.info, label: 'Sebagian', icon: 'pie-chart' },
-};
+const getInvoiceStatusConfig = (t) => ({
+  unpaid: { color: COLORS.warning, label: t('myRent.status.unpaid', 'Belum Bayar'), icon: 'time' },
+  paid: { color: COLORS.success, label: t('myRent.status.paid', 'Lunas'), icon: 'checkmark-circle' },
+  overdue: { color: COLORS.error, label: t('myRent.status.overdue', 'Terlambat'), icon: 'close-circle' },
+  partial: { color: COLORS.info, label: t('myRent.status.partial', 'Sebagian'), icon: 'pie-chart' },
+});
 
-const REQUEST_STATUS_CONFIG = {
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Menunggu Konfirmasi', icon: 'time' },
-  approved: { color: COLORS.success, bg: COLORS.successLight, label: 'Disetujui', icon: 'checkmark-circle' },
-  rejected: { color: COLORS.error, bg: COLORS.errorLight, label: 'Ditolak', icon: 'close-circle' },
-  expired: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Kedaluwarsa', icon: 'hourglass-outline' },
-  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Dibatalkan', icon: 'ban' },
-};
+const getRequestStatusConfig = (t) => ({
+  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: t('myRent.status.pending', 'Menunggu Konfirmasi'), icon: 'time' },
+  approved: { color: COLORS.success, bg: COLORS.successLight, label: t('myRent.status.approved', 'Disetujui'), icon: 'checkmark-circle' },
+  rejected: { color: COLORS.error, bg: COLORS.errorLight, label: t('myRent.status.rejected', 'Ditolak'), icon: 'close-circle' },
+  expired: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.expired', 'Kedaluwarsa'), icon: 'hourglass-outline' },
+  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.cancelled', 'Dibatalkan'), icon: 'ban' },
+});
 
 const MyRentScreen = ({ navigation }) => {
   const { t } = useTranslation();
@@ -140,7 +140,7 @@ const MyRentScreen = ({ navigation }) => {
   const handleCallOwner = (phone) => {
     if (!phone) return;
     Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() =>
-      Alert.alert('Gagal', 'Tidak bisa membuka aplikasi telepon')
+      Alert.alert(t('myRent.callFail', 'Gagal'), t('myRent.callFailMsg', 'Tidak bisa membuka aplikasi telepon'))
     );
   };
 
@@ -151,10 +151,10 @@ const MyRentScreen = ({ navigation }) => {
     setIsRequesting(false);
     
     if (error) {
-      Alert.alert('Gagal', error.message || 'Terjadi kesalahan saat mengajukan fasilitas.');
+      Alert.alert(t('myRent.reqFail', 'Gagal'), error.message || t('myRent.reqFailMsg', 'Terjadi kesalahan saat mengajukan fasilitas.'));
     } else {
       setShowFacilityModal(false);
-      Alert.alert('Berhasil', 'Pengajuan fasilitas terkirim. Menunggu persetujuan pemilik.');
+      Alert.alert(t('myRent.reqSuccess', 'Berhasil'), t('myRent.reqSuccessMsg', 'Pengajuan fasilitas terkirim. Menunggu persetujuan pemilik.'));
       loadData(true);
     }
   };
@@ -185,15 +185,15 @@ const MyRentScreen = ({ navigation }) => {
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <DrawerButton />
             <View style={{ flex: 1 }}>
-              <Text style={styles.headerTitle}>Hunian Saya</Text>
+              <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
             </View>
           </View>
         </View>
         <View style={styles.emptyContainer}>
           <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-          <Text style={styles.emptyTitle}>Belum Ada Hunian Aktif</Text>
+          <Text style={styles.emptyTitle}>{t('myRent.noActiveRent', 'Belum Ada Hunian Aktif')}</Text>
           <Text style={styles.emptySubtitle}>
-            Cari kosan dan ajukan sewa untuk mulai tinggal
+            {t('myRent.noActiveRentSubtitle', 'Cari dan ajukan sewa kosan sekarang')}
           </Text>
           <TouchableOpacity
             style={styles.searchBtn}
@@ -201,7 +201,7 @@ const MyRentScreen = ({ navigation }) => {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="search" size={16} color={COLORS.white} style={{ marginRight: 6 }} />
-              <Text style={styles.searchBtnText}>Cari Kosan</Text>
+              <Text style={styles.searchBtnText}>{t('myRent.search', 'Cari Kosan')}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -236,9 +236,9 @@ const MyRentScreen = ({ navigation }) => {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <DrawerButton />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Hunian Saya</Text>
+            <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
             <Text style={styles.headerSubtitle}>
-              {contract ? 'Kontrak aktif' : 'Pengajuan sewa Anda'}
+              {contract ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
             </Text>
           </View>
         </View>
@@ -247,9 +247,10 @@ const MyRentScreen = ({ navigation }) => {
       {/* Pengajuan Pending (jika belum punya kontrak) */}
       {!contract && rentalRequests.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pengajuan Sewa</Text>
+          <Text style={styles.sectionTitle}>{t('myRent.rentRequest', 'Pengajuan Sewa')}</Text>
           {rentalRequests.map((req) => {
-            const status = REQUEST_STATUS_CONFIG[req.status] ?? REQUEST_STATUS_CONFIG.pending;
+            const statusConfig = getRequestStatusConfig(t);
+            const status = statusConfig[req.status] ?? statusConfig.pending;
             const room = req.rooms;
             const property = room?.properties;
             return (
@@ -261,14 +262,14 @@ const MyRentScreen = ({ navigation }) => {
                   </Text>
                 </View>
                 <Text style={styles.requestProperty}>{property?.name}</Text>
-                <Text style={styles.requestRoom}>Kamar {room?.room_number}</Text>
+                <Text style={styles.requestRoom}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
                 <Text style={styles.requestDate}>
-                  Diajukan: {formatDate(req.created_at)}
+                  {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at) })}
                 </Text>
                 {req.status === 'rejected' && req.owner_rejection_reason && (
                   <View style={styles.rejectionBox}>
                     <Text style={styles.rejectionText}>
-                      Alasan: {req.owner_rejection_reason}
+                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: req.owner_rejection_reason })}
                     </Text>
                   </View>
                 )}
@@ -283,7 +284,7 @@ const MyRentScreen = ({ navigation }) => {
         <>
           {/* Room Card */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Kamar Saya</Text>
+            <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>
             <View style={styles.roomCard}>
               {room?.photo_urls?.[0] || property?.cover_photo_url ? (
                 <Image
@@ -297,7 +298,7 @@ const MyRentScreen = ({ navigation }) => {
               )}
               <View style={styles.roomInfo}>
                 <Text style={styles.roomPropertyName}>{property?.name}</Text>
-                <Text style={styles.roomNumber}>Kamar {room?.room_number}</Text>
+                <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                   <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
                   <Text style={[styles.roomAddress, { marginTop: 0 }]}>
@@ -305,7 +306,7 @@ const MyRentScreen = ({ navigation }) => {
                   </Text>
                 </View>
                 <Text style={styles.roomPrice}>
-                  {formatCurrency(contract.monthly_rate)}/bulan
+                  {formatCurrency(contract.monthly_rate)}{t('roomDetail.perMonth', '/bulan')}
                 </Text>
               </View>
             </View>
@@ -313,12 +314,12 @@ const MyRentScreen = ({ navigation }) => {
             {/* Contract Dates */}
             <View style={styles.contractDates}>
               <View style={styles.dateItem}>
-                <Text style={styles.dateLabel}>Mulai</Text>
+                <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
                 <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
               </View>
               <View style={styles.dateSeparator} />
               <View style={styles.dateItem}>
-                <Text style={styles.dateLabel}>Selesai</Text>
+                <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
                 <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
               </View>
             </View>
@@ -326,7 +327,7 @@ const MyRentScreen = ({ navigation }) => {
             {/* Facilities */}
             {facilities.length > 0 && (
               <View style={styles.facilitiesContainer}>
-                <Text style={styles.facilitiesLabel}>Fasilitas:</Text>
+                <Text style={styles.facilitiesLabel}>{t('myRent.facilities', 'Fasilitas:')}</Text>
                 <View style={styles.facilitiesWrap}>
                   {facilities.map((f, i) => (
                     <View key={i} style={styles.facilityTag}>
@@ -343,17 +344,17 @@ const MyRentScreen = ({ navigation }) => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Ionicons name="sparkles" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                    <Text style={styles.optionalFacilitiesTitle}>Fasilitas Tambahan</Text>
+                    <Text style={styles.optionalFacilitiesTitle}>{t('myRent.additionalFacilities', 'Fasilitas Tambahan')}</Text>
                   </View>
                 </View>
 
                 {activeContractFacilities.map((cf) => (
                   <View key={cf.id} style={styles.optionalFacilityItem}>
                     <Text style={styles.optionalFacilityName}>
-                      {cf.custom_facility_name || cf.facility_master?.name || 'Fasilitas Opsional'}
+                      {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
                     </Text>
                     <Text style={styles.optionalFacilityPrice}>
-                      {formatCurrency(cf.price_per_month)}/bulan
+                      {formatCurrency(cf.price_per_month)}{t('roomDetail.perMonth', '/bulan')}
                     </Text>
                   </View>
                 ))}
@@ -361,10 +362,10 @@ const MyRentScreen = ({ navigation }) => {
                 {requestedContractFacilities.map((cf) => (
                   <View key={cf.id} style={styles.optionalFacilityItem}>
                     <Text style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
-                      {cf.custom_facility_name || cf.facility_master?.name || 'Fasilitas Opsional'}
+                      {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
                     </Text>
                     <View style={styles.requestBadgeInline}>
-                      <Text style={styles.requestBadgeTextInline}>Menunggu Konfirmasi</Text>
+                      <Text style={styles.requestBadgeTextInline}>{t('myRent.waitingConfirm', 'Menunggu Konfirmasi')}</Text>
                     </View>
                   </View>
                 ))}
@@ -377,7 +378,7 @@ const MyRentScreen = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.addFacilityBtnText}>Ajukan Fasilitas Tambahan</Text>
+              <Text style={styles.addFacilityBtnText}>{t('myRent.requestAdditional', 'Ajukan Fasilitas Tambahan')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -385,7 +386,7 @@ const MyRentScreen = ({ navigation }) => {
           {/* Owner Contact */}
           {owner && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Hubungi Pemilik</Text>
+              <Text style={styles.sectionTitle}>{t('myRent.contactOwner', 'Hubungi Pemilik')}</Text>
               <View style={styles.ownerCard}>
                 <View style={styles.ownerAvatar}>
                   <Text style={styles.ownerAvatarText}>
@@ -403,7 +404,7 @@ const MyRentScreen = ({ navigation }) => {
                       onPress={() => handleCallOwner(owner.phone_number)}
                     >
                       <Ionicons name="call" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                      <Text style={styles.callBtnText}>Hubungi</Text>
+                      <Text style={styles.callBtnText}>{t('myRent.call', 'Hubungi')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.callBtn, { backgroundColor: '#25D366', borderColor: '#25D366' }]}
@@ -411,7 +412,7 @@ const MyRentScreen = ({ navigation }) => {
                         let phone = owner.phone_number.replace(/\D/g, '');
                         if (phone.startsWith('0')) phone = '62' + phone.substring(1);
                         const url = `whatsapp://send?phone=${phone}&text=Halo Bapak/Ibu ${owner.full_name}, saya penyewa kosan Anda di aplikasi KosanKu.`;
-                        Linking.openURL(url).catch(() => Alert.alert('Error', 'WhatsApp tidak terinstal'));
+                        Linking.openURL(url).catch(() => Alert.alert(t('myRent.callFail', 'Gagal'), 'WhatsApp tidak terinstal'));
                       }}
                     >
                       <Ionicons name="logo-whatsapp" size={16} color="#FFF" style={{ marginRight: 6 }} />
@@ -426,16 +427,17 @@ const MyRentScreen = ({ navigation }) => {
           {/* Recent Invoices */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Tagihan Terbaru</Text>
+              <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
             </View>
 
             {recentInvoices.length === 0 ? (
               <View style={styles.emptyInvoice}>
-                <Text style={styles.emptyInvoiceText}>Belum ada tagihan</Text>
+                <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
               </View>
             ) : (
               recentInvoices.map((invoice) => {
-                const status = INVOICE_STATUS_CONFIG[invoice.status] ?? INVOICE_STATUS_CONFIG.unpaid;
+                const statusConfig = getInvoiceStatusConfig(t);
+                const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
                 return (
                   <TouchableOpacity
                     key={invoice.id}
@@ -476,13 +478,13 @@ const MyRentScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Ajukan Fasilitas</Text>
+              <Text style={styles.modalTitle}>{t('myRent.requestFacility', 'Ajukan Fasilitas')}</Text>
               <TouchableOpacity onPress={() => setShowFacilityModal(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalSubtitle}>Pilih fasilitas tambahan yang ingin Anda pasang di kamar ini.</Text>
+            <Text style={styles.modalSubtitle}>{t('myRent.chooseFacility', 'Pilih fasilitas tambahan yang ingin Anda pasang di kamar ini.')}</Text>
 
             <ScrollView style={styles.facilityList}>
               {masterFacilities.map((facility) => {
@@ -502,9 +504,9 @@ const MyRentScreen = ({ navigation }) => {
                       <View style={{ marginLeft: 12 }}>
                         <Text style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</Text>
                         {isAlreadyActive ? (
-                          <Text style={styles.facilityOptionStatus}>Sudah terpasang</Text>
+                          <Text style={styles.facilityOptionStatus}>{t('myRent.installed', 'Sudah terpasang')}</Text>
                         ) : isAlreadyRequested ? (
-                          <Text style={styles.facilityOptionStatus}>Menunggu persetujuan</Text>
+                          <Text style={styles.facilityOptionStatus}>{t('myRent.waitingApproval', 'Menunggu persetujuan')}</Text>
                         ) : null}
                       </View>
                     </View>

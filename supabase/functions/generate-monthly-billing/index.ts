@@ -121,8 +121,8 @@ serve(async (req: Request) => {
           for (const invoice of newInvoices) {
             await supabaseAdmin.from('notifications').insert({
               user_id: invoice.tenant_id,
-              title: 'Tagihan Baru Tersedia',
-              body: `Tagihan bulan ini sebesar Rp ${Number(invoice.total_amount).toLocaleString('id-ID')} telah tersedia. Jatuh tempo: ${new Date(invoice.due_date).toLocaleDateString('id-ID')}`,
+              title: 'invoice_generated_title',
+              body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
               type: 'invoice_generated',
               reference_id: invoice.id,
               reference_type: 'invoice',

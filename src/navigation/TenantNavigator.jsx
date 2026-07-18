@@ -151,19 +151,19 @@ const TenantDrawerContent = ({ navigation }) => {
 
   const handleSwitchRole = () => {
     Alert.alert(
-      'Beralih Peran',
-      'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?',
+      t('navigation.switchRole.title', 'Beralih Peran'),
+      t('navigation.switchRole.toOwnerMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Beralih',
+          text: t('navigation.switchRole.btnSwitch', 'Beralih'),
           onPress: async () => {
             const { updateUserProfile } = require('../services/userService');
             const { data, error } = await updateUserProfile(currentUser.id, {
               role: USER_ROLE.OWNER,
             });
             if (error) {
-              Alert.alert('Gagal', error.message);
+              Alert.alert(t('navigation.switchRole.failTitle', 'Gagal'), error.message);
             } else if (data) {
               useAuthStore.getState().setAuthenticatedUser(
                 useAuthStore.getState().currentSession,
@@ -202,7 +202,7 @@ const TenantDrawerContent = ({ navigation }) => {
       </View>
 
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pemilik</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>{t('navigation.switchRole.switchToOwnerBtn', 'Beralih ke Mode Pemilik')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

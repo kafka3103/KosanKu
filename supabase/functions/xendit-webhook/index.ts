@@ -126,8 +126,8 @@ serve(async (req) => {
         // Notifikasi / Bukti Invoice untuk Tenant (Penghuni)
         {
           user_id: invoice.tenant_id,
-          title: "Invoice Lunas & Bukti Pembayaran 🧾",
-          body: `Tagihan ${invoice.invoice_number || 'Kos'} (Kamar ${roomNum} di ${propName}) sebesar ${formattedAmt} telah Lunas otomatis via Xendit (${payment_channel || 'Checkout'}). Klik untuk melihat bukti invoice.`,
+          title: "invoice_paid_tenant_title",
+          body: JSON.stringify({ key: "invoice_paid_tenant_body", params: { invoiceNumber: invoice.invoice_number || 'Kos', room: roomNum, property: propName, amount: formattedAmt, channel: payment_channel || 'Checkout' } }),
           type: "invoice_paid",
           reference_id: invoice.id,
           reference_type: "invoice",
@@ -136,8 +136,8 @@ serve(async (req) => {
         // Notifikasi / Bukti Invoice untuk Owner (Pemilik)
         {
           user_id: invoice.owner_id,
-          title: "Dana Masuk & Invoice Lunas 💰",
-          body: `Penghuni kamar ${roomNum} (${propName}) telah melunasi tagihan ${invoice.invoice_number || 'Kos'} sebesar ${formattedAmt} via Xendit. Invoice telah dicatat di laporan keuangan Anda.`,
+          title: "invoice_paid_owner_title",
+          body: JSON.stringify({ key: "invoice_paid_owner_body", params: { invoiceNumber: invoice.invoice_number || 'Kos', room: roomNum, property: propName, amount: formattedAmt } }),
           type: "invoice_paid",
           reference_id: invoice.id,
           reference_type: "invoice",

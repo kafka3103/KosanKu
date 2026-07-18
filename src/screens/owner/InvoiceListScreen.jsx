@@ -27,13 +27,13 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerInvoices } from '../../services/invoiceService';
 
-const STATUS_CONFIG = {
-  unpaid: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Belum Dibayar' },
-  paid: { color: COLORS.success, bg: COLORS.successLight, label: 'Lunas' },
-  overdue: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terlambat' },
-  partial: { color: COLORS.info, bg: COLORS.infoLight, label: 'Sebagian' },
-  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Dibatalkan' },
-};
+const getStatusConfig = (t) => ({
+  unpaid: { color: COLORS.warning, bg: COLORS.warningLight, label: t('ownerInvoiceList.status.unpaid', 'Belum Dibayar') },
+  paid: { color: COLORS.success, bg: COLORS.successLight, label: t('ownerInvoiceList.status.paid', 'Lunas') },
+  overdue: { color: COLORS.error, bg: COLORS.errorLight, label: t('ownerInvoiceList.status.overdue', 'Terlambat') },
+  partial: { color: COLORS.info, bg: COLORS.infoLight, label: t('ownerInvoiceList.status.partial', 'Sebagian') },
+  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: t('ownerInvoiceList.status.cancelled', 'Dibatalkan') },
+});
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -42,25 +42,26 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMM yyyy', { locale: i18n?.language === 'id' ? idLocale : undefined });
   } catch {
     return dateStr;
   }
 };
 
-const formatPeriod = (dateStr) => {
+const formatPeriod = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'MMMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'MMMM yyyy', { locale: i18n?.language === 'id' ? idLocale : undefined });
   } catch {
     return dateStr;
   }
 };
 
-const InvoiceCard = ({ invoice }) => {
+const InvoiceCard = ({ invoice, t, i18n }) => {
+  const STATUS_CONFIG = getStatusConfig(t);
   const status = STATUS_CONFIG[invoice.status] ?? STATUS_CONFIG.unpaid;
   const tenant = invoice.users;
   const room = invoice.rooms;
@@ -70,7 +71,7 @@ const InvoiceCard = ({ invoice }) => {
       <View style={styles.cardHeader}>
         <View>
           <Text style={styles.invoiceNumber}>{invoice.invoice_number}</Text>
-          <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
+          <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n)}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
           <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
@@ -85,23 +86,23 @@ const InvoiceCard = ({ invoice }) => {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
           <Ionicons name="bed-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
-          <Text style={styles.infoRow}>{room?.properties?.name} · Kamar {room?.room_number}</Text>
+          <Text style={styles.infoRow}>{room?.properties?.name} · {t('ownerInvoiceList.room', 'Kamar')} {room?.room_number}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
-          <Text style={styles.infoRow}>Jatuh tempo: {formatDate(invoice.due_date)}</Text>
+          <Text style={styles.infoRow}>{t('ownerInvoiceList.dueOn', 'Jatuh tempo: {{date}}', { date: formatDate(invoice.due_date, i18n) })}</Text>
         </View>
       </View>
 
       {/* Amount */}
       <View style={styles.amountRow}>
-        <Text style={styles.amountLabel}>Total Tagihan</Text>
+        <Text style={styles.amountLabel}>{t('ownerInvoiceList.totalAmount', 'Total Tagihan')}</Text>
         <Text style={styles.amountValue}>{formatCurrency(invoice.total_amount)}</Text>
       </View>
 
       {invoice.status === 'partial' && (
         <View style={styles.paidRow}>
-          <Text style={styles.paidLabel}>Sudah Dibayar</Text>
+          <Text style={styles.paidLabel}>{t('ownerInvoiceList.paidAmount', 'Sudah Dibayar')}</Text>
           <Text style={styles.paidValue}>{formatCurrency(invoice.paid_amount)}</Text>
         </View>
       )}
@@ -120,7 +121,7 @@ const FilterTab = ({ label, isActive, onPress }) => (
 );
 
 const InvoiceListScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
   const [invoices, setInvoices] = useState([]);
@@ -144,10 +145,10 @@ const InvoiceListScreen = ({ navigation }) => {
   );
 
   const filters = [
-    { key: 'all', label: 'Semua' },
-    { key: 'unpaid', label: 'Belum Bayar' },
-    { key: 'overdue', label: 'Terlambat' },
-    { key: 'paid', label: 'Lunas' },
+    { key: 'all', label: t('ownerInvoiceList.filterAll', 'Semua') },
+    { key: 'unpaid', label: t('ownerInvoiceList.filterUnpaid', 'Belum Bayar') },
+    { key: 'overdue', label: t('ownerInvoiceList.filterOverdue', 'Terlambat') },
+    { key: 'paid', label: t('ownerInvoiceList.filterPaid', 'Lunas') },
   ];
 
   const filteredInvoices =
@@ -173,10 +174,10 @@ const InvoiceListScreen = ({ navigation }) => {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <DrawerButton />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Daftar Tagihan</Text>
+            <Text style={styles.headerTitle}>{t('ownerInvoiceList.title', 'Daftar Tagihan')}</Text>
             {totalUnpaid > 0 && (
               <View style={styles.summaryBanner}>
-                <Text style={styles.summaryLabel}>Total Belum Terbayar</Text>
+                <Text style={styles.summaryLabel}>{t('ownerInvoiceList.totalUnpaid', 'Total Belum Terbayar')}</Text>
                 <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
               </View>
             )}
@@ -219,13 +220,13 @@ const InvoiceListScreen = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="document-text-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Tidak Ada Tagihan</Text>
+            <Text style={styles.emptyTitle}>{t('ownerInvoiceList.emptyTitle', 'Tidak Ada Tagihan')}</Text>
             <Text style={styles.emptySubtitle}>
-              Tagihan akan dibuat otomatis setiap bulan untuk penghuni aktif
+              {t('ownerInvoiceList.emptySubtitle', 'Tagihan akan dibuat otomatis setiap bulan untuk penghuni aktif')}
             </Text>
           </View>
         )}
-        renderItem={({ item }) => <InvoiceCard invoice={item} />}
+        renderItem={({ item }) => <InvoiceCard invoice={item} t={t} i18n={i18n} />}
       />
     </View>
   );

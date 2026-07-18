@@ -40,21 +40,21 @@ import {
   uploadMultiplePropertyPhotos,
 } from '../../services/propertyService';
 
-const GENERAL_FACILITIES = [
-  { key: 'parking', label: 'Parkir', icon: 'car-outline' },
-  { key: 'cctv', label: 'CCTV', icon: 'videocam-outline' },
-  { key: 'security_24h', label: 'Security 24 Jam', icon: 'shield-checkmark-outline' },
-  { key: 'wifi_area', label: 'WiFi Area', icon: 'wifi-outline' },
-  { key: 'laundry', label: 'Laundry', icon: 'shirt-outline' },
-  { key: 'canteen', label: 'Kantin', icon: 'restaurant-outline' },
-  { key: 'garden', label: 'Taman', icon: 'leaf-outline' },
-  { key: 'gym', label: 'Gym', icon: 'barbell-outline' },
+const GENERAL_FACILITIES = (t) => [
+  { key: 'parking', label: t('property.form.facParking', 'Parkir'), icon: 'car-outline' },
+  { key: 'cctv', label: t('property.form.facCctv', 'CCTV'), icon: 'videocam-outline' },
+  { key: 'security_24h', label: t('property.form.facSecurity', 'Security 24 Jam'), icon: 'shield-checkmark-outline' },
+  { key: 'wifi_area', label: t('property.form.facWifi', 'WiFi Area'), icon: 'wifi-outline' },
+  { key: 'laundry', label: t('property.form.facLaundry', 'Laundry'), icon: 'shirt-outline' },
+  { key: 'canteen', label: t('property.form.facCanteen', 'Kantin'), icon: 'restaurant-outline' },
+  { key: 'garden', label: t('property.form.facGarden', 'Taman'), icon: 'leaf-outline' },
+  { key: 'gym', label: t('property.form.facGym', 'Gym'), icon: 'barbell-outline' },
 ];
 
-const GENDER_OPTIONS = [
-  { value: 'male', label: 'Putra', icon: 'man-outline' },
-  { value: 'female', label: 'Putri', icon: 'woman-outline' },
-  { value: 'mixed', label: 'Campur', icon: 'people-outline' },
+const GENDER_OPTIONS = (t) => [
+  { value: 'male', label: t('property.form.genderMale', 'Putra'), icon: 'man-outline' },
+  { value: 'female', label: t('property.form.genderFemale', 'Putri'), icon: 'woman-outline' },
+  { value: 'mixed', label: t('property.form.genderMixed', 'Campur'), icon: 'people-outline' },
 ];
 
 const PropertyFormScreen = ({ navigation, route }) => {
@@ -123,10 +123,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
           setMapSearchResults(data.features);
         }
       } else {
-        Alert.alert('Pencarian Peta', 'Lokasi tidak ditemukan. Coba masukkan nama jalan atau kota yang lebih spesifik.');
+        Alert.alert(t('property.form.mapSearchTitle', 'Pencarian Peta'), t('property.form.mapSearchErrorNotFound', 'Lokasi tidak ditemukan. Coba masukkan nama jalan atau kota yang lebih spesifik.'));
       }
     } catch (err) {
-      Alert.alert('Error', 'Gagal mencari lokasi di peta. Periksa koneksi internet Anda.');
+      Alert.alert('Error', t('property.form.mapSearchErrorNetwork', 'Gagal mencari lokasi di peta. Periksa koneksi internet Anda.'));
     } finally {
       setMapSearchLoading(false);
     }
@@ -137,7 +137,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
       setLocationLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Izin Ditolak', 'Akses lokasi diperlukan untuk mendeteksi koordinat GPS otomatis kosan Anda.');
+        Alert.alert(t('property.form.permRequired', 'Izin Ditolak'), t('property.form.permLocationDenied', 'Akses lokasi diperlukan untuk mendeteksi koordinat GPS otomatis kosan Anda.'));
         setLocationLoading(false);
         return;
       }
@@ -155,16 +155,16 @@ const PropertyFormScreen = ({ navigation, route }) => {
           animationDuration: 800,
         });
         Alert.alert(
-          '📍 Lokasi GPS Terdeteksi!',
-          `Koordinat berhasil disimpan dari posisi Anda:\nLat: ${current.coords.latitude.toFixed(5)}\nLong: ${current.coords.longitude.toFixed(5)}`
+          t('property.form.gpsDetectedTitle', '📍 Lokasi GPS Terdeteksi!'),
+          t('property.form.gpsDetectedMsg', 'Koordinat berhasil disimpan dari posisi Anda:\nLat: {{lat}}\nLong: {{lon}}', { lat: current.coords.latitude.toFixed(5), lon: current.coords.longitude.toFixed(5) })
         );
       } else {
-        Alert.alert('Gagal', 'Tidak dapat mengambil lokasi GPS saat ini.');
+        Alert.alert(t('property.form.gpsErrorTitle', 'Gagal'), t('property.form.gpsErrorMsg', 'Tidak dapat mengambil lokasi GPS saat ini.'));
       }
       setLocationLoading(false);
     } catch (err) {
       console.warn('GPS Error:', err);
-      Alert.alert('Error', 'Gagal mendeteksi lokasi GPS. Pastikan GPS di perangkat aktif.');
+      Alert.alert('Error', t('property.form.gpsDetectFailMsg', 'Gagal mendeteksi lokasi GPS. Pastikan GPS di perangkat aktif.'));
       setLocationLoading(false);
     }
   };
@@ -178,7 +178,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const pickCoverFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permCamDenied', 'Akses kamera diperlukan untuk mengambil foto.'));
       return;
     }
 
@@ -197,7 +197,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const pickCoverFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permGalleryDenied', 'Akses galeri foto diperlukan.'));
       return;
     }
 
@@ -215,12 +215,12 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
   const handlePickCoverPhoto = () => {
     Alert.alert(
-      'Foto Cover Properti',
-      'Pilih sumber foto cover properti',
+      t('property.form.coverPhotoTitle', 'Foto Cover Properti'),
+      t('property.form.coverPhotoMsg', 'Pilih sumber foto cover properti'),
       [
-        { text: 'Kamera', onPress: pickCoverFromCamera },
-        { text: 'Galeri', onPress: pickCoverFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('property.form.cameraBtn', 'Kamera'), onPress: pickCoverFromCamera },
+        { text: t('property.form.galleryBtn', 'Galeri'), onPress: pickCoverFromGallery },
+        { text: t('property.form.cancelBtn', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -229,7 +229,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const pickAdditionalFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permCamDenied', 'Akses kamera diperlukan.'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -244,7 +244,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const pickAdditionalFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri diperlukan.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permGalleryDenied', 'Akses galeri diperlukan.'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -260,16 +260,16 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
   const handlePickAdditionalPhotos = () => {
     if (additionalPhotos.length >= 5) {
-      Alert.alert('Batas Tercapai', 'Maksimal 5 foto tambahan.');
+      Alert.alert(t('property.form.limitReachedTitle', 'Batas Tercapai'), t('property.form.limitReachedMsg', 'Maksimal 5 foto tambahan.'));
       return;
     }
     Alert.alert(
-      'Foto Tambahan',
-      'Pilih sumber foto tambahan',
+      t('property.form.additionalPhotoTitle', 'Foto Tambahan'),
+      t('property.form.additionalPhotoMsg', 'Pilih sumber foto tambahan'),
       [
-        { text: 'Kamera', onPress: pickAdditionalFromCamera },
-        { text: 'Galeri', onPress: pickAdditionalFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('property.form.cameraBtn', 'Kamera'), onPress: pickAdditionalFromCamera },
+        { text: t('property.form.galleryBtn', 'Galeri'), onPress: pickAdditionalFromGallery },
+        { text: t('property.form.cancelBtn', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -281,15 +281,15 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Nama properti wajib diisi');
+      Alert.alert('Error', t('property.form.reqNameError', 'Nama properti wajib diisi'));
       return;
     }
     if (!addressLine.trim()) {
-      Alert.alert('Error', 'Alamat wajib diisi');
+      Alert.alert('Error', t('property.form.reqAddressError', 'Alamat wajib diisi'));
       return;
     }
     if (!city.trim()) {
-      Alert.alert('Error', 'Kota wajib diisi');
+      Alert.alert('Error', t('property.form.reqCityError', 'Kota wajib diisi'));
       return;
     }
 
@@ -349,17 +349,17 @@ const PropertyFormScreen = ({ navigation, route }) => {
       }
 
       if (result.error) {
-        Alert.alert('Gagal Menyimpan', result.error.message);
+        Alert.alert(t('property.form.failSaveTitle', 'Gagal Menyimpan'), result.error.message);
         return;
       }
 
       Alert.alert(
-        'Berhasil!',
-        isEdit ? 'Properti berhasil diperbarui' : 'Properti berhasil ditambahkan',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        t('property.form.successTitle', 'Berhasil!'),
+        isEdit ? t('property.form.successUpdateMsg', 'Properti berhasil diperbarui') : t('property.form.successAddMsg', 'Properti berhasil ditambahkan'),
+        [{ text: t('property.form.okBtn', 'OK'), onPress: () => navigation.goBack() }]
       );
     } catch (err) {
-      Alert.alert('Error', 'Terjadi kesalahan, coba lagi.');
+      Alert.alert('Error', t('property.form.failSaveMsg', 'Terjadi kesalahan, coba lagi.'));
     } finally {
       setIsLoading(false);
     }
@@ -403,17 +403,17 @@ const PropertyFormScreen = ({ navigation, route }) => {
             </View>
           )}
           <View style={styles.coverPhotoOverlay}>
-            <Text style={styles.coverPhotoOverlayText}>Ganti Foto Utama</Text>
+            <Text style={styles.coverPhotoOverlayText}>{t('property.form.changeCoverOverlay', 'Ganti Foto Utama')}</Text>
           </View>
         </TouchableOpacity>
 
         {/* Additional Photos */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[2] }}>
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>📸 Foto Tambahan ({additionalPhotos.length}/5)</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.additionalPhotoHeader', '📸 Foto Tambahan ({{count}}/5)', { count: additionalPhotos.length })}</Text>
             {additionalPhotos.length < 5 && (
               <TouchableOpacity onPress={handlePickAdditionalPhotos}>
-                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>+ Tambah</Text>
+                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>{t('property.form.addAdditionalPhotoBtn', '+ Tambah')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -430,14 +430,14 @@ const PropertyFormScreen = ({ navigation, route }) => {
               </View>
             ))}
             {additionalPhotos.length === 0 && (
-              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.</Text>
+              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>{t('property.form.noAdditionalPhoto', 'Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.')}</Text>
             )}
           </ScrollView>
         </View>
 
         {/* Informasi Dasar */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Informasi Dasar</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.basicInfoTitle', '📋 Informasi Dasar')}</Text>
 
           <Text style={styles.label}>{t('property.form.nameLabel')} *</Text>
           <TextInput
@@ -463,7 +463,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Lokasi */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Lokasi</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.locationTitle', '📍 Lokasi')}</Text>
 
           <Text style={styles.label}>{t('property.form.addressLabel')} *</Text>
           <TextInput
@@ -497,7 +497,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          <Text style={styles.label}>Kode Pos</Text>
+          <Text style={styles.label}>{t('property.form.postalCodeLabel', 'Kode Pos')}</Text>
           <TextInput
             style={styles.input}
             placeholder="40135"
@@ -510,22 +510,22 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Koordinat GPS / Peta */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Titik Koordinat GPS Peta</Text>
-          <Text style={styles.sectionSubtitle}>Atur titik peta agar calon penghuni bisa menemukan kosan Anda melalui fitur pencarian GPS terdekat</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.gpsTitle', '📍 Titik Koordinat GPS Peta')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('property.form.gpsSubtitle', 'Atur titik peta agar calon penghuni bisa menemukan kosan Anda melalui fitur pencarian GPS terdekat')}</Text>
 
           {latitude != null && longitude != null ? (
             <View style={{ backgroundColor: COLORS.primarySurface, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], borderWidth: 1, borderColor: COLORS.primary, marginBottom: SPACING[3] }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
                 <Ionicons name="navigate-circle" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
                 <Text style={{ fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>
-                  Titik GPS Tersimpan
+                  {t('property.form.gpsSavedLabel', 'Titik GPS Tersimpan')}
                 </Text>
               </View>
               <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.semiBold }}>
                 Lat (ltd): {parseFloat(latitude).toFixed(5)}, Long (lnt): {parseFloat(longitude).toFixed(5)}
               </Text>
               <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 2 }}>
-                Titik lokasi ini akan tampil akurat di peta pencarian tenant.
+                {t('property.form.gpsSavedHint', 'Titik lokasi ini akan tampil akurat di peta pencarian tenant.')}
               </Text>
             </View>
           ) : (
@@ -533,11 +533,11 @@ const PropertyFormScreen = ({ navigation, route }) => {
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
                 <Ionicons name="alert-circle" size={22} color={COLORS.warning} style={{ marginRight: 8 }} />
                 <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.warning }}>
-                  Titik Peta Belum Diatur
+                  {t('property.form.gpsNotSetLabel', 'Titik Peta Belum Diatur')}
                 </Text>
               </View>
               <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary }}>
-                Kosan tanpa titik GPS tidak akan muncul di peta & pencarian urutan terdekat tenant.
+                {t('property.form.gpsNotSetHint', 'Kosan tanpa titik GPS tidak akan muncul di peta & pencarian urutan terdekat tenant.')}
               </Text>
             </View>
           )}
@@ -554,7 +554,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
             >
               <Ionicons name="map-outline" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
               <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
-                {latitude != null ? 'Ubah Titik Peta' : 'Pilih Titik di Peta'}
+                {latitude != null ? t('property.form.gpsChangeBtn', 'Ubah Titik Peta') : t('property.form.gpsSetBtn', 'Pilih Titik di Peta')}
               </Text>
             </TouchableOpacity>
 
@@ -570,7 +570,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 <Ionicons name="locate" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
               )}
               <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>
-                {locationLoading ? 'Mendeteksi...' : 'Deteksi GPS Saya'}
+                {locationLoading ? t('property.form.gpsDetectingBtn', 'Mendeteksi...') : t('property.form.gpsDetectBtn', 'Deteksi GPS Saya')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -578,10 +578,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Gender Policy */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👤 Kebijakan Penghuni</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.genderTitle', '👤 Kebijakan Penghuni')}</Text>
           <Text style={styles.label}>{t('property.form.genderPolicyLabel')}</Text>
           <View style={styles.genderRow}>
-            {GENDER_OPTIONS.map((opt) => (
+            {GENDER_OPTIONS(t).map((opt) => (
               <TouchableOpacity
                 key={opt.value}
                 style={[
@@ -607,10 +607,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Fasilitas Umum */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🏢 Fasilitas Umum</Text>
-          <Text style={styles.sectionSubtitle}>Fasilitas area bersama (bukan per kamar)</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.genFacTitle', '🏢 Fasilitas Umum')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('property.form.genFacSubtitle', 'Fasilitas area bersama (bukan per kamar)')}</Text>
           <View style={styles.facilitiesGrid}>
-            {GENERAL_FACILITIES.map((fac) => {
+            {GENERAL_FACILITIES(t).map((fac) => {
               const isSelected = selectedFacilities.includes(fac.key);
               return (
                 <TouchableOpacity
@@ -636,7 +636,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Peraturan */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📜 Peraturan Kosan</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.rulesTitle', '📜 Peraturan Kosan')}</Text>
           <TextInput
             style={[styles.input, styles.textArea, { minHeight: 100 }]}
             placeholder={t('property.form.rulesPlaceholder')}
@@ -651,7 +651,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Billing */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💳 Pengaturan Tagihan</Text>
+          <Text style={styles.sectionTitle}>{t('property.form.billingTitle', '💳 Pengaturan Tagihan')}</Text>
 
           <View style={styles.row}>
             <View style={styles.rowItem}>
@@ -664,7 +664,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 keyboardType="numeric"
                 placeholderTextColor={COLORS.textTertiary}
               />
-              <Text style={styles.fieldHint}>Tanggal 1-28</Text>
+              <Text style={styles.fieldHint}>{t('property.form.billingDayHint', 'Tanggal 1-28')}</Text>
             </View>
             <View style={styles.rowItem}>
               <Text style={styles.label}>{t('property.form.billingDueDaysLabel')}</Text>
@@ -676,7 +676,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 keyboardType="numeric"
                 placeholderTextColor={COLORS.textTertiary}
               />
-              <Text style={styles.fieldHint}>Hari setelah generate</Text>
+              <Text style={styles.fieldHint}>{t('property.form.billingDueHint', 'Hari setelah generate')}</Text>
             </View>
           </View>
         </View>
@@ -710,10 +710,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[4] }}>
               <View>
                 <Text style={{ fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
-                  Pilih Titik Lokasi Peta
+                  {t('property.form.mapPickerTitle', 'Pilih Titik Lokasi Peta')}
                 </Text>
                 <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 2 }}>
-                  Tentukan posisi koordinat kosan agar akurat di peta
+                  {t('property.form.mapPickerSubtitle', 'Tentukan posisi koordinat kosan agar akurat di peta')}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setShowLocationModal(false)}>
@@ -730,7 +730,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                   <Ionicons name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 6 }} />
                   <TextInput
                     style={{ flex: 1, paddingVertical: 10, fontSize: FONT_SIZE.sm, color: COLORS.textPrimary }}
-                    placeholder="Cari jalan, area, atau kota..."
+                    placeholder={t('property.form.mapSearchPlaceholder', 'Cari jalan, area, atau kota...')}
                     placeholderTextColor={COLORS.textTertiary}
                     value={mapSearchQuery}
                     onChangeText={setMapSearchQuery}
@@ -751,7 +751,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                     {mapSearchLoading ? (
                       <ActivityIndicator size="small" color={COLORS.white} />
                     ) : (
-                      <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>Cari</Text>
+                      <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>{t('property.form.mapSearchBtn', 'Cari')}</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -796,7 +796,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
               >
                 <Ionicons name="locate" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
                 <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>
-                  Gunakan Posisi Saya Saat ini
+                  {t('property.form.mapUseCurrentPosBtn', 'Gunakan Posisi Saya Saat ini')}
                 </Text>
               </TouchableOpacity>
 
@@ -830,7 +830,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 </MapboxGL.MapView>
                 <View style={{ position: 'absolute', bottom: 10, left: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', padding: 8, borderRadius: 8 }}>
                   <Text style={{ color: COLORS.white, fontSize: 11, textAlign: 'center' }}>
-                    💡 Ketuk di atas peta untuk memindahkan pin ke lokasi kosan Anda
+                    {t('property.form.mapHint', '💡 Ketuk di atas peta untuk memindahkan pin ke lokasi kosan Anda')}
                   </Text>
                 </View>
               </View>
@@ -838,7 +838,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
               {/* Tombol Nudge / Geser Manual Cepat jika butuh presisi mikro */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING[2], paddingHorizontal: SPACING[1] }}>
                 <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium }}>
-                  Presisi Koordinat:
+                  {t('property.form.mapPrecisionLabel', 'Presisi Koordinat:')}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   <TouchableOpacity onPress={() => {
@@ -846,28 +846,28 @@ const PropertyFormScreen = ({ navigation, route }) => {
                     setTempLatitude(newLat);
                     mapCameraRef.current?.setCamera({ centerCoordinate: [tempLongitude, newLat], animationDuration: 300 });
                   }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>▲ Utara</Text>
+                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>{t('property.form.mapDirNorth', '▲ Utara')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => {
                     const newLat = parseFloat((tempLatitude - 0.0005).toFixed(5));
                     setTempLatitude(newLat);
                     mapCameraRef.current?.setCamera({ centerCoordinate: [tempLongitude, newLat], animationDuration: 300 });
                   }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>▼ Selatan</Text>
+                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>{t('property.form.mapDirSouth', '▼ Selatan')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => {
                     const newLon = parseFloat((tempLongitude - 0.0005).toFixed(5));
                     setTempLongitude(newLon);
                     mapCameraRef.current?.setCamera({ centerCoordinate: [newLon, tempLatitude], animationDuration: 300 });
                   }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>◀ Barat</Text>
+                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>{t('property.form.mapDirWest', '◀ Barat')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => {
                     const newLon = parseFloat((tempLongitude + 0.0005).toFixed(5));
                     setTempLongitude(newLon);
                     mapCameraRef.current?.setCamera({ centerCoordinate: [newLon, tempLatitude], animationDuration: 300 });
                   }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>Timur ▶</Text>
+                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>{t('property.form.mapDirEast', 'Timur ▶')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -875,7 +875,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
             <View style={{ backgroundColor: COLORS.grey50, padding: SPACING[3], borderRadius: BORDER_RADIUS.md, marginBottom: SPACING[4] }}>
               <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, textAlign: 'center' }}>
-                📌 Koordinat yang akan disimpan: <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>{parseFloat(tempLatitude).toFixed(5)}, {parseFloat(tempLongitude).toFixed(5)}</Text>
+                {t('property.form.mapSavePreviewLabel', '📌 Koordinat yang akan disimpan:')} <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>{parseFloat(tempLatitude).toFixed(5)}, {parseFloat(tempLongitude).toFixed(5)}</Text>
               </Text>
             </View>
 
@@ -884,7 +884,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 style={{ flex: 1, paddingVertical: SPACING[3], backgroundColor: COLORS.grey200, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
                 onPress={() => setShowLocationModal(false)}
               >
-                <Text style={{ color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.bold }}>Batal</Text>
+                <Text style={{ color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.bold }}>{t('property.form.cancelBtn', 'Batal')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ flex: 2, paddingVertical: SPACING[3], backgroundColor: COLORS.accent, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
@@ -894,7 +894,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                   setShowLocationModal(false);
                 }}
               >
-                <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold }}>✅ Simpan Titik Ini</Text>
+                <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold }}>{t('property.form.mapSavePointBtn', '✅ Simpan Titik Ini')}</Text>
               </TouchableOpacity>
             </View>
           </View>
