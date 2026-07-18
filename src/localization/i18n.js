@@ -62,10 +62,6 @@ export const initializeI18n = async () => {
         escapeValue: false, // React Native sudah handle XSS
       },
       // Jangan load dari remote — semua teks sudah bundled
-      resources: {
-        id: { translation: idTranslations },
-        en: { translation: enTranslations },
-      },
     });
 
   return i18n;

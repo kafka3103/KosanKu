@@ -76,7 +76,12 @@ const ReportScreen = ({ navigation }) => {
   const totalOutstanding = revenueData.reduce((sum, m) => sum + m.unpaid, 0);
   const maxValue = Math.max(...revenueData.map((m) => m.total), 1);
 
-  const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+  const MONTH_LABELS = [
+    t('ownerReportScreen.months.jan', 'Jan'), t('ownerReportScreen.months.feb', 'Feb'), t('ownerReportScreen.months.mar', 'Mar'),
+    t('ownerReportScreen.months.apr', 'Apr'), t('ownerReportScreen.months.may', 'Mei'), t('ownerReportScreen.months.jun', 'Jun'),
+    t('ownerReportScreen.months.jul', 'Jul'), t('ownerReportScreen.months.aug', 'Ags'), t('ownerReportScreen.months.sep', 'Sep'),
+    t('ownerReportScreen.months.oct', 'Okt'), t('ownerReportScreen.months.nov', 'Nov'), t('ownerReportScreen.months.dec', 'Des')
+  ];
 
   return (
     <ScrollView
@@ -98,19 +103,19 @@ const ReportScreen = ({ navigation }) => {
           
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('report.title')}</Text>
-        <Text style={styles.headerSubtitle}>12 bulan terakhir</Text>
+        <Text style={styles.headerSubtitle}>{t('ownerReportScreen.last12Months', '12 bulan terakhir')}</Text>
       </View>
 
       {/* Summary Cards */}
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Total Diterima</Text>
+          <Text style={styles.summaryLabel}>{t('ownerReportScreen.totalReceived', 'Total Diterima')}</Text>
           <Text style={[styles.summaryValue, { color: COLORS.success }]}>
             {formatCurrency(totalRevenue)}
           </Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Belum Terbayar</Text>
+          <Text style={styles.summaryLabel}>{t('ownerReportScreen.unpaid', 'Belum Terbayar')}</Text>
           <Text style={[styles.summaryValue, { color: COLORS.warning }]}>
             {formatCurrency(totalOutstanding)}
           </Text>
@@ -122,32 +127,32 @@ const ReportScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
             <Ionicons name="stats-chart" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Statistik Properti</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('ownerReportScreen.propertyStats', 'Statistik Properti')}</Text>
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.totalProperties}</Text>
-              <Text style={styles.statLabel}>Properti</Text>
+              <Text style={styles.statLabel}>{t('ownerReportScreen.properties', 'Properti')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.totalRooms}</Text>
-              <Text style={styles.statLabel}>Total Kamar</Text>
+              <Text style={styles.statLabel}>{t('ownerReportScreen.totalRooms', 'Total Kamar')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: COLORS.success }]}>
                 {stats.availableRooms}
               </Text>
-              <Text style={styles.statLabel}>Tersedia</Text>
+              <Text style={styles.statLabel}>{t('ownerReportScreen.available', 'Tersedia')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: COLORS.error }]}>
                 {stats.occupiedRooms}
               </Text>
-              <Text style={styles.statLabel}>Terisi</Text>
+              <Text style={styles.statLabel}>{t('ownerReportScreen.occupied', 'Terisi')}</Text>
             </View>
           </View>
           <View style={styles.occupancyRow}>
-            <Text style={styles.occupancyLabel}>Tingkat Hunian</Text>
+            <Text style={styles.occupancyLabel}>{t('ownerReportScreen.occupancyRate', 'Tingkat Hunian')}</Text>
             <Text style={styles.occupancyValue}>
               {stats.totalRooms > 0
                 ? Math.round((stats.occupiedRooms / stats.totalRooms) * 100)
@@ -171,11 +176,11 @@ const ReportScreen = ({ navigation }) => {
       <View style={styles.section}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
           <Ionicons name="cash-outline" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Pendapatan per Bulan</Text>
+          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('ownerReportScreen.revenuePerMonth', 'Pendapatan per Bulan')}</Text>
         </View>
         {revenueData.length === 0 ? (
           <View style={styles.emptyChart}>
-            <Text style={styles.emptyChartText}>Belum ada data pendapatan</Text>
+            <Text style={styles.emptyChartText}>{t('ownerReportScreen.noRevenueData', 'Belum ada data pendapatan')}</Text>
           </View>
         ) : (
           <View style={styles.chart}>
@@ -220,11 +225,11 @@ const ReportScreen = ({ navigation }) => {
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />
-            <Text style={styles.legendText}>Diterima</Text>
+            <Text style={styles.legendText}>{t('ownerReportScreen.received', 'Diterima')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: COLORS.warningLight }]} />
-            <Text style={styles.legendText}>Belum Bayar</Text>
+            <Text style={styles.legendText}>{t('ownerReportScreen.unpaidLegend', 'Belum Bayar')}</Text>
           </View>
         </View>
       </View>
@@ -233,10 +238,10 @@ const ReportScreen = ({ navigation }) => {
       <View style={styles.section}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
           <Ionicons name="list" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Rincian Bulanan</Text>
+          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('ownerReportScreen.monthlyBreakdown', 'Rincian Bulanan')}</Text>
         </View>
         {revenueData.length === 0 ? (
-          <Text style={styles.emptyChartText}>Belum ada data</Text>
+          <Text style={styles.emptyChartText}>{t('ownerReportScreen.noData', 'Belum ada data')}</Text>
         ) : (
           [...revenueData].reverse().map((month, i) => (
             <View key={i} style={styles.monthRow}>

@@ -42,16 +42,16 @@ const formatDate = (dateStr) => {
   }
 };
 
-const STATUS_CONFIG = {
-  unpaid: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Belum Dibayar', icon: 'time' },
-  paid: { color: COLORS.success, bg: COLORS.successLight, label: 'Lunas', icon: 'checkmark-circle' },
-  overdue: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terlambat', icon: 'close-circle' },
-  partial: { color: COLORS.info, bg: COLORS.infoLight, label: 'Sebagian', icon: 'pie-chart' },
-};
+const getStatusConfig = (t) => ({
+  unpaid: { color: COLORS.warning, bg: COLORS.warningLight, label: t('invoiceDetail.status.unpaid', 'Belum Dibayar'), icon: 'time' },
+  paid: { color: COLORS.success, bg: COLORS.successLight, label: t('invoiceDetail.status.paid', 'Lunas'), icon: 'checkmark-circle' },
+  overdue: { color: COLORS.error, bg: COLORS.errorLight, label: t('invoiceDetail.status.overdue', 'Terlambat'), icon: 'close-circle' },
+  partial: { color: COLORS.info, bg: COLORS.infoLight, label: t('invoiceDetail.status.partial', 'Sebagian'), icon: 'pie-chart' },
+});
 
 const InvoiceDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const invoiceParam = route.params?.invoice;
   const invoiceIdParam = route.params?.invoiceId || invoiceParam?.id;
 
@@ -123,21 +123,22 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
       <View style={[styles.loadingContainer, { paddingHorizontal: SPACING[6] }]}>
         <Ionicons name="document-text-outline" size={56} color={COLORS.textTertiary} />
         <Text style={{ fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginTop: SPACING[3] }}>
-          Tagihan Tidak Ditemukan
+          {t('invoiceDetail.notFound', 'Tagihan Tidak Ditemukan')}
         </Text>
         <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, textAlign: 'center', marginTop: SPACING[1], marginBottom: SPACING[5] }}>
-          Data tagihan mungkin telah dihapus atau tidak dapat dimuat dari server.
+          {t('invoiceDetail.notFoundSub', 'Data tagihan mungkin telah dihapus atau tidak dapat dimuat dari server.')}
         </Text>
         <TouchableOpacity
           style={{ paddingHorizontal: SPACING[6], paddingVertical: SPACING[3], backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md }}
           onPress={() => navigation.goBack()}
         >
-          
+          <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.semibold }}>{t('common.buttons.back', 'Kembali')}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  const STATUS_CONFIG = getStatusConfig(t);
   const status = STATUS_CONFIG[invoice.status] ?? STATUS_CONFIG.unpaid;
   const room = invoice.rooms;
   const items = invoice.invoice_items ?? [];
@@ -147,14 +148,13 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
             </View>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detail Tagihan</Text>
+          <Text style={styles.headerTitle}>{t('invoiceDetail.title', 'Detail Tagihan')}</Text>
           <Text style={styles.invoiceNumber}>{invoice.invoice_number}</Text>
         </View>
 
@@ -165,8 +165,8 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
             <Text style={[styles.statusLabel, { color: status.color }]}>{status.label}</Text>
             <Text style={styles.statusSubtitle}>
               {invoice.status === 'paid'
-                ? `Dibayar: ${formatDate(invoice.paid_at)}`
-                : `Jatuh tempo: ${formatDate(invoice.due_date)}`}
+                ? t('invoiceDetail.paidOn', `Dibayar: ${formatDate(invoice.paid_at)}`, { date: formatDate(invoice.paid_at) })
+                : t('invoiceDetail.dueOn', `Jatuh tempo: ${formatDate(invoice.due_date)}`, { date: formatDate(invoice.due_date) })}
             </Text>
           </View>
         </View>
@@ -175,21 +175,21 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
             <Ionicons name="home" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Informasi Kamar</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('invoiceDetail.roomInfo', 'Informasi Kamar')}</Text>
           </View>
           <Text style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Properti: </Text>
+            <Text style={styles.infoLabel}>{t('invoiceDetail.property', 'Properti: ')}</Text>
             <Text style={styles.infoValue}>{room?.properties?.name}</Text>
           </Text>
           <Text style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Kamar: </Text>
+            <Text style={styles.infoLabel}>{t('invoiceDetail.room', 'Kamar: ')}</Text>
             <Text style={styles.infoValue}>{room?.room_number}</Text>
           </Text>
           <Text style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Periode: </Text>
+            <Text style={styles.infoLabel}>{t('invoiceDetail.period', 'Periode: ')}</Text>
             <Text style={styles.infoValue}>
               {invoice.billing_period
-                ? format(new Date(invoice.billing_period), 'MMMM yyyy', { locale: idLocale })
+                ? format(new Date(invoice.billing_period), 'MMMM yyyy', { locale: i18n.language === 'id' ? idLocale : undefined })
                 : '—'}
             </Text>
           </Text>
@@ -199,10 +199,10 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
             <Ionicons name="list" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Rincian Tagihan</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('invoiceDetail.invoiceItems', 'Rincian Tagihan')}</Text>
           </View>
           {items.length === 0 ? (
-            <Text style={styles.noItemsText}>Tidak ada rincian item</Text>
+            <Text style={styles.noItemsText}>{t('invoiceDetail.noItems', 'Tidak ada rincian item')}</Text>
           ) : (
             items.map((item) => (
               <View key={item.id} style={styles.itemRow}>
@@ -225,18 +225,18 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
           {/* Total Box */}
           <View style={styles.totalContainer}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Tagihan</Text>
+              <Text style={styles.totalLabel}>{t('invoiceDetail.totalAmount', 'Total Tagihan')}</Text>
               <Text style={styles.totalAmount}>{formatCurrency(invoice.total_amount)}</Text>
             </View>
 
             {invoice.status === 'partial' && (
               <>
                 <View style={styles.paidRow}>
-                  <Text style={styles.paidLabel}>Sudah Dibayar</Text>
+                  <Text style={styles.paidLabel}>{t('invoiceDetail.paidAmount', 'Sudah Dibayar')}</Text>
                   <Text style={styles.paidAmount}>{formatCurrency(invoice.paid_amount)}</Text>
                 </View>
                 <View style={styles.remainRow}>
-                  <Text style={styles.remainLabel}>Sisa Tagihan</Text>
+                  <Text style={styles.remainLabel}>{t('invoiceDetail.remainAmount', 'Sisa Tagihan')}</Text>
                   <Text style={styles.remainAmount}>{formatCurrency(unpaidAmount)}</Text>
                 </View>
               </>
@@ -253,7 +253,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
         <View style={styles.bottomBar}>
           <View style={{ flex: 1, marginRight: SPACING[3] }}>
             <Text style={styles.bottomLabel}>
-              {invoice.status === 'partial' ? 'Sisa Tagihan yang Harus Dibayar' : 'Total Tagihan Pembayaran'}
+              {invoice.status === 'partial' ? t('invoiceDetail.remainAmount', 'Sisa Tagihan yang Harus Dibayar') : t('invoiceDetail.totalAmount', 'Total Tagihan Pembayaran')}
             </Text>
             <Text style={styles.bottomAmount} numberOfLines={1} adjustsFontSizeToFit>
               {formatCurrency(invoice.status === 'partial' ? unpaidAmount : invoice.total_amount)}
@@ -265,7 +265,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
             activeOpacity={0.8}
           >
             <Ionicons name="card" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
-            <Text style={styles.payBtnText}>{t('invoice.detail.payButton')}</Text>
+            <Text style={styles.payBtnText}>{t('invoiceDetail.payNow', 'Bayar Sekarang')}</Text>
           </TouchableOpacity>
         </View>
       )}

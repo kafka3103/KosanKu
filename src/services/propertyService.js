@@ -496,7 +496,7 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
     .select(`
       *,
       rooms(room_number, base_price, properties(name, address_line, city)),
-      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, avatar_url)
+      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, email, avatar_url)
     `)
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
@@ -610,8 +610,8 @@ export const approveRentalRequest = async (requestId) => {
       // 6. Kirim notifikasi ke penghuni (Tenant)
       await sendNotification({
         userId: request.tenant_id,
-        title: 'Pengajuan Sewa Disetujui! 🎉',
-        body: `Selamat! Pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`,
+        title: 'rental_approved_title',
+        body: JSON.stringify({ key: 'rental_approved_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
         type: 'rental_request_approved',
         referenceId: newInvoice?.id ?? request.id,
         referenceType: newInvoice ? 'invoice' : 'rental_request',
@@ -663,10 +663,10 @@ export const rejectRentalRequest = async (requestId, reason) => {
     // Kirim notifikasi penolakan ke tenant
     await sendNotification({
       userId: request.tenant_id,
-      title: 'Pengajuan Sewa Ditolak ❌',
+      title: 'rental_rejected_title',
       body: reason
-        ? `Mohon maaf, pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} belum dapat disetujui. Alasan: ${reason}`
-        : `Mohon maaf, pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} belum dapat disetujui oleh pemilik kos.`,
+        ? JSON.stringify({ key: 'rental_rejected_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos', reason: reason } })
+        : JSON.stringify({ key: 'rental_rejected_body_no_reason', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
       type: 'rental_request_rejected',
       referenceId: requestId,
       referenceType: 'rental_request',
@@ -781,7 +781,7 @@ export const getPendingFacilityRequests = async (ownerId) => {
       contracts!inner(
         id, owner_id, room_id, tenant_id,
         rooms(room_number, properties(name)),
-        users!contracts_tenant_id_fkey(full_name, phone_number, avatar_url)
+        users!contracts_tenant_id_fkey(full_name, phone_number, email, avatar_url)
       )
     `)
     .eq('status', 'requested')

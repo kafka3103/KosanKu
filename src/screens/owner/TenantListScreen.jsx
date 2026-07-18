@@ -28,10 +28,10 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerActiveTenants } from '../../services/propertyService';
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMM yyyy', { locale: i18n?.language === 'id' ? idLocale : undefined });
   } catch {
     return dateStr;
   }
@@ -45,7 +45,7 @@ const getDaysUntilEnd = (endDate) => {
   return diff;
 };
 
-const TenantCard = ({ contract, onCall }) => {
+const TenantCard = ({ contract, onCall, t, i18n }) => {
   const tenant = contract.users;
   const room = contract.rooms;
   const property = room?.properties;
@@ -60,14 +60,14 @@ const TenantCard = ({ contract, onCall }) => {
         <View style={styles.expiryWarning}>
           <Ionicons name="warning" size={16} color={COLORS.warning} style={{ marginRight: 4 }} />
           <Text style={styles.expiryWarningText}>
-            Kontrak berakhir {daysLeft === 0 ? 'hari ini' : `dalam ${daysLeft} hari`}
+            {daysLeft === 0 ? t('ownerTenantList.expiresToday', 'Kontrak berakhir hari ini') : t('ownerTenantList.expiresInDays', 'Kontrak berakhir dalam {{days}} hari', { days: daysLeft })}
           </Text>
         </View>
       )}
       {isExpired && (
         <View style={[styles.expiryWarning, styles.expiryExpired]}>
           <Ionicons name="close-circle" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
-          <Text style={[styles.expiryWarningText, { color: COLORS.error }]}>Kontrak sudah berakhir</Text>
+          <Text style={[styles.expiryWarningText, { color: COLORS.error }]}>{t('ownerTenantList.expired', 'Kontrak sudah berakhir')}</Text>
         </View>
       )}
 
@@ -98,33 +98,33 @@ const TenantCard = ({ contract, onCall }) => {
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="business-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Properti</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.property', 'Properti')}</Text>
           </View>
           <Text style={styles.detailValue}>{property?.name}</Text>
         </View>
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="bed-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Kamar</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.room', 'Kamar')}</Text>
           </View>
           <Text style={styles.detailValue}>{room?.room_number}</Text>
         </View>
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Mulai</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.start', 'Mulai')}</Text>
           </View>
-          <Text style={styles.detailValue}>{formatDate(contract.start_date)}</Text>
+          <Text style={styles.detailValue}>{formatDate(contract.start_date, i18n)}</Text>
         </View>
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Selesai</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.end', 'Selesai')}</Text>
           </View>
           <Text style={[styles.detailValue, isExpiringSoon && { color: COLORS.warning }]}>
-            {formatDate(contract.end_date)}
+            {formatDate(contract.end_date, i18n)}
             {daysLeft != null && daysLeft >= 0 && (
-              <Text style={styles.daysLeft}> ({daysLeft} hari lagi)</Text>
+              <Text style={styles.daysLeft}>{t('ownerTenantList.daysLeft', ' ({{days}} hari lagi)', { days: daysLeft })}</Text>
             )}
           </Text>
         </View>
@@ -134,7 +134,7 @@ const TenantCard = ({ contract, onCall }) => {
 };
 
 const TenantListScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useAuthStore();
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -159,7 +159,7 @@ const TenantListScreen = ({ navigation }) => {
   const handleCall = (phoneNumber) => {
     const cleaned = phoneNumber.replace(/\s+/g, '');
     Linking.openURL(`tel:${cleaned}`).catch(() => {
-      Alert.alert('Gagal', 'Tidak bisa membuka aplikasi telepon');
+      Alert.alert(t('ownerTenantList.failed', 'Gagal'), t('ownerTenantList.callFailed', 'Tidak bisa membuka aplikasi telepon'));
     });
   };
 
@@ -179,9 +179,9 @@ const TenantListScreen = ({ navigation }) => {
           <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
           
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Daftar Penghuni</Text>
+        <Text style={styles.headerTitle}>{t('ownerTenantList.title', 'Daftar Penghuni')}</Text>
         <Text style={styles.headerSubtitle}>
-          {contracts.length} penghuni aktif
+          {t('ownerTenantList.activeTenants', '{{count}} penghuni aktif', { count: contracts.length })}
         </Text>
       </View>
 
@@ -201,14 +201,14 @@ const TenantListScreen = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="people-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Belum Ada Penghuni</Text>
+            <Text style={styles.emptyTitle}>{t('ownerTenantList.emptyTitle', 'Belum Ada Penghuni')}</Text>
             <Text style={styles.emptySubtitle}>
-              Penghuni aktif akan muncul setelah Anda menyetujui pengajuan sewa.
+              {t('ownerTenantList.emptySubtitle', 'Penghuni aktif akan muncul setelah Anda menyetujui pengajuan sewa.')}
             </Text>
           </View>
         )}
         renderItem={({ item }) => (
-          <TenantCard contract={item} onCall={handleCall} />
+          <TenantCard contract={item} onCall={handleCall} t={t} i18n={i18n} />
         )}
       />
     </View>
