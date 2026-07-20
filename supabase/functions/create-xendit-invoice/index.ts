@@ -23,7 +23,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { invoice_id, user_id } = body;
+    const { invoice_id, user_id, payment_methods } = body;
     if (!invoice_id) {
       return new Response(JSON.stringify({ success: false, error: "invoice_id is required" }), {
         status: 400,
@@ -135,6 +135,7 @@ serve(async (req) => {
       },
       success_redirect_url: `https://app.kosanku.com/payment/success?invoice_id=${invoice.id}`,
       failure_redirect_url: `https://app.kosanku.com/payment/failed?invoice_id=${invoice.id}`,
+      ...(payment_methods && Array.isArray(payment_methods) ? { payment_methods } : {}),
     };
 
     console.log(`🚀 Membuat Xendit Invoice untuk ID: ${invoice.id}, Amount: ${amountToPay}`);

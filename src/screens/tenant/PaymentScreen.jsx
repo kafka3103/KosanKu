@@ -19,6 +19,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -48,32 +49,38 @@ const PaymentScreen = ({ navigation, route }) => {
   // Re-build PAYMENT_METHODS based on translations
   const PAYMENT_METHODS = [
     {
-      id: 'xendit_auto',
-      name: t('paymentScreen.methodXendit', 'Pembayaran Otomatis Xendit'),
-      icon: 'qr-code',
-      options: ['QRIS (GoPay, OVO, DANA, BCA)', 'Virtual Account (BCA, BRI, BNI, Mandiri)', 'E-Wallet / Retail Outlet'],
+      id: 'xendit_va',
+      name: t('paymentScreen.methodVA', 'Transfer Bank (Virtual Account)'),
+      icon: 'business',
+      options: ['BCA', 'BNI', 'BRI', 'Mandiri', 'BSI', 'Permata', 'CIMB Niaga'],
       isAuto: true,
     },
     {
-      id: 'bank_transfer',
-      name: t('paymentScreen.methodTransfer', 'Transfer Bank Manual'),
-      icon: 'business',
-      options: ['BCA Manual', 'BRI Manual', 'BNI Manual', 'Mandiri Manual'],
-      isAuto: false,
+      id: 'xendit_ewallet',
+      name: t('paymentScreen.methodEwallet', 'E-Wallets'),
+      icon: 'wallet',
+      options: ['OVO', 'DANA', 'ShopeePay', 'LinkAja'],
+      isAuto: true,
     },
     {
-      id: 'cash',
-      name: t('paymentScreen.methodCash', 'Tunai / Langsung'),
-      icon: 'cash',
-      options: [t('paymentScreen.optionCash', 'Bayar Langsung ke Pemilik Kos')],
-      isAuto: false,
+      id: 'xendit_qris',
+      name: t('paymentScreen.methodQris', 'QR Code (QRIS)'),
+      icon: 'qr-code',
+      options: ['Scan QRIS (M-Banking & E-Wallet)'],
+      isAuto: true,
+    },
+    {
+      id: 'xendit_retail',
+      name: t('paymentScreen.methodRetail', 'Retail Outlets'),
+      icon: 'cart',
+      options: ['Alfamart', 'Indomaret'],
+      isAuto: true,
     },
   ];
 
-  // State tagihan lokal yang selalu ter-update secara real-time & cepat
   const [invoice, setInvoice] = useState(initialInvoice);
-  const [selectedMethod, setSelectedMethod] = useState(null);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedMethod, setSelectedMethod] = useState(PAYMENT_METHODS[0]);
+  const [selectedOption, setSelectedOption] = useState(PAYMENT_METHODS[0]?.options[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInvoicePaid, setIsInvoicePaid] = useState(initialInvoice?.status === 'paid');
 
@@ -167,7 +174,15 @@ const PaymentScreen = ({ navigation, route }) => {
             text: t('paymentScreen.continuePay', 'Lanjutkan Bayar'),
             onPress: async () => {
               setIsLoading(true);
-              const result = await createXenditCheckout(invoice.id);
+              
+              // Batasi metode di WebView Xendit sesuai pilihan pengguna
+              let paymentMethods = null;
+              if (selectedMethod.id === 'xendit_va') paymentMethods = ['BCA', 'BNI', 'BRI', 'MANDIRI', 'BSI', 'PERMATA', 'CIMB'];
+              else if (selectedMethod.id === 'xendit_ewallet') paymentMethods = ['OVO', 'DANA', 'SHOPEEPAY', 'LINKAJA'];
+              else if (selectedMethod.id === 'xendit_qris') paymentMethods = ['QRIS'];
+              else if (selectedMethod.id === 'xendit_retail') paymentMethods = ['ALFAMART', 'INDOMARET'];
+
+              const result = await createXenditCheckout(invoice.id, paymentMethods);
               setIsLoading(false);
 
               if (result.isAlreadyPaid) {
@@ -190,8 +205,7 @@ const PaymentScreen = ({ navigation, route }) => {
               }
 
               setXenditResult(result);
-              // Langsung buka link checkout resmi Xendit di Browser/WebView
-              Linking.openURL(result.invoiceUrl);
+              // Langsung buka link checkout resmi Xendit di WebView (In-App)
             },
           },
         ]
@@ -388,60 +402,66 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('paymentScreen.modalTitle', 'Pembayaran Xendit')}</Text>
-              <TouchableOpacity onPress={() => setXenditResult(null)}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="lock-closed" size={16} color={COLORS.success} style={{ marginRight: 6 }} />
+                <Text style={styles.modalTitle}>{t('paymentScreen.modalTitle', 'Pembayaran Xendit')}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setXenditResult(null)} style={{ padding: 4 }}>
                 <Ionicons name="close" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', paddingVertical: SPACING[3] }}>
-              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[2] }}>
-                {t('paymentScreen.modalTotal', 'Total Pembayaran')}
-              </Text>
-              <Text style={{ fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, color: COLORS.primary, marginBottom: SPACING[4] }}>
-                {formatCurrency(unpaidAmount)}
-              </Text>
-
-              <View style={styles.vaBox}>
-                <Ionicons name="lock-closed" size={28} color={COLORS.primary} style={{ marginBottom: 8 }} />
-                <Text style={{ fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, textAlign: 'center' }}>
-                  {t('paymentScreen.modalCheckoutOpened', 'Halaman Checkout Xendit Telah Dibuka')}
-                </Text>
-                <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, textAlign: 'center', marginTop: 4 }}>
-                  {t('paymentScreen.modalCheckoutDesc', 'Silakan selesaikan pembayaran Anda di browser melalui QRIS, Virtual Account, atau E-Wallet pilihan Anda.')}
-                </Text>
-              </View>
-
-              {/* Status polling note */}
-              <View style={styles.statusBox}>
-                <ActivityIndicator size="small" color={COLORS.primary} style={{ marginRight: 8 }} />
-                <Text style={{ flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.textPrimary }}>
-                  {t('paymentScreen.modalPolling', 'Sistem memantau status pembayaran Anda dari Xendit secara Real-Time... Begitu Anda selesai membayar, halaman ini otomatis menutup dan tagihan lunas!')}
-                </Text>
-              </View>
-
-              {/* Action Buttons */}
-              <View style={{ width: '100%', marginTop: SPACING[4], gap: SPACING[3] }}>
-                {xenditResult?.invoiceUrl && (
-                  <TouchableOpacity
-                    style={styles.checkStatusBtn}
-                    onPress={() => Linking.openURL(xenditResult.invoiceUrl)}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="open-outline" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
-                      <Text style={styles.checkStatusBtnText}>{t('paymentScreen.modalReopen', 'Buka Ulang Checkout Xendit')}</Text>
-                    </View>
-                  </TouchableOpacity>
+            {xenditResult?.invoiceUrl ? (
+              <WebView 
+                source={{ uri: xenditResult.invoiceUrl }} 
+                style={{ flex: 1, width: '100%' }}
+                startInLoadingState={true}
+                originWhitelist={['*']}
+                onShouldStartLoadWithRequest={(request) => {
+                  const { url } = request;
+                  // Handle E-Wallet Deep Links (OVO, Gojek, Dana, dll)
+                  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('about:')) {
+                    Linking.openURL(url).catch(() => {
+                      Alert.alert(
+                        t('paymentScreen.errorAppNotInstalled', 'Aplikasi Tidak Ditemukan'), 
+                        t('paymentScreen.errorAppNotInstalledDesc', 'Pastikan aplikasi e-wallet tersebut terinstal di perangkat Anda.')
+                      );
+                    });
+                    return false; // Jangan coba me-load scheme ini di WebView
+                  }
+                  return true;
+                }}
+                onNavigationStateChange={(navState) => {
+                  const { url } = navState;
+                  // Tangkap success_redirect_url / failure_redirect_url dari Xendit
+                  if (url.startsWith('kosanku://payment/success')) {
+                    setXenditResult(null);
+                    setIsInvoicePaid(true);
+                    Alert.alert(
+                      t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
+                      t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
+                      [{ text: 'OK', onPress: () => navigation.popToTop() }]
+                    );
+                  } else if (url.startsWith('kosanku://payment/failed')) {
+                    setXenditResult(null);
+                    Alert.alert(
+                      t('paymentScreen.manualErrorTitle', 'Gagal'),
+                      t('paymentScreen.manualErrorMsg', 'Pembayaran gagal diproses, coba lagi.')
+                    );
+                  }
+                }}
+                renderLoading={() => (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={{ marginTop: 12, color: COLORS.textSecondary }}>Memuat halaman pembayaran...</Text>
+                  </View>
                 )}
-
-                <TouchableOpacity
-                  style={styles.openUrlBtn}
-                  onPress={() => setXenditResult(null)}
-                >
-                  <Text style={styles.openUrlBtnText}>{t('paymentScreen.modalClose', 'Tutup / Selesai')}</Text>
-                </TouchableOpacity>
+              />
+            ) : (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
               </View>
-            </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
@@ -604,19 +624,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
+    flex: 1,
+    marginTop: 60,
     backgroundColor: COLORS.white,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     paddingTop: SPACING[4],
-    paddingBottom: SPACING[6],
-    paddingHorizontal: SPACING[4],
-    maxHeight: '80%',
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingBottom: SPACING[3],
+    paddingHorizontal: SPACING[4],
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
