@@ -54,7 +54,6 @@ import NotificationScreen from '../screens/shared/NotificationScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import CustomTabBar from '../components/navigation/CustomTabBar';
-import { Alert } from 'react-native';
 
 const OwnerDrawer = createDrawerNavigator();
 const OwnerBottomTab = createBottomTabNavigator();
@@ -200,19 +199,8 @@ const OwnerDrawerContent = ({ navigation }) => {
         { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
           text: t('navigation.switchRole.btnSwitch', 'Beralih'),
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.TENANT,
-            });
-            if (error) {
-              Alert.alert(t('navigation.switchRole.failTitle', 'Gagal'), error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          onPress: () => {
+            switchRole();
           },
         },
       ]
@@ -248,7 +236,9 @@ const OwnerDrawerContent = ({ navigation }) => {
 
       {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pencari</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>
+          {hasTenantProfile ? t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari') : t('navigation.switchRole.registerTenantBtn', 'Daftar sebagai Pencari Kos')}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

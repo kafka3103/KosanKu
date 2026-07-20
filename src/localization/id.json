@@ -473,10 +473,7 @@
     "modalPolling": "Sistem memantau status pembayaran Anda dari Xendit secara Real-Time... Begitu Anda selesai membayar, halaman ini otomatis menutup dan tagihan lunas!",
     "modalReopen": "Buka Ulang Checkout Xendit",
     "modalClose": "Tutup / Selesai",
-    "methodXendit": "Pembayaran Otomatis Xendit",
-    "methodTransfer": "Transfer Bank Manual",
-    "methodCash": "Tunai / Langsung",
-    "optionCash": "Bayar Langsung ke Pemilik Kos"
+    "methodXendit": "Pembayaran Otomatis Xendit"
   },
   "ownerDashboard": {
     "greetingMorning": "Selamat Pagi",
