@@ -360,7 +360,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
       {/* Pay Button jika belum lunas */}
       {!isInvoicePaid && (
-        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + SPACING[4] }]}>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + SPACING[2], SPACING[6]) }]}>
           <TouchableOpacity
             style={[styles.payBtn, isLoading && styles.payBtnDisabled]}
             onPress={handlePay}
@@ -590,12 +590,13 @@ const styles = StyleSheet.create({
   },
   payBtn: {
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING[3.5],
-    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING[4],
+    borderRadius: BORDER_RADIUS.full,
     alignItems: 'center',
+    ...SHADOW.sm,
   },
   payBtnDisabled: { opacity: 0.6 },
-  payBtnText: { color: COLORS.white, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold },
+  payBtnText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
 
   modalOverlay: {
     flex: 1,

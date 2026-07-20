@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -114,9 +114,9 @@ const TenantBottomTabNavigator = () => {
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? TENANT_SCREENS.MY_RENT;
           if (routeName !== TENANT_SCREENS.MY_RENT) {
-            return { tabBarStyle: { display: 'none' } };
+            return { tabBarStyle: { display: 'none' }, unmountOnBlur: true };
           }
-          return {};
+          return { unmountOnBlur: true };
         }}
       />
       <TenantBottomTab.Screen
@@ -148,8 +148,25 @@ const TenantDrawerContent = ({ navigation }) => {
     { label: t('navigation.tenant.profile'), screen: TENANT_SCREENS.PROFILE, icon: '👤' },
     { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: '⚙️' },
   ];
+  const [hasOwnerProfile, setHasOwnerProfile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkProfile = async () => {
+      const { checkOwnerProfileExists } = require('../services/userService');
+      const exists = await checkOwnerProfileExists(currentUser.id);
+      setHasOwnerProfile(exists);
+    };
+    if (currentUser?.id) {
+      checkProfile();
+    }
+  }, [currentUser]);
 
   const handleSwitchRole = () => {
+    if (!hasOwnerProfile) {
+      navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.OWNER });
+      return;
+    }
+
     Alert.alert(
       t('navigation.switchRole.title', 'Beralih Peran'),
       t('navigation.switchRole.toOwnerMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?'),
@@ -157,19 +174,8 @@ const TenantDrawerContent = ({ navigation }) => {
         { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
           text: t('navigation.switchRole.btnSwitch', 'Beralih'),
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.OWNER,
-            });
-            if (error) {
-              Alert.alert(t('navigation.switchRole.failTitle', 'Gagal'), error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          onPress: () => {
+            switchRole();
           },
         },
       ]
@@ -202,7 +208,9 @@ const TenantDrawerContent = ({ navigation }) => {
       </View>
 
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>{t('navigation.switchRole.switchToOwnerBtn', 'Beralih ke Mode Pemilik')}</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>
+          {hasOwnerProfile ? t('navigation.switchRole.switchToOwnerBtn', 'Beralih ke Mode Pemilik') : t('navigation.switchRole.registerOwnerBtn', 'Daftar sebagai Pemilik')}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -211,6 +219,8 @@ const TenantDrawerContent = ({ navigation }) => {
     </View>
   );
 };
+
+import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
 
 /**
  * Tenant Root Navigator — Drawer + Bottom Tab
@@ -238,6 +248,11 @@ const TenantNavigator = () => {
       <TenantDrawer.Screen
         name={TENANT_SCREENS.SETTINGS}
         component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <TenantDrawer.Screen
+        name="RoleRegistrationScreen"
+        component={RoleRegistrationScreen}
         options={{ headerShown: false }}
       />
     </TenantDrawer.Navigator>

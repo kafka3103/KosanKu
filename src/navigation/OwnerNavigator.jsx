@@ -17,7 +17,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -173,7 +173,25 @@ const OwnerDrawerContent = ({ navigation }) => {
   ];
 
 
+  const [hasTenantProfile, setHasTenantProfile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkProfile = async () => {
+      const { checkTenantProfileExists } = require('../services/userService');
+      const exists = await checkTenantProfileExists(currentUser.id);
+      setHasTenantProfile(exists);
+    };
+    if (currentUser?.id) {
+      checkProfile();
+    }
+  }, [currentUser]);
+
   const handleSwitchRole = () => {
+    if (!hasTenantProfile) {
+      navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.TENANT });
+      return;
+    }
+
     Alert.alert(
       t('navigation.switchRole.title', 'Beralih Peran'),
       t('navigation.switchRole.toTenantMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pencari Kosan?'),
@@ -181,19 +199,8 @@ const OwnerDrawerContent = ({ navigation }) => {
         { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
           text: t('navigation.switchRole.btnSwitch', 'Beralih'),
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.TENANT,
-            });
-            if (error) {
-              Alert.alert(t('navigation.switchRole.failTitle', 'Gagal'), error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          onPress: () => {
+            switchRole();
           },
         },
       ]
@@ -229,7 +236,9 @@ const OwnerDrawerContent = ({ navigation }) => {
 
       {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>{t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari')}</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>
+          {hasTenantProfile ? t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari') : t('navigation.switchRole.registerTenantBtn', 'Daftar sebagai Pencari Kos')}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -238,6 +247,8 @@ const OwnerDrawerContent = ({ navigation }) => {
     </View>
   );
 };
+
+import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
 
 /**
  * Owner Root Navigator — Drawer yang membungkus Bottom Tab
@@ -272,6 +283,26 @@ const OwnerNavigator = () => {
       <OwnerDrawer.Screen
         name={OWNER_SCREENS.REPORT}
         component={ReportScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.PROPERTY_FORM}
+        component={PropertyFormScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.ROOM_FORM}
+        component={RoomFormScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name={OWNER_SCREENS.INVOICE_LIST}
+        component={InvoiceListScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name="RoleRegistrationScreen"
+        component={RoleRegistrationScreen}
         options={{ headerShown: false }}
       />
       <OwnerDrawer.Screen

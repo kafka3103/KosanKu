@@ -26,7 +26,9 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerProperties, deleteProperty } from '../../services/propertyService';
+import { checkOwnerProfileExists } from '../../services/userService';
 import { OWNER_SCREENS } from '../../constants/screenNames';
+import USER_ROLE from '../../constants/userRole';
 
 const StatusBadge = ({ isActive, t }) => (
   <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>
@@ -158,7 +160,26 @@ const PropertyListScreen = ({ navigation }) => {
     navigation.navigate(OWNER_SCREENS.ROOM_LIST, { property });
   };
 
-  const handleAddProperty = () => {
+  const handleAddProperty = async () => {
+    const hasProfile = await checkOwnerProfileExists(currentUser?.id);
+    if (!hasProfile) {
+      Alert.alert(
+        'Profil Belum Lengkap',
+        'Anda harus mengunggah foto kartu identitas (KTP/SIM) sebelum dapat menambahkan properti baru.',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Lengkapi Profil', 
+            onPress: () => navigation.navigate('RoleRegistrationScreen', { 
+              targetRole: USER_ROLE.OWNER, 
+              isCompletingProfile: true 
+            }) 
+          }
+        ]
+      );
+      return;
+    }
+
     navigation.navigate(OWNER_SCREENS.PROPERTY_FORM, { property: null });
   };
 

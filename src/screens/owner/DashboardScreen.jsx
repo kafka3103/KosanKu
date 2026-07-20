@@ -26,7 +26,9 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerDashboardStats } from '../../services/propertyService';
+import { checkOwnerProfileExists } from '../../services/userService';
 import { OWNER_SCREENS } from '../../constants/screenNames';
+import USER_ROLE from '../../constants/userRole';
 
 const formatCurrency = (amount) => {
   if (!amount) return 'Rp 0';
@@ -130,6 +132,29 @@ const DashboardScreen = ({ navigation }) => {
       loadStats();
     }, [loadStats])
   );
+
+  const handleAddProperty = async () => {
+    const hasProfile = await checkOwnerProfileExists(currentUser?.id);
+    if (!hasProfile) {
+      Alert.alert(
+        'Profil Belum Lengkap',
+        'Anda harus mengunggah foto kartu identitas (KTP/SIM) sebelum dapat menambahkan properti baru.',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Lengkapi Profil', 
+            onPress: () => navigation.navigate('RoleRegistrationScreen', { 
+              targetRole: USER_ROLE.OWNER, 
+              isCompletingProfile: true 
+            }) 
+          }
+        ]
+      );
+      return;
+    }
+
+    navigation.navigate(OWNER_SCREENS.PROPERTY_FORM);
+  };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -279,7 +304,7 @@ const DashboardScreen = ({ navigation }) => {
           <View style={styles.quickActionsRow}>
             <TouchableOpacity
               style={styles.quickAction}
-              onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_FORM)}
+              onPress={handleAddProperty}
               activeOpacity={0.7}
             >
               <Ionicons name="add-circle-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />

@@ -207,3 +207,31 @@ export const uploadKtpPhoto = async (userId, localUri) => {
     return { path: null, error: err };
   }
 };
+
+/**
+ * Cek apakah user memiliki profil owner
+ */
+export const checkOwnerProfileExists = async (userId) => {
+  const { data, error } = await supabaseClient
+    .from('owner_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') return false; // ignore "row not found" error
+  return !!data;
+};
+
+/**
+ * Cek apakah user memiliki profil tenant
+ */
+export const checkTenantProfileExists = async (userId) => {
+  const { data, error } = await supabaseClient
+    .from('tenant_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') return false;
+  return !!data;
+};
