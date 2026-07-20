@@ -94,7 +94,7 @@ serve(async (req) => {
           owner_id: invoice.owner_id,
           amount: newPaidAmount,
           payment_method: "bank_transfer", // Sesuai enum schema payments kita
-          status: "completed",
+          status: "success",
           gateway_transaction_id: xendit_id || external_id,
           gateway_payment_code: payment_channel || payment_method || "XENDIT",
           gateway_raw_response: payload,

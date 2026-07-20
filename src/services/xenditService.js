@@ -17,7 +17,7 @@ export const fetchInvoiceLatestStatus = async (invoiceId) => {
   try {
     const { data, error } = await supabaseClient
       .from('invoices')
-      .select('id, status, paid_amount, total_amount, updated_at')
+      .select('id, status, paid_amount, total_amount, paid_at, updated_at')
       .eq('id', invoiceId)
       .single();
 

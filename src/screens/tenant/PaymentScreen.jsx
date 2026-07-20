@@ -97,6 +97,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
   // Xendit automated payment result state
   const [xenditResult, setXenditResult] = useState(null);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   const unpaidAmount =
     parseFloat(invoice?.total_amount ?? 0) - parseFloat(invoice?.paid_amount ?? 0);
@@ -412,13 +413,51 @@ const PaymentScreen = ({ navigation, route }) => {
             </View>
 
             {xenditResult?.invoiceUrl ? (
-              <WebView 
+              <>
+                <WebView 
                 source={{ uri: xenditResult.invoiceUrl }} 
                 style={{ flex: 1, width: '100%' }}
                 startInLoadingState={true}
                 originWhitelist={['*']}
                 onShouldStartLoadWithRequest={(request) => {
                   const { url } = request;
+                  
+                  // Deteksi redirect sukses dari Xendit (custom scheme ATAU legacy https)
+                  if (
+                    url.startsWith('kosanku://payment/success') ||
+                    url.includes('app.kosanku.com/payment/success')
+                  ) {
+                    setIsFinalizing(true);
+                    setTimeout(() => {
+                      setXenditResult(null);
+                      setIsFinalizing(false);
+                      setIsInvoicePaid(true);
+                      Alert.alert(
+                        t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
+                        t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
+                        [{ text: 'OK', onPress: () => navigation.popToTop() }]
+                      );
+                    }, 300);
+                    return false;
+                  }
+                  
+                  // Deteksi redirect gagal dari Xendit
+                  if (
+                    url.startsWith('kosanku://payment/failed') ||
+                    url.includes('app.kosanku.com/payment/failed')
+                  ) {
+                    setIsFinalizing(true);
+                    setTimeout(() => {
+                      setXenditResult(null);
+                      setIsFinalizing(false);
+                      Alert.alert(
+                        t('paymentScreen.manualErrorTitle', 'Gagal'),
+                        t('paymentScreen.manualErrorMsg', 'Pembayaran gagal diproses, coba lagi.')
+                      );
+                    }, 300);
+                    return false;
+                  }
+
                   // Handle E-Wallet Deep Links (OVO, Gojek, Dana, dll)
                   if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('about:')) {
                     Linking.openURL(url).catch(() => {
@@ -427,27 +466,59 @@ const PaymentScreen = ({ navigation, route }) => {
                         t('paymentScreen.errorAppNotInstalledDesc', 'Pastikan aplikasi e-wallet tersebut terinstal di perangkat Anda.')
                       );
                     });
-                    return false; // Jangan coba me-load scheme ini di WebView
+                    return false;
                   }
                   return true;
                 }}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  const errorUrl = nativeEvent.url || '';
+                  const isKosankuRedirect =
+                    errorUrl.startsWith('kosanku://') ||
+                    errorUrl.includes('app.kosanku.com/payment/');
+                  
+                  if (
+                    nativeEvent.description?.includes('ERR_NAME_NOT_RESOLVED') &&
+                    isKosankuRedirect
+                  ) {
+                    const isSuccess =
+                      errorUrl.startsWith('kosanku://payment/success') ||
+                      errorUrl.includes('app.kosanku.com/payment/success');
+                    setIsFinalizing(true);
+                    setTimeout(() => {
+                      setXenditResult(null);
+                      setIsFinalizing(false);
+                      if (isSuccess) {
+                        setIsInvoicePaid(true);
+                        Alert.alert(
+                          t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
+                          t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
+                          [{ text: 'OK', onPress: () => navigation.popToTop() }]
+                        );
+                      } else {
+                        Alert.alert(
+                          t('paymentScreen.manualErrorTitle', 'Gagal'),
+                          t('paymentScreen.manualErrorMsg', 'Pembayaran gagal diproses, coba lagi.')
+                        );
+                      }
+                    }, 300);
+                  }
+                }}
                 onNavigationStateChange={(navState) => {
                   const { url } = navState;
-                  // Tangkap success_redirect_url / failure_redirect_url dari Xendit
-                  if (url.startsWith('kosanku://payment/success')) {
+                  const isSuccessUrl =
+                    url.startsWith('kosanku://payment/success') ||
+                    url.includes('app.kosanku.com/payment/success');
+                  const isFailedUrl =
+                    url.startsWith('kosanku://payment/failed') ||
+                    url.includes('app.kosanku.com/payment/failed');
+                  
+                  // Fallback — jika lolos dari onShouldStartLoadWithRequest
+                  if (isSuccessUrl && !isFinalizing) {
                     setXenditResult(null);
                     setIsInvoicePaid(true);
-                    Alert.alert(
-                      t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
-                      t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
-                      [{ text: 'OK', onPress: () => navigation.popToTop() }]
-                    );
-                  } else if (url.startsWith('kosanku://payment/failed')) {
+                  } else if (isFailedUrl && !isFinalizing) {
                     setXenditResult(null);
-                    Alert.alert(
-                      t('paymentScreen.manualErrorTitle', 'Gagal'),
-                      t('paymentScreen.manualErrorMsg', 'Pembayaran gagal diproses, coba lagi.')
-                    );
                   }
                 }}
                 renderLoading={() => (
@@ -457,6 +528,13 @@ const PaymentScreen = ({ navigation, route }) => {
                   </View>
                 )}
               />
+              {isFinalizing && (
+                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.8)' }]}>
+                  <ActivityIndicator size="large" color={COLORS.primary} />
+                  <Text style={{ marginTop: 12, color: COLORS.primary, fontWeight: 'bold' }}>Memverifikasi pembayaran...</Text>
+                </View>
+              )}
+              </>
             ) : (
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={COLORS.primary} />

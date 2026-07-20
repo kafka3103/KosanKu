@@ -133,8 +133,8 @@ serve(async (req) => {
         email: tenant?.email || callerEmail || "tenant@kosanku.com",
         mobile_number: formattedPhone || undefined,
       },
-      success_redirect_url: `https://app.kosanku.com/payment/success?invoice_id=${invoice.id}`,
-      failure_redirect_url: `https://app.kosanku.com/payment/failed?invoice_id=${invoice.id}`,
+      success_redirect_url: `kosanku://payment/success?invoice_id=${invoice.id}`,
+      failure_redirect_url: `kosanku://payment/failed?invoice_id=${invoice.id}`,
       ...(payment_methods && Array.isArray(payment_methods) ? { payment_methods } : {}),
     };
 

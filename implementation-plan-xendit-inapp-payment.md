@@ -1,101 +1,106 @@
-# Implementation Plan: Xendit In-App Payment (KosanKu)
+# Implementation Plan: Fix Bug — WebView Xendit Tidak Auto-Close & Tagihan Tidak Update
 
-## Tujuan
-User membayar sewa kos tanpa merasa keluar dari aplikasi KosanKu, menggunakan Xendit akun gratis/self-serve + Supabase Edge Functions.
+## Root Cause
+Setelah pembayaran sukses, Xendit checkout page melakukan **JS redirect** (`window.location.href`) ke `success_redirect_url` (custom scheme, misal `kosanku://payment/success`). Android WebView mencoba memuatnya sebagai URL biasa → gagal resolve domain → muncul `Error loading page: net::ERR_NAME_NOT_RESOLVED`.
 
-## Strategi
-Gunakan **Xendit Invoice API** (sudah cocok untuk free tier) + render checkout page-nya di dalam **`react-native-webview`**, bukan browser eksternal. Status pembayaran dipantau via **webhook Xendit → Supabase Edge Function → Realtime → React Native**.
+Penyebab: intercept navigasi saat ini kemungkinan hanya di `onNavigationStateChange` (terjadi **setelah** WebView mulai/mencoba load), bukan di `onShouldStartLoadWithRequest` (terjadi **sebelum** WebView mencoba load). Custom scheme tidak pernah boleh sampai ke tahap "load" — harus dicegat lebih awal.
 
 ---
 
-## Fase 1 — Backend: Create Invoice via Supabase Edge Function
-
-**File:** `supabase/functions/create-invoice/index.ts`
-
-1. Terima request dari app: `{ tenant_id, amount, description, invoice_ref }`
-2. Panggil Xendit API `POST /v2/invoices` dengan:
-   - `success_redirect_url`: `kosanku://payment/success`
-   - `failure_redirect_url`: `kosanku://payment/failed`
-   - `payment_methods`: batasi ke metode yang didukung akun gratis (VA, QRIS, e-wallet — cek dashboard Xendit kamu untuk daftar aktif)
-3. Simpan response (`invoice_id`, `invoice_url`, `status: PENDING`) ke tabel `payments` di Supabase
-4. Return `invoice_url` ke client
-
-> Catatan: `success_redirect_url`/`failure_redirect_url` diisi **custom URL scheme app kamu**, bukan URL web. Ini kunci supaya WebView bisa "menangkap" event selesai dan menutup diri secara otomatis.
-
-## Fase 2 — Setup Deep Link / URL Scheme di React Native
-
-1. Daftarkan scheme `kosanku://` di `app.json` (Expo):
-```json
-{
-  "expo": {
-    "scheme": "kosanku"
-  }
-}
-```
-2. Pastikan `expo-linking` terpasang untuk menangani deep link masuk.
-
-## Fase 3 — Komponen WebView Pembayaran
+## Fase 1 — Intercept Navigasi Sebelum Terjadi
 
 **File:** `src/screens/tenant/PaymentWebViewScreen.jsx`
 
-1. Install: `npx expo install react-native-webview`
-2. Terima `invoice_url` dari navigation params
-3. Render `<WebView source={{ uri: invoice_url }} onNavigationStateChange={...} />`
-4. Di `onNavigationStateChange`, deteksi jika `event.url` mulai dengan `kosanku://payment/success` atau `kosanku://payment/failed`
-5. Jika terdeteksi:
-   - Hentikan WebView (jangan biarkan lanjut load, karena custom scheme tidak bisa di-load browser)
-   - Navigate balik ke `PaymentStatusScreen` dengan hasil sementara (`optimistic UI`)
-   - Status final tetap menunggu konfirmasi webhook (langkah Fase 4) untuk keamanan — jangan percaya redirect URL sebagai bukti bayar sah
+1. Tambahkan prop `onShouldStartLoadWithRequest` pada `<WebView>`:
+   - Cek apakah `request.url` diawali dengan scheme custom (`kosanku://payment/success` atau `kosanku://payment/failed`)
+   - Jika ya:
+     - Jalankan handler sukses/gagal (state update, tutup WebView, navigasi ke `PaymentStatusScreen`)
+     - **Return `false`** → mencegah WebView benar-benar memuat URL tersebut, sehingga error page tidak pernah muncul
+   - Jika bukan (http/https normal, atau deep link e-wallet) → return `true` seperti biasa, atau arahkan ke `Linking.openURL()` untuk scheme non-http lain (lihat plan sebelumnya untuk e-wallet)
 
-## Fase 4 — Webhook Handler (sumber kebenaran status pembayaran)
+2. **Hilangkan/kurangi ketergantungan** pada `onNavigationStateChange` untuk deteksi redirect sukses — jadikan hanya sebagai fallback logging, bukan trigger utama.
 
-**File:** `supabase/functions/xendit-webhook/index.ts`
+## Fase 2 — Fallback Safety Net (jaga-jaga bug Android WebView versi tertentu)
 
-1. Endpoint public menerima callback dari Xendit saat invoice `PAID`/`EXPIRED`
-2. **Verifikasi `x-callback-token`** header terhadap secret dari dashboard Xendit (wajib, supaya endpoint tidak bisa dipalsukan)
-3. Update tabel `payments`: status, paid_at, payment_method
-4. Trigger push notification FCM (pakai Edge Function yang sudah kamu buat sebelumnya) ke pemilik & penyewa
-5. (Opsional) Insert ke tabel `notifications` untuk in-app notification list
+Ada beberapa versi Android WebView yang tetap memicu percobaan load walau `onShouldStartLoadWithRequest` return `false` (race condition di beberapa device). Tambahkan lapisan pengaman:
 
-## Fase 5 — Realtime Update di App
+1. Pasang `onError` pada WebView:
+   - Jika `nativeEvent.description` mengandung `ERR_NAME_NOT_RESOLVED` **dan** `nativeEvent.url` cocok dengan prefix scheme kamu (`kosanku://`) → treat sebagai sinyal sukses/gagal juga (jangan tampilkan error ke user), lalu jalankan handler yang sama seperti Fase 1
+   - Jika error dari domain lain (bukan scheme kamu) → baru tampilkan pesan error sungguhan ke user
 
-1. Di `PaymentStatusScreen`, subscribe ke Supabase Realtime pada tabel `payments` filter `id = invoice_id`
-2. Saat webhook mengubah status jadi `PAID`, UI otomatis update tanpa perlu refresh manual
-3. Tampilkan konfirmasi sukses + navigasi ke halaman invoice/riwayat pembayaran
+## Fase 3 — UI Saat Transisi (hindari "flash" error)
 
-## Fase 6 — Handling E-Wallet Deep Link dari dalam WebView
+1. Tambahkan state `isFinalizing` yang di-set `true` begitu redirect terdeteksi (baik dari Fase 1 maupun Fase 2)
+2. Saat `isFinalizing === true`, render **overlay loading** ("Memverifikasi pembayaran...") di atas WebView sebelum modal ditutup — supaya walau ada flash singkat, user tidak melihat error page Android
 
-1. E-wallet (OVO/DANA/ShopeePay) akan memicu `mobile_deeplink_checkout_url` yang otomatis membuka app e-wallet
-2. Tangani ini dengan `onShouldStartLoadWithRequest` di WebView: jika URL bukan `http(s)`, gunakan `Linking.openURL()` untuk membuka app e-wallet, lalu `return false` supaya WebView tidak error mencoba load scheme non-http
-3. Setelah user bayar & kembali (biasanya via deep link balik otomatis dari e-wallet), WebView akan lanjut redirect ke `success_redirect_url` kamu → ditangkap oleh Fase 3
+## Fase 4 — Konfirmasi Status Sungguhan (tetap wajib, jangan hanya andalkan redirect)
 
-## Fase 7 — QA & Edge Cases
+*(Ini melanjutkan plan sebelumnya — pastikan ini sudah berjalan)*
 
-- [ ] Uji WebView di-close manual sebelum bayar selesai → pastikan status tetap `PENDING`, tidak stuck
-- [ ] Uji invoice expired (default 24 jam) → handle `EXPIRED` webhook, munculkan tombol "Buat ulang pembayaran"
-- [ ] Uji koneksi terputus saat WebView loading
-- [ ] Pastikan `payments` table punya RLS: tenant hanya bisa lihat pembayaran miliknya
-- [ ] Rate limit / idempotency check di `create-invoice` supaya user tidak bisa spam klik bayar dan membuat banyak invoice ganda
+1. Setelah WebView ditutup, `PaymentStatusScreen` menampilkan status **"Menunggu konfirmasi dari server"**, bukan langsung "Lunas"
+2. Subscribe Supabase Realtime ke tabel `payments` row terkait
+3. Saat webhook `xendit-webhook` menerima event `PAID` dan update DB → Realtime push ke app → UI berubah jadi "Lunas" otomatis
+4. **Fallback polling**: jika Realtime tidak konek (misal koneksi tidak stabil), lakukan polling `GET` status invoice setiap 3 detik, maksimal 10x percobaan, sebelum menampilkan tombol "Cek status manual"
+
+## Fase 5 — Testing
+
+- [ ] Uji ulang skenario di screenshot: bayar via QRIS sandbox → pastikan tidak ada flash "Error loading page"
+- [ ] Cek log: pastikan `onShouldStartLoadWithRequest` benar-benar terpanggil dengan url `kosanku://payment/success` sebelum WebView error
+- [ ] Uji redirect gagal (`failure_redirect_url`) dengan skenario invoice expired
+- [ ] Uji di minimal 2 device Android berbeda versi (WebView engine beda-beda, terutama Android 10 ke bawah vs Android 12+) untuk pastikan Fase 2 fallback bekerja
+- [ ] Pastikan status akhir di UI selalu match dengan status di dashboard Xendit & tabel `payments` — jangan sampai UI bilang "Lunas" tapi backend masih `PENDING`
 
 ---
 
-## Ringkasan Alur
+## Contoh Kerangka Kode (untuk referensi implementasi)
 
+```jsx
+const SUCCESS_PREFIX = 'kosanku://payment/success';
+const FAILED_PREFIX = 'kosanku://payment/failed';
+
+const handleRedirect = (url, type) => {
+  setIsFinalizing(true);
+  if (type === 'success') {
+    navigation.replace('PaymentStatusScreen', { invoiceId, optimisticStatus: 'PROCESSING' });
+  } else {
+    navigation.replace('PaymentStatusScreen', { invoiceId, optimisticStatus: 'FAILED' });
+  }
+};
+
+const onShouldStartLoadWithRequest = (request) => {
+  if (request.url.startsWith(SUCCESS_PREFIX)) {
+    handleRedirect(request.url, 'success');
+    return false; // cegah WebView memuat scheme ini
+  }
+  if (request.url.startsWith(FAILED_PREFIX)) {
+    handleRedirect(request.url, 'failed');
+    return false;
+  }
+  return true; // lanjutkan load normal untuk http/https
+};
+
+const onWebViewError = (syntheticEvent) => {
+  const { nativeEvent } = syntheticEvent;
+  if (
+    nativeEvent.description?.includes('ERR_NAME_NOT_RESOLVED') &&
+    nativeEvent.url?.startsWith('kosanku://')
+  ) {
+    // fallback safety net — jangan tampilkan error ke user
+    const type = nativeEvent.url.startsWith(SUCCESS_PREFIX) ? 'success' : 'failed';
+    handleRedirect(nativeEvent.url, type);
+  }
+};
 ```
-[App] --create-invoice--> [Supabase Edge Function] --API call--> [Xendit]
-[App] <--invoice_url------------------------------------------------|
 
-[App: WebView loads invoice_url]
-   user bayar (VA/QRIS/e-wallet, mungkin deep link keluar-masuk sebentar)
-   Xendit redirect ke kosanku://payment/success
-[App: WebView tangkap redirect, tutup WebView, tampilkan status "menunggu konfirmasi"]
-
-[Xendit] --webhook PAID--> [Supabase Edge Function: xendit-webhook]
-   --verifikasi token--> update tabel payments --> trigger FCM notification
-
-[App: Realtime subscription] --> update UI jadi "Lunas" otomatis
+```jsx
+<WebView
+  source={{ uri: invoiceUrl }}
+  onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+  onError={onWebViewError}
+  startInLoadingState
+  renderLoading={() => <LoadingOverlay />}
+/>
 ```
 
-## Catatan Penting
-- **Jangan pernah** menandai pembayaran sukses hanya dari redirect URL WebView — itu bisa dimanipulasi user. Status final **wajib** dari webhook server-to-server.
-- Cek di dashboard Xendit kamu, akun free/self-serve biasanya perlu aktivasi manual per payment method (VA, e-wallet tertentu) sebelum bisa dipakai — beberapa channel mungkin butuh approval tambahan.
+## Catatan
+Status "Lunas" di UI **hanya boleh** ditentukan oleh data dari webhook (via Supabase, Fase 4), bukan dari berhasilnya intercept redirect ini. Redirect di atas hanya berguna untuk **menutup WebView dengan mulus**, bukan sebagai bukti pembayaran sah.
