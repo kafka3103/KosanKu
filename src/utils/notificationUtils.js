@@ -52,7 +52,7 @@ export async function registerForPushNotificationsAsync() {
     token = tokenData.data;
     console.log('Native Push Token:', token);
   } catch (error) {
-    console.error('Error getting push token:', error);
+    console.warn('Error getting push token (Firebase may not be configured):', error.message);
   }
 
   return token;
