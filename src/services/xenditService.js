@@ -17,7 +17,7 @@ export const fetchInvoiceLatestStatus = async (invoiceId) => {
   try {
     const { data, error } = await supabaseClient
       .from('invoices')
-      .select('id, status, paid_amount, total_amount, updated_at')
+      .select('id, status, paid_amount, total_amount, paid_at, updated_at')
       .eq('id', invoiceId)
       .single();
 
@@ -34,7 +34,7 @@ export const fetchInvoiceLatestStatus = async (invoiceId) => {
  * @param {string} invoiceId UUID dari tabel `invoices`
  * @returns {Promise<{success: boolean, invoiceUrl?: string, xenditInvoiceId?: string, isAlreadyPaid?: boolean, error?: string}>}
  */
-export const createXenditCheckout = async (invoiceId) => {
+export const createXenditCheckout = async (invoiceId, paymentMethods = null) => {
   try {
     // 1. Cek Cepat Real-Time: Pastikan tagihan belum lunas di database sebelum memanggil server Xendit
     const checkBefore = await fetchInvoiceLatestStatus(invoiceId);
@@ -54,6 +54,7 @@ export const createXenditCheckout = async (invoiceId) => {
       body: {
         invoice_id: invoiceId,
         user_id: currentUser?.id,
+        payment_methods: paymentMethods,
       },
     });
 
