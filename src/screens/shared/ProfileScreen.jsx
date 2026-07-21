@@ -429,10 +429,6 @@ const ProfileScreen = ({ navigation }) => {
         </View>
         <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
           {isOwner
-<<<<<<< HEAD
-            ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar atau beralih ke mode Pencari Kosan sekarang.')
-            : t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa mendaftar atau beralih ke mode Pemilik Kosan untuk mulai mengelola.')}
-=======
             ? (currentUser.role === USER_ROLE.BOTH 
                 ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mengubah mode akun Anda ke mode Pencari Kosan sekarang.')
                 : t('profile.registerTenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar ke mode Pencari Kosan sekarang.'))
@@ -440,7 +436,6 @@ const ProfileScreen = ({ navigation }) => {
                 ? t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa beralih ke mode Pemilik Kosan untuk mulai mengelola properti.')
                 : t('profile.registerOwnerPrompt', 'Punya properti kosan? Anda bisa mendaftar ke mode Pemilik Kosan untuk mulai mengelola properti.'))
           }
->>>>>>> sanly
         </Text>
         <TouchableOpacity
           style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
@@ -554,7 +549,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
+    color: COLORS.white,
+
   },
   avatarSection: {
     alignItems: 'center',
