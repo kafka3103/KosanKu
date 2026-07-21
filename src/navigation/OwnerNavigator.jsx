@@ -17,7 +17,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -165,7 +165,7 @@ const OwnerDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: 'Pengajuan Masuk', screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
+    { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
     { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: '👥' },
     { label: t('navigation.owner.reports'), screen: OWNER_SCREENS.REPORT, icon: '📈' },
     { label: t('navigation.owner.profile'), screen: OWNER_SCREENS.PROFILE, icon: '👤' },
@@ -184,7 +184,7 @@ const OwnerDrawerContent = ({ navigation }) => {
     if (currentUser?.id) {
       checkProfile();
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   const handleSwitchRole = () => {
     if (!hasTenantProfile) {
@@ -193,25 +193,14 @@ const OwnerDrawerContent = ({ navigation }) => {
     }
 
     Alert.alert(
-      'Beralih Peran',
-      'Apakah Anda ingin beralih mode aplikasi menjadi Pencari Kosan?',
+      t('navigation.switchRole.title', 'Beralih Peran'),
+      t('navigation.switchRole.toTenantMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pencari Kosan?'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Beralih',
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.TENANT,
-            });
-            if (error) {
-              Alert.alert('Gagal', error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          text: t('navigation.switchRole.btnSwitch', 'Beralih'),
+          onPress: () => {
+            switchRole();
           },
         },
       ]
@@ -248,7 +237,7 @@ const OwnerDrawerContent = ({ navigation }) => {
       {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
         <Text style={[styles.logoutText, { color: COLORS.white }]}>
-          {hasTenantProfile ? 'Beralih ke Mode Pencari' : 'Daftar sebagai Pencari Kos'}
+          {hasTenantProfile ? t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari') : t('navigation.switchRole.registerTenantBtn', 'Daftar sebagai Pencari Kos')}
         </Text>
       </TouchableOpacity>
 

@@ -37,11 +37,11 @@ import {
   uploadMultipleRoomPhotos,
 } from '../../services/propertyService';
 
-const ROOM_TYPES = [
-  { value: 'standard', label: 'Standard', icon: 'bed-outline' },
-  { value: 'deluxe', label: 'Deluxe', icon: 'sparkles-outline' },
-  { value: 'suite', label: 'Suite', icon: 'diamond-outline' },
-  { value: 'studio', label: 'Studio', icon: 'home-outline' },
+const ROOM_TYPES = (t) => [
+  { value: 'standard', label: t('room.form.typeStandard', 'Standard'), icon: 'bed-outline' },
+  { value: 'deluxe', label: t('room.form.typeDeluxe', 'Deluxe'), icon: 'sparkles-outline' },
+  { value: 'suite', label: t('room.form.typeSuite', 'Suite'), icon: 'diamond-outline' },
+  { value: 'studio', label: t('room.form.typeStudio', 'Studio'), icon: 'home-outline' },
 ];
 
 const FACILITY_ICON_MAP = {
@@ -124,7 +124,7 @@ const RoomFormScreen = ({ navigation, route }) => {
   const pickPhotosFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan.');
+      Alert.alert(t('room.form.permissionRequired', 'Izin Diperlukan'), t('room.form.cameraDenied', 'Akses kamera diperlukan.'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -139,7 +139,7 @@ const RoomFormScreen = ({ navigation, route }) => {
   const pickPhotosFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri diperlukan.');
+      Alert.alert(t('room.form.permissionRequired', 'Izin Diperlukan'), t('room.form.galleryDenied', 'Akses galeri diperlukan.'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -155,16 +155,16 @@ const RoomFormScreen = ({ navigation, route }) => {
 
   const handlePickPhotos = () => {
     if (roomPhotos.length >= 5) {
-      Alert.alert('Batas Tercapai', 'Maksimal 5 foto kamar.');
+      Alert.alert(t('room.form.limitReachedTitle', 'Batas Tercapai'), t('room.form.limitReachedMsg', 'Maksimal 5 foto kamar.'));
       return;
     }
     Alert.alert(
-      'Foto Kamar',
-      'Pilih sumber foto kamar',
+      t('room.form.photoSourceTitle', 'Foto Kamar'),
+      t('room.form.photoSourceMsg', 'Pilih sumber foto kamar'),
       [
-        { text: 'Kamera', onPress: pickPhotosFromCamera },
-        { text: 'Galeri', onPress: pickPhotosFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('room.form.cameraBtn', 'Kamera'), onPress: pickPhotosFromCamera },
+        { text: t('room.form.galleryBtn', 'Galeri'), onPress: pickPhotosFromGallery },
+        { text: t('room.form.cancelBtn', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -176,15 +176,15 @@ const RoomFormScreen = ({ navigation, route }) => {
 
   const handleSave = async () => {
     if (!isBulkMode && !roomNumber.trim()) {
-      Alert.alert('Error', 'Nomor kamar wajib diisi');
+      Alert.alert('Error', t('room.form.reqRoomNumError', 'Nomor kamar wajib diisi'));
       return;
     }
     if (isBulkMode && (!bulkPrefix.trim() || !bulkCount || parseInt(bulkCount, 10) < 1)) {
-      Alert.alert('Error', 'Awalan dan jumlah kamar wajib diisi');
+      Alert.alert('Error', t('room.form.reqBulkError', 'Awalan dan jumlah kamar wajib diisi'));
       return;
     }
     if (!basePrice) {
-      Alert.alert('Error', 'Harga sewa wajib diisi');
+      Alert.alert('Error', t('room.form.reqPriceError', 'Harga sewa wajib diisi'));
       return;
     }
 
@@ -228,7 +228,7 @@ const RoomFormScreen = ({ navigation, route }) => {
         const { error: facError } = await setBulkRoomFacilities(roomIds, selectedFacilities);
         if (facError) console.warn('Gagal update fasilitas bulk:', facError.message);
         
-        Alert.alert('Berhasil!', `${count} Kamar berhasil dibuat`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+        Alert.alert(t('room.form.successTitle', 'Berhasil!'), t('room.form.successAddBulkMsg', '{{count}} Kamar berhasil dibuat', { count }), [{ text: t('room.form.okBtn', 'OK'), onPress: () => navigation.goBack() }]);
       } else {
         // Single Create/Edit
         const roomData = {
@@ -254,19 +254,19 @@ const RoomFormScreen = ({ navigation, route }) => {
         }
 
         Alert.alert(
-          'Berhasil!',
-          isEdit ? 'Kamar berhasil diperbarui' : 'Kamar berhasil ditambahkan',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          t('room.form.successTitle', 'Berhasil!'),
+          isEdit ? t('room.form.successUpdateMsg', 'Kamar berhasil diperbarui') : t('room.form.successAddMsg', 'Kamar berhasil ditambahkan'),
+          [{ text: t('room.form.okBtn', 'OK'), onPress: () => navigation.goBack() }]
         );
       }
 
       Alert.alert(
-        'Berhasil!',
-        isEdit ? 'Kamar berhasil diperbarui' : 'Kamar berhasil ditambahkan',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        t('room.form.successTitle', 'Berhasil!'),
+        isEdit ? t('room.form.successUpdateMsg', 'Kamar berhasil diperbarui') : t('room.form.successAddMsg', 'Kamar berhasil ditambahkan'),
+        [{ text: t('room.form.okBtn', 'OK'), onPress: () => navigation.goBack() }]
       );
     } catch (err) {
-      Alert.alert('Gagal Menyimpan', err.message ?? 'Terjadi kesalahan');
+      Alert.alert(t('room.form.failSaveTitle', 'Gagal Menyimpan'), err.message ?? 'Terjadi kesalahan');
     } finally {
       setIsLoading(false);
     }
@@ -281,13 +281,13 @@ const RoomFormScreen = ({ navigation, route }) => {
   }, {});
 
   const categoryLabels = {
-    electronics: '🔌 Elektronik',
-    furniture: '🪑 Furnitur',
-    bathroom: '🚿 Kamar Mandi',
-    connectivity: '📶 Konektivitas',
-    shared: '🤝 Bersama',
-    space: '🌅 Ruang',
-    other: '📦 Lainnya',
+    electronics: t('room.form.catElectronics', '🔌 Elektronik'),
+    furniture: t('room.form.catFurniture', '🪑 Furnitur'),
+    bathroom: t('room.form.catBathroom', '🚿 Kamar Mandi'),
+    connectivity: t('room.form.catConnectivity', '📶 Konektivitas'),
+    shared: t('room.form.catShared', '🤝 Bersama'),
+    space: t('room.form.catSpace', '🌅 Ruang'),
+    other: t('room.form.catOther', '📦 Lainnya'),
   };
 
   return (
@@ -317,8 +317,8 @@ const RoomFormScreen = ({ navigation, route }) => {
         {!isEdit && (
           <View style={[styles.section, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
             <View>
-              <Text style={styles.sectionTitle}>⚡ Generate Banyak Kamar</Text>
-              <Text style={[styles.label, { marginTop: 0 }]}>Buat otomatis sekaligus</Text>
+              <Text style={styles.sectionTitle}>{t('room.form.bulkTitle', '⚡ Generate Banyak Kamar')}</Text>
+              <Text style={[styles.label, { marginTop: 0 }]}>{t('room.form.bulkSubtitle', 'Buat otomatis sekaligus')}</Text>
             </View>
             <Switch
               value={isBulkMode}
@@ -331,22 +331,22 @@ const RoomFormScreen = ({ navigation, route }) => {
 
         {/* Informasi Kamar */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Informasi Kamar</Text>
+          <Text style={styles.sectionTitle}>{t('room.form.infoTitle', '📋 Informasi Kamar')}</Text>
 
           {isBulkMode ? (
             <View style={styles.row}>
               <View style={styles.rowItem}>
-                <Text style={styles.label}>Awalan Nomor *</Text>
+                <Text style={styles.label}>{t('room.form.bulkPrefix', 'Awalan Nomor *')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Mis: A, B, Lt1-"
+                  placeholder={t('room.form.bulkPrefixPlaceholder', 'Mis: A, B, Lt1-')}
                   value={bulkPrefix}
                   onChangeText={setBulkPrefix}
                   placeholderTextColor={COLORS.textTertiary}
                 />
               </View>
               <View style={styles.rowItem}>
-                <Text style={styles.label}>Jumlah *</Text>
+                <Text style={styles.label}>{t('room.form.bulkCount', 'Jumlah *')}</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="10"
@@ -374,7 +374,7 @@ const RoomFormScreen = ({ navigation, route }) => {
           {/* Room Type */}
           <Text style={styles.label}>{t('room.form.roomTypeLabel')}</Text>
           <View style={styles.typeGrid}>
-            {ROOM_TYPES.map((type) => {
+            {ROOM_TYPES(t).map((type) => {
               const isSelected = roomType === type.value;
               return (
                 <TouchableOpacity
@@ -446,7 +446,7 @@ const RoomFormScreen = ({ navigation, route }) => {
           <Text style={styles.label}>{t('room.form.descriptionLabel')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Deskripsi singkat kamar..."
+            placeholder={t('room.form.descriptionPlaceholder', 'Deskripsi singkat kamar...')}
             value={description}
             onChangeText={setDescription}
             multiline
@@ -459,10 +459,10 @@ const RoomFormScreen = ({ navigation, route }) => {
         {/* Room Photos */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[2] }}>
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>📸 Foto Kamar ({roomPhotos.length}/5)</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('room.form.photoTitle', '📸 Foto Kamar ({{count}}/5)', { count: roomPhotos.length })}</Text>
             {roomPhotos.length < 5 && (
               <TouchableOpacity onPress={handlePickPhotos}>
-                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>+ Tambah</Text>
+                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>{t('room.form.addPhotoBtn', '+ Tambah')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -479,7 +479,7 @@ const RoomFormScreen = ({ navigation, route }) => {
               </View>
             ))}
             {roomPhotos.length === 0 && (
-              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>Belum ada foto kamar. Ketuk "+ Tambah" untuk menambahkan.</Text>
+              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>{t('room.form.noPhoto', 'Belum ada foto kamar. Ketuk "+ Tambah" untuk menambahkan.')}</Text>
             )}
           </ScrollView>
         </View>

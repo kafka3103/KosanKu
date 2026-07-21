@@ -26,7 +26,9 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerDashboardStats } from '../../services/propertyService';
+import { checkOwnerProfileExists } from '../../services/userService';
 import { OWNER_SCREENS } from '../../constants/screenNames';
+import USER_ROLE from '../../constants/userRole';
 
 const formatCurrency = (amount) => {
   if (!amount) return 'Rp 0';
@@ -77,11 +79,11 @@ const StatCard = ({ label, value, icon, color = COLORS.primary, isGradient = fal
   );
 };
 
-const RequestCard = ({ request, onPress }) => {
+const RequestCard = ({ request, onPress, t }) => {
   const tenantName = request.users?.full_name ?? 'Tenant';
   
   const details = [];
-  if (request.rooms?.room_number) details.push(`Kamar ${request.rooms.room_number}`);
+  if (request.rooms?.room_number) details.push(`${t('ownerDashboard.room', 'Kamar')} ${request.rooms.room_number}`);
   if (request.rooms?.properties?.name) details.push(request.rooms.properties.name);
 
   return (
@@ -98,7 +100,7 @@ const RequestCard = ({ request, onPress }) => {
         )}
       </View>
       <View style={styles.requestBadge}>
-        <Text style={styles.requestBadgeText}>Pending</Text>
+        <Text style={styles.requestBadgeText}>{t('ownerDashboard.pending', 'Pending')}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -131,6 +133,29 @@ const DashboardScreen = ({ navigation }) => {
     }, [loadStats])
   );
 
+  const handleAddProperty = async () => {
+    const hasProfile = await checkOwnerProfileExists(currentUser?.id);
+    if (!hasProfile) {
+      Alert.alert(
+        'Profil Belum Lengkap',
+        'Anda harus mengunggah foto kartu identitas (KTP/SIM) sebelum dapat menambahkan properti baru.',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Lengkapi Profil', 
+            onPress: () => navigation.navigate('RoleRegistrationScreen', { 
+              targetRole: USER_ROLE.OWNER, 
+              isCompletingProfile: true 
+            }) 
+          }
+        ]
+      );
+      return;
+    }
+
+    navigation.navigate(OWNER_SCREENS.PROPERTY_FORM);
+  };
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     loadStats(true);
@@ -144,10 +169,10 @@ const DashboardScreen = ({ navigation }) => {
 
   const greeting = () => {
     const hour = new Date().getHours();
-    if (hour < 11) return 'Selamat Pagi';
-    if (hour < 15) return 'Selamat Siang';
-    if (hour < 18) return 'Selamat Sore';
-    return 'Selamat Malam';
+    if (hour < 11) return t('ownerDashboard.greetingMorning', 'Selamat Pagi');
+    if (hour < 15) return t('ownerDashboard.greetingAfternoon', 'Selamat Siang');
+    if (hour < 18) return t('ownerDashboard.greetingEvening', 'Selamat Sore');
+    return t('ownerDashboard.greetingNight', 'Selamat Malam');
   };
 
   if (isLoading) {
@@ -185,14 +210,14 @@ const DashboardScreen = ({ navigation }) => {
           {/* Occupancy Banner */}
           <View style={styles.occupancyBanner}>
             <View>
-              <Text style={styles.occupancyLabel}>Tingkat Hunian</Text>
+              <Text style={styles.occupancyLabel}>{t('ownerDashboard.occupancy', 'Tingkat Hunian')}</Text>
               <Text style={styles.occupancyValue}>{occupancyRate}%</Text>
             </View>
             <View style={styles.occupancyBarContainer}>
               <View style={[styles.occupancyBar, { width: `${occupancyRate}%` }]} />
             </View>
             <Text style={styles.occupancyDetail}>
-              {stats?.occupiedRooms ?? 0}/{stats?.totalRooms ?? 0} kamar terisi
+              {t('ownerDashboard.roomsFilled', '{{occupied}}/{{total}} kamar terisi', { occupied: stats?.occupiedRooms ?? 0, total: stats?.totalRooms ?? 0 })}
             </Text>
           </View>
         </View>
@@ -200,7 +225,7 @@ const DashboardScreen = ({ navigation }) => {
         {/* Stat Cards */}
         <View style={styles.statsGrid}>
           <StatCard
-            label="Properti"
+            label={t('ownerDashboard.statsProperty', 'Properti')}
             value={stats?.totalProperties ?? 0}
             icon="business-outline"
             isGradient={true}
@@ -212,7 +237,7 @@ const DashboardScreen = ({ navigation }) => {
             }
           />
           <StatCard
-            label="Kamar Tersedia"
+            label={t('ownerDashboard.statsAvailable', 'Kamar Tersedia')}
             value={stats?.availableRooms ?? 0}
             icon="bed-outline"
             isGradient={true}
@@ -224,7 +249,7 @@ const DashboardScreen = ({ navigation }) => {
             }
           />
           <StatCard
-            label="Tagihan Tertunda"
+            label={t('ownerDashboard.statsUnpaid', 'Tagihan Tertunda')}
             value={stats?.unpaidInvoicesCount ?? 0}
             icon="document-text-outline"
             isGradient={true}
@@ -232,7 +257,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
           />
           <StatCard
-            label="Pendapatan Bulan Ini"
+            label={t('ownerDashboard.statsRevenue', 'Pendapatan Bulan Ini')}
             value={formatCurrency(stats?.monthlyRevenue ?? 0)}
             icon="wallet-outline"
             isGradient={true}
@@ -243,11 +268,11 @@ const DashboardScreen = ({ navigation }) => {
         {/* Pengajuan Sewa Terbaru */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Pengajuan Masuk</Text>
+            <Text style={styles.sectionTitle}>{t('ownerDashboard.incomingRequests', 'Pengajuan Masuk')}</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
             >
-              <Text style={styles.seeAllText}>Lihat Semua</Text>
+              <Text style={styles.seeAllText}>{t('ownerDashboard.seeAll', 'Lihat Semua')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -258,14 +283,15 @@ const DashboardScreen = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <Ionicons name="mail-open-outline" size={40} color={COLORS.textTertiary} style={styles.emptyIcon} />
-              <Text style={styles.emptyTitle}>Tidak Ada Pengajuan Baru</Text>
-              <Text style={styles.emptySubtitle}>Klik untuk melihat riwayat pengajuan</Text>
+              <Text style={styles.emptyTitle}>{t('ownerDashboard.noNewRequests', 'Tidak Ada Pengajuan Baru')}</Text>
+              <Text style={styles.emptySubtitle}>{t('ownerDashboard.noNewRequestsSub', 'Klik untuk melihat riwayat pengajuan')}</Text>
             </TouchableOpacity>
           ) : (
             stats.pendingRequests.map((req) => (
               <RequestCard
                 key={req.id}
                 request={req}
+                t={t}
                 onPress={() => navigation.navigate(OWNER_SCREENS.RENTAL_REQUEST)}
               />
             ))
@@ -274,15 +300,15 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Aksi Cepat</Text>
+          <Text style={styles.sectionTitle}>{t('ownerDashboard.quickActions', 'Aksi Cepat')}</Text>
           <View style={styles.quickActionsRow}>
             <TouchableOpacity
               style={styles.quickAction}
-              onPress={() => navigation.navigate(OWNER_SCREENS.PROPERTY_FORM)}
+              onPress={handleAddProperty}
               activeOpacity={0.7}
             >
               <Ionicons name="add-circle-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-              <Text style={styles.quickActionLabel}>Tambah Properti</Text>
+              <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaAddProperty', 'Tambah Properti')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -291,7 +317,7 @@ const DashboardScreen = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <Ionicons name="people-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-              <Text style={styles.quickActionLabel}>Daftar Penghuni</Text>
+              <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaTenantList', 'Daftar Penghuni')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -300,7 +326,7 @@ const DashboardScreen = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <Ionicons name="stats-chart-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-              <Text style={styles.quickActionLabel}>Laporan</Text>
+              <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaReports', 'Laporan')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -309,7 +335,7 @@ const DashboardScreen = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <Ionicons name="card-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-              <Text style={styles.quickActionLabel}>Tagihan</Text>
+              <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaInvoices', 'Tagihan')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -318,7 +344,7 @@ const DashboardScreen = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <Ionicons name="sparkles-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-              <Text style={styles.quickActionLabel}>Master Fasilitas</Text>
+              <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaFacilityMaster', 'Master Fasilitas')}</Text>
             </TouchableOpacity>
           </View>
         </View>

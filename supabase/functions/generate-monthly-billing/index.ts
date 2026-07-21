@@ -21,6 +21,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper: Kirim push notification via Edge Function send-notification (fire-and-forget)
+const triggerPushNotification = async (userId: string, title: string, body: string, data: Record<string, string> = {}) => {
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ userId, title, body, data }),
+    });
+  } catch (err) {
+    console.warn('⚠️ Gagal trigger push notification:', err);
+  }
+};
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -119,15 +137,37 @@ serve(async (req: Request) => {
 
         if (newInvoices) {
           for (const invoice of newInvoices) {
+            const notifTitle = 'Tagihan Baru Tersedia';
+            const notifBody = `Tagihan bulan ini sebesar Rp ${Number(invoice.total_amount).toLocaleString('id-ID')} telah tersedia. Jatuh tempo: ${new Date(invoice.due_date).toLocaleDateString('id-ID')}`;
+
             await supabaseAdmin.from('notifications').insert({
               user_id: invoice.tenant_id,
-              title: 'Tagihan Baru Tersedia',
-              body: `Tagihan bulan ini sebesar Rp ${Number(invoice.total_amount).toLocaleString('id-ID')} telah tersedia. Jatuh tempo: ${new Date(invoice.due_date).toLocaleDateString('id-ID')}`,
+<<<<<<< HEAD
+<<<<<<< HEAD
+              title: notifTitle,
+              body: notifBody,
+=======
+              title: 'invoice_generated_title',
+              body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
+>>>>>>> rijal
+=======
+              title: 'invoice_generated_title',
+              body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
+>>>>>>> 76b31cab6566d65008a3fd94717b52035b93ca9e
               type: 'invoice_generated',
               reference_id: invoice.id,
               reference_type: 'invoice',
             });
+
+            // Kirim push notification ke device tenant
+            await triggerPushNotification(
+              invoice.tenant_id,
+              notifTitle,
+              notifBody,
+              { type: 'invoice_generated', referenceId: invoice.id, referenceType: 'invoice' }
+            );
           }
+          console.log(`📲 Push notification FCM terkirim ke ${newInvoices.length} tenant`);
         }
       }
     }

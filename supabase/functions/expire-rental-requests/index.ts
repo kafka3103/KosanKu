@@ -55,8 +55,8 @@ serve(async (req: Request) => {
     // Kirim notifikasi ke setiap tenant yang requestnya expired
     const notifications = requestsToExpire.map((request) => ({
       user_id: request.tenant_id,
-      title: 'Pengajuan Sewa Kedaluwarsa',
-      body: 'Pengajuan sewa Anda telah kedaluwarsa karena tidak ada respons dalam 3 hari kerja.',
+      title: 'rental_expired_title',
+      body: JSON.stringify({ key: 'rental_expired_body', params: {} }),
       type: 'rental_request_expired',
       reference_id: request.id,
       reference_type: 'rental_request',

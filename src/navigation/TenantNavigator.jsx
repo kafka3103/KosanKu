@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -159,7 +159,7 @@ const TenantDrawerContent = ({ navigation }) => {
     if (currentUser?.id) {
       checkProfile();
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   const handleSwitchRole = () => {
     if (!hasOwnerProfile) {
@@ -168,25 +168,14 @@ const TenantDrawerContent = ({ navigation }) => {
     }
 
     Alert.alert(
-      'Beralih Peran',
-      'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?',
+      t('navigation.switchRole.title', 'Beralih Peran'),
+      t('navigation.switchRole.toOwnerMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Beralih',
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.OWNER,
-            });
-            if (error) {
-              Alert.alert('Gagal', error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          text: t('navigation.switchRole.btnSwitch', 'Beralih'),
+          onPress: () => {
+            switchRole();
           },
         },
       ]
@@ -220,7 +209,7 @@ const TenantDrawerContent = ({ navigation }) => {
 
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
         <Text style={[styles.logoutText, { color: COLORS.white }]}>
-          {hasOwnerProfile ? 'Beralih ke Mode Pemilik' : 'Daftar sebagai Pemilik'}
+          {hasOwnerProfile ? t('navigation.switchRole.switchToOwnerBtn', 'Beralih ke Mode Pemilik') : t('navigation.switchRole.registerOwnerBtn', 'Daftar sebagai Pemilik')}
         </Text>
       </TouchableOpacity>
 

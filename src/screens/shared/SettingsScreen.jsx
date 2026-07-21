@@ -23,6 +23,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { logout, updatePassword } from '../../services/authService';
+import { saveLanguagePreference } from '../../localization/i18n';
 
 const SettingsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -36,30 +37,30 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleChangeLanguage = () => {
     Alert.alert(
-      'Bahasa / Language',
-      'Pilih bahasa aplikasi:',
+      t('settings.languageTitle', 'Bahasa / Language'),
+      t('settings.languageMsg', 'Pilih bahasa aplikasi:'),
       [
         {
           text: '🇮🇩 Bahasa Indonesia',
-          onPress: () => i18n.changeLanguage('id'),
+          onPress: () => saveLanguagePreference('id'),
         },
         {
           text: '🇬🇧 English',
-          onPress: () => i18n.changeLanguage('en'),
+          onPress: () => saveLanguagePreference('en'),
         },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       ]
     );
   };
 
   const handleChangePassword = () => {
     Alert.alert(
-      'Ubah Password',
-      'Fitur ubah password akan membuka halaman reset via email.',
+      t('settings.changePasswordTitle', 'Ubah Password'),
+      t('settings.changePasswordMsg', 'Fitur ubah password akan membuka halaman reset via email.'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Kirim Email Reset',
+          text: t('settings.btnSendResetEmail', 'Kirim Email Reset'),
           onPress: () => {
             Alert.alert('Email Terkirim', 'Cek inbox email Anda untuk link reset password.');
           },
@@ -70,12 +71,12 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      '⚠️ Hapus Akun',
-      'Akun yang dihapus tidak dapat dipulihkan. Seluruh data Anda akan hilang.',
+      t('settings.deleteAccountTitle', '⚠️ Hapus Akun'),
+      t('settings.deleteAccountMsg', 'Akun yang dihapus tidak dapat dipulihkan. Seluruh data Anda akan hilang.'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus Akun',
+          text: t('settings.btnDeleteAccount', 'Hapus Akun'),
           style: 'destructive',
           onPress: () =>
             Alert.alert('Hubungi Support', 'Untuk menghapus akun, hubungi support@kosanku.id'),
@@ -86,7 +87,7 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleLogout = () => {
     Alert.alert('Keluar', 'Yakin ingin keluar dari akun?', [
-      { text: 'Batal', style: 'cancel' },
+      { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       {
         text: 'Keluar',
         style: 'destructive',
@@ -180,14 +181,14 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => Linking.openURL('https://kosanku.id/terms')}
         />
         <SettingRow
-          label="Hubungi Support"
+          label={t('settings.contactSupport', 'Hubungi Support')}
           onPress={() => Linking.openURL('mailto:support@kosanku.id')}
         />
       </View>
 
       {/* Zona Bahaya */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Akun</Text>
+        <Text style={styles.sectionTitle}>{t('settings.accountSection', 'Akun')}</Text>
         <TouchableOpacity style={styles.logoutRow} onPress={handleLogout} activeOpacity={0.7}>
           <Text style={styles.logoutText}>🚪 {t('profile.logoutButton')}</Text>
         </TouchableOpacity>
@@ -196,7 +197,7 @@ const SettingsScreen = ({ navigation }) => {
           onPress={handleDeleteAccount}
           activeOpacity={0.7}
         >
-          <Text style={styles.deleteText}>🗑️ Hapus Akun</Text>
+          <Text style={styles.deleteText}>🗑️ {t('settings.btnDeleteAccount', 'Hapus Akun')}</Text>
         </TouchableOpacity>
       </View>
 

@@ -247,8 +247,8 @@ export const addContractFacility = async ({
   if (!error && data?.billing_action === 'invoice_created' && data?.tenant_id) {
     await sendNotification({
       userId: data.tenant_id,
-      title: 'Tagihan Fasilitas Tambahan Baru ❄️',
-      body: `Tagihan sebesar Rp ${pricePerMonth.toLocaleString('id-ID')} untuk pemasangan ${data.facility_name ?? customName ?? 'fasilitas tambahan'} telah tersedia. Silakan lakukan pembayaran.`,
+      title: 'facility_invoice_title',
+      body: JSON.stringify({ key: 'facility_invoice_body', params: { amount: `Rp ${pricePerMonth.toLocaleString('id-ID')}`, facilityName: data.facility_name ?? customName ?? 'fasilitas tambahan' } }),
       type: 'invoice_generated',
       referenceId: data.invoice_id,
       referenceType: 'invoice',

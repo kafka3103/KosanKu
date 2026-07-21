@@ -25,12 +25,12 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { getPropertyRooms, deleteRoom } from '../../services/propertyService';
 import { OWNER_SCREENS } from '../../constants/screenNames';
 
-const STATUS_CONFIG = {
-  available: { color: COLORS.success, bg: COLORS.successLight, label: 'Tersedia', icon: 'checkmark-circle' },
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Diproses', icon: 'time' },
-  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terisi', icon: 'close-circle' },
-  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Perawatan', icon: 'build' },
-};
+const getStatusConfig = (t) => ({
+  available: { color: COLORS.success, bg: COLORS.successLight, label: t('ownerRoomList.status.available', 'Tersedia'), icon: 'checkmark-circle' },
+  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: t('ownerRoomList.status.pending', 'Diproses'), icon: 'time' },
+  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: t('ownerRoomList.status.occupied', 'Terisi'), icon: 'close-circle' },
+  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: t('ownerRoomList.status.maintenance', 'Perawatan'), icon: 'build' },
+});
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -39,7 +39,8 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
+const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
+  const STATUS_CONFIG = getStatusConfig(t);
   const statusCfg = STATUS_CONFIG[room.status] ?? STATUS_CONFIG.available;
   const facilities = room.room_facilities
     ?.map((rf) => rf.facility_master?.name)
@@ -51,8 +52,8 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
       {/* Header */}
       <View style={styles.roomCardHeader}>
         <View>
-          <Text style={styles.roomNumber}>Kamar {room.room_number}</Text>
-          <Text style={styles.roomType}>{room.room_type} · Lantai {room.floor_number ?? '-'}</Text>
+          <Text style={styles.roomNumber}>{t('ownerRoomList.roomNumber', 'Kamar {{number}}', { number: room.room_number })}</Text>
+          <Text style={styles.roomType}>{room.room_type} · {t('ownerRoomList.floorNumber', 'Lantai {{number}}', { number: room.floor_number ?? '-' })}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
           <Ionicons name={statusCfg.icon} size={14} color={statusCfg.color} />
@@ -92,7 +93,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
         <TouchableOpacity style={styles.actionBtn} onPress={onEdit} activeOpacity={0.7}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="pencil" size={14} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={styles.actionBtnText}>Edit</Text>
+            <Text style={styles.actionBtnText}>{t('ownerRoomList.edit', 'Edit')}</Text>
           </View>
         </TouchableOpacity>
         {room.status === 'pending' && (
@@ -103,7 +104,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest }) => {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="clipboard" size={14} color={COLORS.warning} style={{ marginRight: 6 }} />
-              <Text style={[styles.actionBtnText, { color: COLORS.warning }]}>Tinjau</Text>
+              <Text style={[styles.actionBtnText, { color: COLORS.warning }]}>{t('ownerRoomList.review', 'Tinjau')}</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -157,17 +158,17 @@ const RoomListScreen = ({ navigation, route }) => {
 
   const handleDelete = (room) => {
     Alert.alert(
-      'Hapus Kamar',
-      `Yakin ingin menghapus kamar ${room.room_number}?`,
+      t('ownerRoomList.deleteTitle', 'Hapus Kamar'),
+      t('ownerRoomList.deleteMessage', 'Yakin ingin menghapus kamar {{number}}?', { number: room.room_number }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('ownerRoomList.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('ownerPropertyList.delete', 'Hapus'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await deleteRoom(room.id);
             if (error) {
-              Alert.alert('Gagal', error.message);
+              Alert.alert(t('ownerRoomList.failed', 'Gagal'), error.message);
             } else {
               setRooms((prev) => prev.filter((r) => r.id !== room.id));
             }
@@ -181,8 +182,8 @@ const RoomListScreen = ({ navigation, route }) => {
     { key: 'all', label: t('room.list.filterAll') },
     { key: 'available', label: t('room.list.filterAvailable') },
     { key: 'occupied', label: t('room.list.filterOccupied') },
-    { key: 'pending', label: 'Diproses' },
-    { key: 'maintenance', label: 'Perawatan' },
+    { key: 'pending', label: t('ownerRoomList.status.pending', 'Diproses') },
+    { key: 'maintenance', label: t('ownerRoomList.status.maintenance', 'Perawatan') },
   ];
 
   const filteredRooms =
@@ -206,8 +207,8 @@ const RoomListScreen = ({ navigation, route }) => {
             
           </View>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{property?.name ?? 'Kamar'}</Text>
-        <Text style={styles.headerSubtitle}>{rooms.length} kamar · {t('room.list.title')}</Text>
+        <Text style={styles.headerTitle}>{property?.name ?? t('ownerRoomList.room', 'Kamar')}</Text>
+        <Text style={styles.headerSubtitle}>{t('ownerRoomList.headerSubtitle', '{{count}} kamar', { count: rooms.length })} · {t('room.list.title')}</Text>
       </View>
 
       {/* Filter Tabs */}
@@ -245,17 +246,18 @@ const RoomListScreen = ({ navigation, route }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="bed-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Tidak Ada Kamar</Text>
+            <Text style={styles.emptyTitle}>{t('ownerRoomList.emptyTitle', 'Tidak Ada Kamar')}</Text>
             <Text style={styles.emptySubtitle}>
               {activeFilter === 'all'
-                ? 'Tambahkan kamar pertama untuk properti ini'
-                : `Tidak ada kamar dengan status "${filters.find(f => f.key === activeFilter)?.label}"`}
+                ? t('ownerRoomList.emptyAll', 'Tambahkan kamar pertama untuk properti ini')
+                : t('ownerRoomList.emptyFilter', 'Tidak ada kamar dengan status "{{status}}"', { status: filters.find(f => f.key === activeFilter)?.label })}
             </Text>
           </View>
         )}
         renderItem={({ item }) => (
           <RoomCard
             room={item}
+            t={t}
             onEdit={() =>
               navigation.navigate(OWNER_SCREENS.ROOM_FORM, {
                 room: item,

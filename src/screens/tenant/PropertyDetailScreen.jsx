@@ -42,17 +42,27 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const STATUS_CONFIG = {
-  available: { color: COLORS.success, bg: COLORS.successLight, label: 'Tersedia' },
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Diproses' },
-  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terisi' },
-  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Perawatan' },
+const getStatusConfig = (t) => ({
+  available: { color: COLORS.success, bg: COLORS.successLight, label: t('propertyDetail.status.available', 'Tersedia') },
+  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: t('propertyDetail.status.pending', 'Diproses') },
+  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: t('propertyDetail.status.occupied', 'Terisi') },
+  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: t('propertyDetail.status.maintenance', 'Perawatan') },
+});
+
+const TAB_KEYS = ['room', 'info', 'facility', 'review'];
+
+const getTabLabel = (t, key) => {
+  const labels = {
+    room: t('propertyDetail.tabs.room', 'Kamar'),
+    info: t('propertyDetail.tabs.info', 'Informasi'),
+    facility: t('propertyDetail.tabs.facility', 'Fasilitas'),
+    review: t('propertyDetail.tabs.review', 'Ulasan'),
+  };
+  return labels[key] ?? key;
 };
 
-const TABS = ['Kamar', 'Informasi', 'Fasilitas', 'Ulasan'];
-
 const PropertyDetailScreen = ({ navigation, route }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useAuthStore();
   const insets = useSafeAreaInsets();
 
@@ -60,11 +70,13 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const [property, setProperty] = useState(propertyParam);
   const [isLoading, setIsLoading] = useState(!propertyParam);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [activeTab, setActiveTab] = useState('Kamar');
+  const [activeTab, setActiveTab] = useState('room');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   
   const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 });
   const [reviews, setReviews] = useState([]);
+
+
 
   const photos = [
     ...(property?.cover_photo_url ? [property.cover_photo_url] : []),
@@ -119,7 +131,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       {availableRooms.length === 0 ? (
         <View style={styles.noRoomsContainer}>
           <Ionicons name="sad-outline" size={32} color={COLORS.textTertiary} style={{ marginBottom: 8 }} />
-          <Text style={styles.noRoomsText}>Tidak ada kamar tersedia saat ini</Text>
+          <Text style={styles.noRoomsText}>{t('propertyDetail.noRooms', 'Tidak ada kamar tersedia saat ini')}</Text>
         </View>
       ) : (
         availableRooms.map((room) => {
@@ -138,12 +150,12 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             >
               <View style={styles.roomCardHeader}>
                 <View>
-                  <Text style={styles.roomNumber}>Kamar {room.room_number}</Text>
+                  <Text style={styles.roomNumber}>{t('propertyDetail.roomNumber', 'Kamar {{number}}', { number: room.room_number })}</Text>
                   <Text style={styles.roomType}>{room.room_type} · {room.size_sqm ? `${room.size_sqm} m²` : ''}</Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: STATUS_CONFIG[room.status]?.bg }]}>
-                  <Text style={[styles.statusText, { color: STATUS_CONFIG[room.status]?.color }]}>
-                    {STATUS_CONFIG[room.status]?.label}
+                <View style={[styles.statusBadge, { backgroundColor: getStatusConfig(t)[room.status]?.bg }]}>
+                  <Text style={[styles.statusText, { color: getStatusConfig(t)[room.status]?.color }]}>
+                    {getStatusConfig(t)[room.status]?.label}
                   </Text>
                 </View>
               </View>
@@ -157,9 +169,9 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 </View>
               )}
               <View style={styles.roomPriceRow}>
-                <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
+                <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}{t('propertyDetail.perMonth', '/bln')}</Text>
                 <View style={[styles.detailBtn, { backgroundColor: COLORS.accent }]}>
-                  <Text style={styles.detailBtnText}>Detail</Text>
+                  <Text style={styles.detailBtnText}>{t('propertyDetail.btnDetail', 'Detail')}</Text>
                   <Ionicons name="arrow-forward" size={14} color={COLORS.white} style={{ marginLeft: 4 }} />
                 </View>
               </View>
@@ -175,11 +187,11 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       <View style={styles.infoCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
           <Ionicons name="location" size={20} color={COLORS.accent} style={{ marginRight: 6 }} />
-          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Lokasi</Text>
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.locationTitle', 'Lokasi')}</Text>
         </View>
         <Text style={styles.infoText}>{property?.address_line}</Text>
         <Text style={styles.infoText}>{property?.district ? `${property.district}, ` : ''}{property?.city}</Text>
-        {property?.postal_code && <Text style={styles.infoText}>Kode Pos: {property.postal_code}</Text>}
+        {property?.postal_code && <Text style={styles.infoText}>{t('propertyDetail.postalCode', 'Kode Pos: ')}{property.postal_code}</Text>}
 
         {property?.latitude != null && property?.longitude != null && (
           <View style={{ borderRadius: BORDER_RADIUS.md, overflow: 'hidden', marginTop: SPACING[3], borderWidth: 1, borderColor: COLORS.border, height: 200 }}>
@@ -228,14 +240,14 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             onPress={() => {
               const url = `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`;
               Linking.openURL(url).catch(() => {
-                Alert.alert('Error', 'Tidak dapat membuka aplikasi Google Maps.');
+                Alert.alert(t('common.error', 'Error'), t('propertyDetail.openMapError', 'Tidak dapat membuka aplikasi Google Maps.'));
               });
             }}
             activeOpacity={0.8}
           >
             <Ionicons name="map" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
             <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
-              🗺️ Buka Rute di Google Maps (Peta Bawaan HP)
+              {t('propertyDetail.openMap', '🗺️ Buka Rute di Google Maps (Peta Bawaan HP)')}
             </Text>
           </TouchableOpacity>
         )}
@@ -243,7 +255,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       <View style={styles.infoCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
           <Ionicons name="people" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Kebijakan Penghuni</Text>
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.policyTitle', 'Kebijakan Penghuni')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons 
@@ -253,9 +265,9 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             style={{ marginRight: 6 }} 
           />
           <Text style={styles.infoText}>
-            {property?.gender_policy === 'male' ? 'Khusus Putra'
-              : property?.gender_policy === 'female' ? 'Khusus Putri'
-              : 'Campur (Putra & Putri)'}
+            {property?.gender_policy === 'male' ? t('propertyDetail.policyMale', 'Khusus Putra')
+              : property?.gender_policy === 'female' ? t('propertyDetail.policyFemale', 'Khusus Putri')
+              : t('propertyDetail.policyMixed', 'Campur (Putra & Putri)')}
           </Text>
         </View>
       </View>
@@ -263,7 +275,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <View style={styles.infoCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="information-circle" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Tentang Kosan</Text>
+            <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.aboutTitle', 'Tentang Kosan')}</Text>
           </View>
           <Text style={styles.infoText}>{property.description}</Text>
         </View>
@@ -271,7 +283,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       <View style={styles.infoCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
           <Ionicons name="person" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Pemilik</Text>
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.ownerTitle', 'Pemilik')}</Text>
         </View>
         <View style={styles.ownerRow}>
           <View style={styles.ownerAvatar}>
@@ -294,7 +306,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               activeOpacity={0.8}
             >
               <Ionicons name="logo-whatsapp" size={16} color="#FFF" style={{ marginRight: 4 }} />
-              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>Chat WA</Text>
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>{t('propertyDetail.chatWA', 'Chat WA')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -305,12 +317,12 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const renderFacilities = () => (
     <View style={styles.tabContent}>
       {(property?.general_facilities?.length ?? 0) === 0 ? (
-        <Text style={styles.noDataText}>Tidak ada fasilitas umum yang tersedia</Text>
+        <Text style={styles.noDataText}>{t('propertyDetail.noFacilities', 'Tidak ada fasilitas umum yang tersedia')}</Text>
       ) : (
         <View style={styles.facilitiesGrid}>
           {(property?.general_facilities ?? []).map((fac, i) => (
             <View key={i} style={styles.facilityGridItem}>
-              <Text style={styles.facilityGridText}>{fac.replace(/_/g, ' ')}</Text>
+              <Text style={styles.facilityGridText}>{t('facilities.' + fac.replace(/_/g, ' '), fac.replace(/_/g, ' '))}</Text>
             </View>
           ))}
         </View>
@@ -319,9 +331,11 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <View style={styles.rulesCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>Peraturan Kosan</Text>
+            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
           </View>
-          <Text style={styles.rulesText}>{property.rules}</Text>
+          {property.rules.split('\n').map((rule, idx) => (
+            <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+          ))}
         </View>
       )}
     </View>
@@ -334,7 +348,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <Text style={styles.ratingBigNumber}>{ratingSummary.average}</Text>
           <View style={styles.ratingStars}>
             <Ionicons name="star" size={24} color={COLORS.warning} />
-            <Text style={styles.ratingTotalText}>dari {ratingSummary.count} Ulasan</Text>
+            <Text style={styles.ratingTotalText}>{t('propertyDetail.fromReviews', 'dari {{count}} Ulasan', { count: ratingSummary.count })}</Text>
           </View>
         </View>
       </View>
@@ -343,10 +357,10 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         onPress={() => navigation.navigate('AddReviewScreen', { propertyId: property.id })}
       >
         <Ionicons name="pencil" size={20} color={COLORS.white} />
-        <Text style={styles.addReviewBtnText}>Tulis Ulasan</Text>
+        <Text style={styles.addReviewBtnText}>{t('propertyDetail.writeReview', 'Tulis Ulasan')}</Text>
       </TouchableOpacity>
       {reviews.length === 0 ? (
-        <Text style={styles.noDataText}>Belum ada ulasan untuk kosan ini.</Text>
+        <Text style={styles.noDataText}>{t('propertyDetail.noReviews', 'Belum ada ulasan untuk kosan ini.')}</Text>
       ) : (
         reviews.map((rev) => (
           <View key={rev.id} style={styles.reviewCard}>
@@ -355,8 +369,8 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.ownerAvatarText}>{rev.users?.full_name?.[0]?.toUpperCase() ?? 'U'}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.reviewName}>{rev.users?.full_name ?? 'Anonim'}</Text>
-                <Text style={styles.reviewDate}>{new Date(rev.created_at).toLocaleDateString('id-ID')}</Text>
+                <Text style={styles.reviewName}>{rev.users?.full_name ?? t('common.anonymous', 'Anonim')}</Text>
+                <Text style={styles.reviewDate}>{new Date(rev.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID')}</Text>
               </View>
               <View style={styles.reviewStarBadge}>
                 <Ionicons name="star" size={14} color={COLORS.warning} style={{ marginRight: 4 }} />
@@ -419,7 +433,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
           {/* Available Count */}
           <View style={styles.availableBadge}>
-            <Text style={styles.availableBadgeText}>{availableRooms.length} kamar tersedia</Text>
+            <Text style={styles.availableBadgeText}>{t('propertyDetail.roomsAvailable', '{{count}} kamar tersedia', { count: availableRooms.length })}</Text>
           </View>
         </View>
 
@@ -434,25 +448,25 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          {TABS.map((tab) => (
+          {TAB_KEYS.map((tabKey) => (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}
+              key={tabKey}
+              style={[styles.tab, activeTab === tabKey && styles.tabActive]}
+              onPress={() => setActiveTab(tabKey)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab}
+              <Text style={[styles.tabText, activeTab === tabKey && styles.tabTextActive]}>
+                {getTabLabel(t, tabKey)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Tab Content */}
-        {activeTab === 'Kamar' && renderRooms()}
-        {activeTab === 'Informasi' && renderInfo()}
-        {activeTab === 'Fasilitas' && renderFacilities()}
-        {activeTab === 'Ulasan' && renderReviews()}
+        {activeTab === 'room' && renderRooms()}
+        {activeTab === 'info' && renderInfo()}
+        {activeTab === 'facility' && renderFacilities()}
+        {activeTab === 'review' && renderReviews()}
       </ScrollView>
     </View>
   );

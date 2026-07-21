@@ -25,10 +25,10 @@ import { uploadKtpPhoto, upsertOwnerProfile, upsertTenantProfile, updateUserProf
 import USER_ROLE from '../../constants/userRole';
 
 const RoleRegistrationScreen = ({ navigation, route }) => {
-  const { targetRole } = route.params || {};
+  const { targetRole, isCompletingProfile } = route.params || {};
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { currentUser, setAuthenticatedUser, currentSession } = useAuthStore();
+  const { currentUser, setAuthenticatedUser, currentSession, switchRole } = useAuthStore();
 
   const [isLoading, setIsLoading] = useState(false);
   
@@ -84,7 +84,15 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.OWNER });
+    if (isCompletingProfile) {
+      setIsLoading(false);
+      Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi!', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+      return;
+    }
+
+    const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.BOTH });
     
     setIsLoading(false);
     if (userError) {
@@ -92,8 +100,18 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan!');
-    setAuthenticatedUser(currentSession, userData);
+    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan!', [
+      {
+        text: 'OK',
+        onPress: () => {
+          setAuthenticatedUser(currentSession, userData);
+          // Since BOTH defaults to TENANT, we need to explicitly switch to OWNER
+          if (useAuthStore.getState().userRole !== USER_ROLE.OWNER) {
+            useAuthStore.getState().switchRole();
+          }
+        }
+      }
+    ]);
   };
 
   const handleRegisterTenant = async () => {
@@ -115,7 +133,15 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.TENANT });
+    if (isCompletingProfile) {
+      setIsLoading(false);
+      Alert.alert('Berhasil', 'Profil Pencari Kos berhasil dilengkapi!', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+      return;
+    }
+
+    const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.BOTH });
     
     setIsLoading(false);
     if (userError) {
@@ -123,8 +149,15 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan!');
-    setAuthenticatedUser(currentSession, userData);
+    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan!', [
+      {
+        text: 'OK',
+        onPress: () => {
+          setAuthenticatedUser(currentSession, userData);
+          // BOTH defaults to TENANT, so it will automatically switch to TENANT
+        }
+      }
+    ]);
   };
 
   return (
@@ -137,11 +170,22 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate(targetRole === USER_ROLE.OWNER ? 'TenantMain' : 'OwnerMain');
+              }
+            }}
+          >
             <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            Daftar sebagai {targetRole === USER_ROLE.OWNER ? 'Pemilik' : 'Pencari Kos'}
+            {isCompletingProfile
+              ? `Lengkapi Profil ${targetRole === USER_ROLE.OWNER ? 'Pemilik' : 'Pencari Kos'}`
+              : `Daftar sebagai ${targetRole === USER_ROLE.OWNER ? 'Pemilik' : 'Pencari Kos'}`}
           </Text>
         </View>
 

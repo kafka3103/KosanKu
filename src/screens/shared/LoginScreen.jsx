@@ -27,7 +27,7 @@ const LoginScreen = ({ navigation }) => {
     // Validasi format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Format email tidak valid. Pastikan Anda menggunakan format email yang benar (contoh: nama@email.com)');
+      Alert.alert(t('common.error', 'Error'), t('auth.emailFormatInvalid', 'Format email tidak valid. Pastikan Anda menggunakan format email yang benar (contoh: nama@email.com)'));
       return;
     }
 
@@ -37,15 +37,15 @@ const LoginScreen = ({ navigation }) => {
     if (error) {
       if (error.message.toLowerCase().includes('invalid login credentials')) {
         Alert.alert(
-          'Login Gagal',
-          'Akun tidak terdaftar atau kombinasi email dan password salah.',
+          t('auth.loginFailedTitle', 'Login Gagal'),
+          t('auth.loginFailedMsg', 'Akun tidak terdaftar atau kombinasi email dan password salah.'),
           [
-            { text: 'Coba Lagi', style: 'cancel' },
-            { text: 'Daftar Sekarang', onPress: () => navigation.navigate(AUTH_SCREENS.REGISTER) }
+            { text: t('common.buttons.retry', 'Coba Lagi'), style: 'cancel' },
+            { text: t('auth.registerNow', 'Daftar Sekarang'), onPress: () => navigation.navigate(AUTH_SCREENS.REGISTER) }
           ]
         );
       } else {
-        Alert.alert('Login Gagal', error.message);
+        Alert.alert(t('auth.loginFailedTitle', 'Login Gagal'), error.message);
       }
     }
     // Jika berhasil, AppNavigator akan otomatis redirect via auth state
@@ -59,12 +59,12 @@ const LoginScreen = ({ navigation }) => {
     if (error) {
       if (error.code === 'NOT_REGISTERED') {
         Alert.alert(
-          'Akun Belum Terdaftar',
+          t('auth.notRegisteredTitle', 'Akun Belum Terdaftar'),
           error.message,
           [
-            { text: 'Batal', style: 'cancel' },
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
             { 
-              text: 'Daftar Sekarang', 
+              text: t('auth.registerNow', 'Daftar Sekarang'), 
               onPress: () => navigation.navigate(AUTH_SCREENS.REGISTER) 
             }
           ]

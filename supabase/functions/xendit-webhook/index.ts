@@ -9,6 +9,22 @@ const XENDIT_CALLBACK_TOKEN = Deno.env.get("XENDIT_CALLBACK_TOKEN") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+// Helper: Kirim push notification via Edge Function send-notification (fire-and-forget)
+const triggerPushNotification = async (userId: string, title: string, body: string, data: Record<string, string> = {}) => {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ userId, title, body, data }),
+    });
+  } catch (err) {
+    console.warn("⚠️ Gagal trigger push notification:", err);
+  }
+};
+
 serve(async (req) => {
   // Hanya terima method POST dari server Xendit
   if (req.method !== "POST") {
@@ -94,7 +110,7 @@ serve(async (req) => {
           owner_id: invoice.owner_id,
           amount: newPaidAmount,
           payment_method: "bank_transfer", // Sesuai enum schema payments kita
-          status: "completed",
+          status: "success",
           gateway_transaction_id: xendit_id || external_id,
           gateway_payment_code: payment_channel || payment_method || "XENDIT",
           gateway_raw_response: payload,
@@ -127,8 +143,8 @@ serve(async (req) => {
         // Notifikasi / Bukti Invoice untuk Tenant (Penghuni)
         {
           user_id: invoice.tenant_id,
-          title: "Invoice Lunas & Bukti Pembayaran 🧾",
-          body: `Tagihan ${invoice.invoice_number || 'Kos'} (Kamar ${roomNum} di ${propName}) sebesar ${formattedAmt} telah Lunas otomatis via Xendit (${payment_channel || 'Checkout'}). Klik untuk melihat bukti invoice.`,
+          title: "invoice_paid_tenant_title",
+          body: JSON.stringify({ key: "invoice_paid_tenant_body", params: { invoiceNumber: invoice.invoice_number || 'Kos', room: roomNum, property: propName, amount: formattedAmt, channel: payment_channel || 'Checkout' } }),
           type: "invoice_paid",
           reference_id: invoice.id,
           reference_type: "invoice",
@@ -137,8 +153,8 @@ serve(async (req) => {
         // Notifikasi / Bukti Invoice untuk Owner (Pemilik)
         {
           user_id: invoice.owner_id,
-          title: "Dana Masuk & Invoice Lunas 💰",
-          body: `Penghuni kamar ${roomNum} (${propName}) telah melunasi tagihan ${invoice.invoice_number || 'Kos'} sebesar ${formattedAmt} via Xendit. Invoice telah dicatat di laporan keuangan Anda.`,
+          title: "invoice_paid_owner_title",
+          body: JSON.stringify({ key: "invoice_paid_owner_body", params: { invoiceNumber: invoice.invoice_number || 'Kos', room: roomNum, property: propName, amount: formattedAmt } }),
           type: "invoice_paid",
           reference_id: invoice.id,
           reference_type: "invoice",
@@ -148,6 +164,23 @@ serve(async (req) => {
 
       await supabaseAdmin.from("notifications").insert(notifications);
       console.log(`🔔 Notifikasi & invoice lunas telah dikirim ke Tenant (${invoice.tenant_id}) dan Owner (${invoice.owner_id})`);
+
+      // 6. Kirim Push Notification (FCM) ke device Tenant & Owner
+      await Promise.all([
+        triggerPushNotification(
+          invoice.tenant_id,
+          notifications[0].title,
+          notifications[0].body,
+          { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
+        ),
+        triggerPushNotification(
+          invoice.owner_id,
+          notifications[1].title,
+          notifications[1].body,
+          { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
+        ),
+      ]);
+      console.log(`📲 Push notification FCM terkirim ke Tenant & Owner`);
     }
 
     // Selalu balikan HTTP 200 OK agar server Xendit tahu webhook berhasil diterima

@@ -363,6 +363,23 @@ export const updateUserProfile = async ({ userId, profileData }) => {
 };
 
 /**
+ * Update FCM token user
+ *
+ * @param {string} userId
+ * @param {string} token
+ */
+export const updateFcmToken = async (userId, token) => {
+  if (!token) return;
+  const { error } = await supabaseClient
+    .from('users')
+    .update({ fcm_token: token })
+    .eq('id', userId);
+  
+  if (error) console.error('Error updating FCM token:', error);
+};
+
+
+/**
  * Subscribe ke perubahan auth state (login/logout)
  * Mengembalikan fungsi unsubscribe untuk cleanup di useEffect
  *

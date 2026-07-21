@@ -253,8 +253,8 @@ export const submitRentalRequest = async (requestData) => {
   if (!error && data && requestData.ownerId) {
     await sendNotification({
       userId: requestData.ownerId,
-      title: 'Pengajuan Sewa Baru 📋',
-      body: `Penghuni baru telah mengajukan sewa kamar untuk durasi ${requestData.durationMonths} bulan. Segera tinjau pengajuan di menu Pengajuan Sewa.`,
+      title: 'rental_new_title',
+      body: JSON.stringify({ key: 'rental_new_body', params: { months: requestData.durationMonths } }),
       type: 'rental_request_new',
       referenceId: data.id,
       referenceType: 'rental_request',

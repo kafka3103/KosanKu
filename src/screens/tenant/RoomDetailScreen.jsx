@@ -22,7 +22,9 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getTenantActiveContract } from '../../services/invoiceService';
+import { checkTenantProfileExists } from '../../services/userService';
 import { TENANT_SCREENS } from '../../constants/screenNames';
+import USER_ROLE from '../../constants/userRole';
 
 const FACILITY_ICON_MAP = {
   'air-conditioner': 'snow',
@@ -69,23 +71,44 @@ const RoomDetailScreen = ({ navigation, route }) => {
     return acc;
   }, {});
 
-  const categoryLabels = {
-    electronics: { text: 'Elektronik', icon: 'hardware-chip-outline' },
-    furniture: { text: 'Furnitur', icon: 'bed-outline' },
-    bathroom: { text: 'Kamar Mandi', icon: 'water-outline' },
-    connectivity: { text: 'Konektivitas', icon: 'wifi-outline' },
-    shared: { text: 'Bersama', icon: 'people-outline' },
-    space: { text: 'Ruang', icon: 'expand-outline' },
-    other: { text: 'Lainnya', icon: 'cube-outline' },
-  };
+  const getCategoryLabels = (t) => ({
+    electronics: { text: t('roomDetail.categories.electronics', 'Elektronik'), icon: 'hardware-chip-outline' },
+    furniture: { text: t('roomDetail.categories.furniture', 'Furnitur'), icon: 'bed-outline' },
+    bathroom: { text: t('roomDetail.categories.bathroom', 'Kamar Mandi'), icon: 'water-outline' },
+    connectivity: { text: t('roomDetail.categories.connectivity', 'Konektivitas'), icon: 'wifi-outline' },
+    shared: { text: t('roomDetail.categories.shared', 'Bersama'), icon: 'people-outline' },
+    space: { text: t('roomDetail.categories.space', 'Ruang'), icon: 'expand-outline' },
+    other: { text: t('roomDetail.categories.other', 'Lainnya'), icon: 'cube-outline' },
+  });
+  const categoryLabels = getCategoryLabels(t);
 
   const handleRequestRent = async () => {
+    // Cek kelengkapan profil tenant
+    const hasProfile = await checkTenantProfileExists(currentUser?.id);
+    if (!hasProfile) {
+      Alert.alert(
+        'Profil Belum Lengkap',
+        'Data pekerjaan dan kontak darurat wajib diisi sebelum Anda dapat mengajukan sewa kamar.',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Lengkapi Profil', 
+            onPress: () => navigation.navigate('RoleRegistrationScreen', { 
+              targetRole: USER_ROLE.TENANT, 
+              isCompletingProfile: true 
+            }) 
+          }
+        ]
+      );
+      return;
+    }
+
     // Cek apakah tenant sudah punya kontrak aktif
     const { data: activeContract } = await getTenantActiveContract(currentUser?.id);
     if (activeContract) {
       Alert.alert(
-        'Sudah Memiliki Hunian',
-        'Anda sudah memiliki kontrak hunian aktif. Selesaikan terlebih dahulu sebelum menyewa yang baru.',
+        t('roomDetail.alertTitle', 'Sudah Memiliki Hunian'),
+        t('roomDetail.alertMessage', 'Anda sudah memiliki kontrak hunian aktif. Selesaikan terlebih dahulu sebelum menyewa yang baru.'),
         [{ text: 'OK' }]
       );
       return;
@@ -133,7 +156,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name={room?.status === 'available' ? 'checkmark-circle' : 'close-circle'} size={14} color={COLORS.white} style={{ marginRight: 4 }} />
               <Text style={styles.statusText}>
-                {room?.status === 'available' ? 'Tersedia' : 'Tidak Tersedia'}
+                {room?.status === 'available' ? t('roomDetail.statusAvailable', 'Tersedia') : t('roomDetail.statusUnavailable', 'Tidak Tersedia')}
               </Text>
             </View>
           </View>
@@ -155,14 +178,14 @@ const RoomDetailScreen = ({ navigation, route }) => {
         <View style={styles.infoSection}>
           <View style={styles.roomHeader}>
             <View>
-              <Text style={styles.roomNumber}>Kamar {room?.room_number}</Text>
+              <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
               <Text style={styles.roomType}>
-                {room?.room_type} · Lantai {room?.floor_number ?? '-'}
+                {room?.room_type} · {t('roomDetail.floorNumber', 'Lantai {{number}}', { number: room?.floor_number ?? '-' })}
               </Text>
             </View>
             <View>
               <Text style={styles.price}>{formatCurrency(room?.base_price)}</Text>
-              <Text style={styles.priceUnit}>per bulan</Text>
+              <Text style={styles.priceUnit}>{t('roomDetail.perMonth', 'per bulan')}</Text>
             </View>
           </View>
 
@@ -189,7 +212,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
         {/* Facilities */}
         {Object.keys(groupedFacilities).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Fasilitas Kamar</Text>
+            <Text style={styles.sectionTitle}>{t('roomDetail.facilitiesTitle', 'Fasilitas Kamar')}</Text>
             {Object.entries(groupedFacilities).map(([cat, facs]) => (
               <View key={cat} style={styles.facilityGroup}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
@@ -200,7 +223,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                 </View>
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
-                    <View key={fac.name} style={styles.facilityItem}>
+                    <View key={t('facilities.' + fac.name, fac.name)} style={styles.facilityItem}>
                       <Ionicons
                         name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
                         size={20}
@@ -208,7 +231,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                         style={{ marginRight: 4 }}
                       />
                       <View>
-                        <Text style={styles.facilityName}>{fac.name}</Text>
+                        <Text style={styles.facilityName}>{t('facilities.' + fac.name, fac.name)}</Text>
                         {fac.additional_cost && (
                           <Text style={styles.additionalCost}>
                             +{formatCurrency(fac.additional_cost)}
@@ -228,10 +251,12 @@ const RoomDetailScreen = ({ navigation, route }) => {
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
               <Ionicons name="document-text" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Peraturan Kosan</Text>
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('roomDetail.rulesTitle', 'Peraturan Kosan')}</Text>
             </View>
             <View style={styles.rulesCard}>
-              <Text style={styles.rulesText}>{property.rules}</Text>
+              {property.rules.split('\n').map((rule, idx) => (
+                <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+              ))}
             </View>
           </View>
         )}
@@ -244,7 +269,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
       {room?.status === 'available' && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
           <View style={styles.bottomPrice}>
-            <Text style={styles.bottomPriceLabel}>Harga/bulan</Text>
+            <Text style={styles.bottomPriceLabel}>{t('roomDetail.priceLabel', 'Harga/bulan')}</Text>
             <Text style={styles.bottomPriceValue}>{formatCurrency(room?.base_price)}</Text>
           </View>
           <TouchableOpacity
@@ -252,7 +277,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             onPress={handleRequestRent}
             activeOpacity={0.8}
           >
-            <Text style={styles.rentBtnText}>Ajukan Sewa</Text>
+            <Text style={styles.rentBtnText}>{t('roomDetail.btnRent', 'Ajukan Sewa')}</Text>
           </TouchableOpacity>
         </View>
       )}

@@ -50,7 +50,7 @@ const RegisterScreen = ({ navigation }) => {
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', t('auth.errors.passwordMismatch') || 'Password mismatch');
+      Alert.alert(t('common.error', 'Error'), t('auth.errors.passwordMismatch', 'Password mismatch'));
       return false;
     }
     return true;
@@ -73,15 +73,15 @@ const RegisterScreen = ({ navigation }) => {
       const isAlreadyRegistered = error.message?.toLowerCase().includes('already registered') || error.code === 'user_already_exists';
       if (isAlreadyRegistered) {
         Alert.alert(
-          'Akun Sudah Terdaftar',
-          t('auth.errors.emailAlreadyUsed') || 'Email ini sudah terdaftar. Silakan gunakan menu Login.',
+          t('auth.notRegisteredTitle', 'Akun Sudah Terdaftar'),
+          t('auth.errors.emailAlreadyUsed', 'Email ini sudah terdaftar. Silakan gunakan menu Login.'),
           [
-            { text: 'Batal', style: 'cancel' },
-            { text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
+            { text: t('auth.loginNow', 'Masuk (Login)'), onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
           ]
         );
       } else {
-        Alert.alert('Registrasi Gagal', error.message);
+        Alert.alert(t('auth.registerFailedTitle', 'Registrasi Gagal'), error.message);
       }
       return;
     }
@@ -89,15 +89,15 @@ const RegisterScreen = ({ navigation }) => {
     // Jika Supabase mengaktifkan "Confirm Email", session akan null
     if (!data?.session) {
       Alert.alert(
-        'Registrasi Berhasil!',
-        'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.',
+        t('auth.registerSuccessTitle', 'Registrasi Berhasil!'),
+        t('auth.registerSuccessEmailMsg', 'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.'),
         [{ text: 'OK', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
       );
     } else {
       Alert.alert(
-        'Registrasi Berhasil! 🎉',
-        'Akun Anda berhasil dibuat. Anda sekarang masuk.',
-        [{ text: 'Lanjutkan', onPress: () => { } }] // AppNavigator will auto route
+        t('auth.registerSuccessTitle2', 'Registrasi Berhasil! 🎉'),
+        t('auth.registerSuccessMsg', 'Akun Anda berhasil dibuat. Anda sekarang masuk.'),
+        [{ text: t('common.buttons.next', 'Lanjutkan'), onPress: () => { } }] // AppNavigator will auto route
       );
     }
   };
@@ -110,18 +110,18 @@ const RegisterScreen = ({ navigation }) => {
     if (error) {
       if (error.code === 'ALREADY_REGISTERED') {
         Alert.alert(
-          'Akun Sudah Terdaftar',
+          t('auth.notRegisteredTitle', 'Akun Sudah Terdaftar'),
           error.message,
           [
-            { text: 'Batal', style: 'cancel' },
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
             {
-              text: 'Masuk (Login)',
+              text: t('auth.loginNow', 'Masuk (Login)'),
               onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN)
             }
           ]
         );
       } else {
-        Alert.alert(t('common.errors.error') || 'Error', error.message);
+        Alert.alert(t('common.error', 'Error'), error.message);
       }
     }
   };

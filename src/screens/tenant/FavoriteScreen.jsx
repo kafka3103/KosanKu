@@ -36,7 +36,7 @@ const formatCurrency = (amount) =>
     maximumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const FavoriteCard = ({ favorite, onPress, onRemove }) => {
+const FavoriteCard = ({ favorite, onPress, onRemove, t }) => {
   const property = favorite.properties;
   const rooms = property?.rooms ?? [];
   const availableRooms = rooms.filter((r) => r.status === 'available');
@@ -60,7 +60,7 @@ const FavoriteCard = ({ favorite, onPress, onRemove }) => {
         </TouchableOpacity>
         {availableRooms.length > 0 && (
           <View style={styles.availableBadge}>
-            <Text style={styles.availableBadgeText}>{availableRooms.length} tersedia</Text>
+            <Text style={styles.availableBadgeText}>{t('favorites.available', '{{count}} tersedia', { count: availableRooms.length })}</Text>
           </View>
         )}
       </View>
@@ -73,16 +73,16 @@ const FavoriteCard = ({ favorite, onPress, onRemove }) => {
         </Text>
         <View style={styles.cardFooter}>
           <Text style={styles.genderBadge}>
-            {property?.gender_policy === 'male' ? '👨 Putra'
-              : property?.gender_policy === 'female' ? '👩 Putri'
-              : '👫 Campur'}
+            {property?.gender_policy === 'male' ? t('favorites.maleOnly', '👨 Putra')
+              : property?.gender_policy === 'female' ? t('favorites.femaleOnly', '👩 Putri')
+              : t('favorites.mixed', '👫 Campur')}
           </Text>
           {minPrice != null ? (
             <Text style={styles.price}>
-              Mulai <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>/bln
+              {t('favorites.startFrom', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('favorites.perMonth', '/bln')}
             </Text>
           ) : (
-            <Text style={styles.noRoomText}>Tidak tersedia</Text>
+            <Text style={styles.noRoomText}>{t('favorites.notAvailable', 'Tidak tersedia')}</Text>
           )}
         </View>
       </View>
@@ -115,12 +115,12 @@ const FavoriteScreen = ({ navigation }) => {
 
   const handleRemoveFavorite = (favorite) => {
     Alert.alert(
-      'Hapus Favorit',
-      `Hapus "${favorite.properties?.name}" dari daftar favorit?`,
+      t('favorites.removeTitle', 'Hapus Favorit'),
+      t('favorites.removeMsg', `Hapus "${favorite.properties?.name}" dari daftar favorit?`, { name: favorite.properties?.name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('favorites.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('favorites.remove', 'Hapus'),
           style: 'destructive',
           onPress: async () => {
             await toggleFavorite(currentUser.id, favorite.properties?.id);
@@ -146,8 +146,8 @@ const FavoriteScreen = ({ navigation }) => {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <DrawerButton />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Favorit Saya</Text>
-            <Text style={styles.headerSubtitle}>{favorites.length} kosan disimpan</Text>
+            <Text style={styles.headerTitle}>{t('favorites.title', 'Favorit Saya')}</Text>
+            <Text style={styles.headerSubtitle}>{t('favorites.savedCount', '{{count}} kosan disimpan', { count: favorites.length })}</Text>
           </View>
         </View>
       </View>
@@ -174,13 +174,14 @@ const FavoriteScreen = ({ navigation }) => {
               style={styles.browseBtn}
               onPress={() => navigation.navigate(TENANT_SCREENS.SEARCH_STACK)}
             >
-              <Text style={styles.browseBtnText}>🔍 Jelajahi Kosan</Text>
+              <Text style={styles.browseBtnText}>{t('favorites.browse', '🔍 Jelajahi Kosan')}</Text>
             </TouchableOpacity>
           </View>
         )}
         renderItem={({ item }) => (
           <FavoriteCard
             favorite={item}
+            t={t}
             onPress={() =>
               navigation.navigate(TENANT_SCREENS.SEARCH_STACK, {
                 screen: TENANT_SCREENS.PROPERTY_DETAIL,
