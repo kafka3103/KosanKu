@@ -247,7 +247,7 @@ const ProfileScreen = ({ navigation }) => {
     setIsSaving(false);
 
     if (error || tenantError) {
-      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || t('profile.saveFailed', 'Gagal menyimpan profil'));
+      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || t('profile.updateFail', 'Gagal menyimpan profil'));
     } else if (data) {
       Alert.alert(t('common.buttons.success', 'Berhasil'), t('profile.updateSuccess', 'Profil berhasil diperbarui'));
       setProfile(data);
@@ -429,8 +429,13 @@ const ProfileScreen = ({ navigation }) => {
         </View>
         <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
           {isOwner
-            ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar atau beralih ke mode Pencari Kosan sekarang.')
-            : t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa mendaftar atau beralih ke mode Pemilik Kosan untuk mulai mengelola.')}
+            ? (currentUser.role === USER_ROLE.BOTH 
+                ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mengubah mode akun Anda ke mode Pencari Kosan sekarang.')
+                : t('profile.registerTenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar ke mode Pencari Kosan sekarang.'))
+            : (currentUser.role === USER_ROLE.BOTH
+                ? t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa beralih ke mode Pemilik Kosan untuk mulai mengelola properti.')
+                : t('profile.registerOwnerPrompt', 'Punya properti kosan? Anda bisa mendaftar ke mode Pemilik Kosan untuk mulai mengelola properti.'))
+          }
         </Text>
         <TouchableOpacity
           style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
@@ -544,7 +549,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
+    color: COLORS.white,
+
   },
   avatarSection: {
     alignItems: 'center',
