@@ -113,7 +113,7 @@ async function sendFcmMessage(
         priority: "high",
         notification: {
           channel_id: "default",
-          priority: "max",
+          notification_priority: "PRIORITY_MAX",
           default_vibrate_timings: true,
           sound: "default",
         },
@@ -192,7 +192,12 @@ serve(async (req: Request) => {
       .select("token")
       .eq("user_id", userId);
 
-    if (tokensError || !tokenRecords || tokenRecords.length === 0) {
+    let tokensToUse: { token: string }[] = [];
+    if (tokenRecords && tokenRecords.length > 0) {
+      tokensToUse = tokenRecords;
+    }
+
+    if (tokensToUse.length === 0) {
       // Coba fallback ke tabel users
       const { data: userRecord } = await supabaseAdmin
         .from("users")
@@ -209,7 +214,7 @@ serve(async (req: Request) => {
       }
       
       // Gunakan token dari users jika fcm_tokens kosong tapi users ada
-      tokenRecords.push({ token: userRecord.fcm_token });
+      tokensToUse.push({ token: userRecord.fcm_token });
     }
 
     // Generate Firebase Access Token
@@ -217,7 +222,7 @@ serve(async (req: Request) => {
     
     // Kirim push notification ke semua token
     const results = await Promise.all(
-      tokenRecords.map(async (record) => {
+      tokensToUse.map(async (record) => {
         return await sendFcmMessage(accessToken, projectId, record.token, title, body, data);
       })
     );
@@ -228,7 +233,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: successCount > 0, 
-        message: `Dikirim ke ${successCount}/${tokenRecords.length} perangkat`,
+        message: `Dikirim ke ${successCount}/${tokensToUse.length} perangkat`,
         results 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

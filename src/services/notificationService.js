@@ -12,6 +12,8 @@ import supabaseClient from './supabaseClient';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
+import i18n from '../localization/i18n';
+
 /**
  * Kirim push notification via Edge Function (FCM)
  * Fire-and-forget — tidak memblokir alur utama jika gagal
@@ -23,18 +25,38 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
  */
 const triggerPushNotification = async (userId, title, body, data = {}) => {
   try {
+    let pushTitle = title;
+    let pushBody = body;
+
+    // Coba translate title
+    if (i18n.exists(`dbNotification.${title}`)) {
+      pushTitle = i18n.t(`dbNotification.${title}`);
+    }
+
+    // Coba translate body (karena formatnya JSON { key, params })
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && parsed.key && i18n.exists(`dbNotification.${parsed.key}`)) {
+        pushBody = i18n.t(`dbNotification.${parsed.key}`, parsed.params || {});
+      }
+    } catch (e) {
+      // Abaikan jika bukan JSON
+    }
+
     const res = await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ userId, title, body, data }),
+      body: JSON.stringify({ userId, title: pushTitle, body: pushBody, data }),
     });
 
+    const textBody = await res.text();
+    console.log(`🚀 [Push Notif] Response dari Edge Function (Status: ${res.status}):`, textBody);
+
     if (!res.ok) {
-      const errBody = await res.text();
-      console.warn('⚠️ Push notification gagal terkirim:', errBody);
+      console.warn('⚠️ Push notification gagal terkirim:', textBody);
     }
   } catch (err) {
     // Push notif adalah best-effort — jangan crash alur utama
