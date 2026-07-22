@@ -5,7 +5,8 @@
  */
 
 import supabaseClient from './supabaseClient';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { Platform } from 'react-native';
 import useAuthStore from '../store/authStore';
 
 // Konfigurasi Google Sign-In awal
@@ -91,6 +92,11 @@ export const signInWithGoogle = async (role = null) => {
     try { await GoogleSignin.signOut(); } catch (_) {}
 
     const userInfo = await GoogleSignin.signIn();
+    
+    // Cek pembatalan login untuk GoogleSignin v16+
+    if (userInfo?.type === 'cancelled' || userInfo?.type === 'noSavedCredentialFound') {
+      return { data: null, error: null };
+    }
     
     // Mendukung versi v16+ maupun versi lama dari GoogleSignin
     const idToken = userInfo?.data?.idToken || userInfo?.idToken;
@@ -179,6 +185,9 @@ export const signInWithGoogle = async (role = null) => {
       throw new Error('No ID token present!');
     }
   } catch (error) {
+    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      return { data: null, error: null };
+    }
     console.error('Error signing in with Google:', error);
     return { error };
   } finally {
@@ -370,12 +379,31 @@ export const updateUserProfile = async ({ userId, profileData }) => {
  */
 export const updateFcmToken = async (userId, token) => {
   if (!token) return;
-  const { error } = await supabaseClient
+
+  // 1. Simpan ke tabel users (untuk backward compatibility)
+  const { error: userError } = await supabaseClient
     .from('users')
     .update({ fcm_token: token })
     .eq('id', userId);
   
-  if (error) console.error('Error updating FCM token:', error);
+  if (userError) console.error('Error updating FCM token on users table:', userError);
+
+  // 2. Simpan ke tabel fcm_tokens (mendukung multiple devices)
+  const { error: tokensError } = await supabaseClient
+    .from('fcm_tokens')
+    .upsert(
+      { 
+        user_id: userId, 
+        token: token, 
+        platform: Platform.OS, 
+        updated_at: new Date().toISOString() 
+      }, 
+      { onConflict: 'token' }
+    );
+
+  if (tokensError && tokensError.code !== '42501') {
+    console.error('Error upserting FCM token on fcm_tokens table:', tokensError);
+  }
 };
 
 

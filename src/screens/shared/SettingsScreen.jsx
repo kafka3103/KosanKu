@@ -24,6 +24,7 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { logout, updatePassword } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
+import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
 const SettingsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -130,7 +131,7 @@ const SettingsScreen = ({ navigation }) => {
 
       {/* Notifikasi */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.notifications.title')}</Text>
+        <Text style={styles.sectionTitle}>{t('settings.notifications.title', 'Notifikasi')}</Text>
         <SettingRow
           label={t('settings.notifications.push')}
           rightElement={
@@ -142,6 +143,20 @@ const SettingsScreen = ({ navigation }) => {
             />
           }
         />
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => {
+            scheduleLocalNotification(
+              "Uji Coba Notifikasi",
+              "Ini adalah notifikasi lokal yang muncul setelah 5 detik.",
+              { type: 'test' },
+              5
+            );
+          }}
+        >
+          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.actionButtonText}>Uji Coba Notifikasi Lokal (5 detik)</Text>
+        </TouchableOpacity>
         <SettingRow
           label={t('settings.notifications.email')}
           rightElement={

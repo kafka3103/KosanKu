@@ -88,6 +88,7 @@ const getRoomTypeOptions = (t) => [
 ];
 
 const PropertyCard = ({ property, onPress }) => {
+  const { t } = useTranslation();
   const availableRooms = property.rooms?.filter((r) => r.status === 'available') ?? [];
   const minPrice = availableRooms.length > 0
     ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0)))

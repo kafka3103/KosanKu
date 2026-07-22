@@ -6,12 +6,12 @@
 
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import useAuthStore from '../store/authStore';
 import { subscribeToAuthChanges, getUserProfile, updateFcmToken } from '../services/authService';
-import { registerForPushNotificationsAsync } from '../utils/notificationUtils';
+import { registerForPushNotificationsAsync, setupNotificationListeners } from '../utils/notificationUtils';
 import COLORS from '../constants/colors';
 
 import AuthNavigator from './AuthNavigator';
@@ -35,6 +35,9 @@ const SplashScreen = () => (
   </View>
 );
 
+// Create a global navigation ref to use outside of React components if needed
+export const navigationRef = createNavigationContainerRef();
+
 const AppNavigator = () => {
   const {
     isLoading,
@@ -46,6 +49,25 @@ const AppNavigator = () => {
   } = useAuthStore();
 
   useEffect(() => {
+    // Setup listener untuk Foreground, Background, dan Terminated Notifications
+    const cleanupListeners = setupNotificationListeners(
+      (notification) => {
+        // Foreground notification handler (Bisa ditambah custom logic jika diperlukan)
+      },
+      (response) => {
+        // Background / Terminated tap handler
+        const role = useAuthStore.getState().userRole;
+        // Navigasi ke halaman Notifikasi sesuai role
+        if (navigationRef.isReady()) {
+          if (role === USER_ROLE.OWNER) {
+            navigationRef.navigate('OwnerMain', { screen: 'OwnerNotifications' });
+          } else if (role === USER_ROLE.TENANT) {
+            navigationRef.navigate('TenantMain', { screen: 'Notifications' });
+          }
+        }
+      }
+    );
+
     // Subscribe ke perubahan auth state Supabase
     const unsubscribe = subscribeToAuthChanges(async (event, session) => {
       // Handler untuk sesi aktif: baik saat login baru maupun saat restore sesi sebelumnya
@@ -96,7 +118,10 @@ const AppNavigator = () => {
       }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      cleanupListeners();
+    };
   }, []);
 
   if (isLoading) {
@@ -125,7 +150,7 @@ const AppNavigator = () => {
   };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       {renderNavigator()}
     </NavigationContainer>
   );

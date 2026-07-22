@@ -30,6 +30,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { submitRentalRequest } from '../../services/searchService';
+import { scheduleLocalNotification } from '../../utils/notificationUtils';
 import { uploadKtpPhoto } from '../../services/userService';
 
 const formatCurrency = (amount) =>
@@ -152,6 +153,14 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 }
                 return;
               }
+
+              // Panggil Local Notification sebagai pemberitahuan lokal di HP penyewa
+              scheduleLocalNotification(
+                "Pengajuan Berhasil Dikirim!",
+                `Pemilik kos ${property?.name} akan meninjau pengajuan Anda dalam waktu 3 hari.`,
+                { type: 'rental_request', status: 'pending' },
+                2
+              );
 
               Alert.alert(
                 t('rental.request.sentTitle', 'Pengajuan Dikirim! 🎉'),

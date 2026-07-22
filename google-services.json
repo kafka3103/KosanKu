@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "139770871928",
-    "project_id": "kosanku-5689f",
-    "storage_bucket": "kosanku-5689f.firebasestorage.app"
+    "project_number": "847747622937",
+    "project_id": "kosanku-5d756",
+    "storage_bucket": "kosanku-5d756.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:139770871928:android:65cb52336fa67d30226d8d",
+        "mobilesdk_app_id": "1:847747622937:android:3eeec12a27066af511e288",
         "android_client_info": {
           "package_name": "com.kosanku.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDbPluTDw8XCBBH0sc6yO4FJ4MS7yAQilc"
+          "current_key": "AIzaSyAMwFgBRNsoSuwUjBYS0mMqlgC7dezpWNE"
         }
       ],
       "services": {

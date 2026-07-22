@@ -186,36 +186,51 @@ serve(async (req: Request) => {
     // Inisialisasi Supabase Admin client (bypass RLS)
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Ambil FCM token user dari tabel public.users
-    const { data: userRecord, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("fcm_token")
-      .eq("id", userId)
-      .single();
+    // Ambil FCM token user dari tabel fcm_tokens
+    const { data: tokenRecords, error: tokensError } = await supabaseAdmin
+      .from("fcm_tokens")
+      .select("token")
+      .eq("user_id", userId);
 
-    if (userError || !userRecord) {
-      console.warn(`⚠️ User ${userId} tidak ditemukan atau error:`, userError?.message);
-      return new Response(
-        JSON.stringify({ success: false, message: "User tidak ditemukan." }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (tokensError || !tokenRecords || tokenRecords.length === 0) {
+      // Coba fallback ke tabel users
+      const { data: userRecord } = await supabaseAdmin
+        .from("users")
+        .select("fcm_token")
+        .eq("id", userId)
+        .single();
+        
+      if (!userRecord || !userRecord.fcm_token) {
+        console.warn(`⚠️ User ${userId} tidak memiliki FCM token. Notifikasi in-app tetap tersimpan.`);
+        return new Response(
+          JSON.stringify({ success: false, message: "FCM token tidak tersedia untuk user ini." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Gunakan token dari users jika fcm_tokens kosong tapi users ada
+      tokenRecords.push({ token: userRecord.fcm_token });
     }
 
-    const fcmToken = userRecord.fcm_token;
-    if (!fcmToken) {
-      console.warn(`⚠️ User ${userId} tidak memiliki FCM token. Notifikasi in-app tetap tersimpan.`);
-      return new Response(
-        JSON.stringify({ success: false, message: "FCM token tidak tersedia untuk user ini." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Generate Firebase Access Token & kirim push notification
+    // Generate Firebase Access Token
     const accessToken = await getFirebaseAccessToken(serviceAccount);
-    const result = await sendFcmMessage(accessToken, projectId, fcmToken, title, body, data);
+    
+    // Kirim push notification ke semua token
+    const results = await Promise.all(
+      tokenRecords.map(async (record) => {
+        return await sendFcmMessage(accessToken, projectId, record.token, title, body, data);
+      })
+    );
+
+    // Filter results untuk mengetahui berapa yang sukses
+    const successCount = results.filter(r => r.success).length;
 
     return new Response(
-      JSON.stringify({ success: result.success, fcmResponse: result.response }),
+      JSON.stringify({ 
+        success: successCount > 0, 
+        message: `Dikirim ke ${successCount}/${tokenRecords.length} perangkat`,
+        results 
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
