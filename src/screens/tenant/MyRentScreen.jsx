@@ -22,9 +22,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 import DrawerButton from '../../components/navigation/DrawerButton';
+import DynamicText from '../../components/shared/DynamicText';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -44,19 +45,38 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const FACILITY_ICON_MAP = {
+  'air-conditioner': 'snow',
+  wifi: 'wifi',
+  shower: 'water',
+  'water-heater': 'flame',
+  bed: 'bed',
+  wardrobe: 'file-tray',
+  desk: 'desktop',
+  chair: 'cube',
+  refrigerator: 'snow-outline',
+  television: 'tv',
+  'washing-machine': 'shirt',
+  kitchen: 'restaurant',
+  balcony: 'partly-sunny',
+  window: 'scan-outline',
+};
+
+const formatDate = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy', { locale: idLocale });
+    const locale = lang === 'en' ? enLocale : idLocale;
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale });
   } catch {
     return dateStr;
   }
 };
 
-const formatPeriod = (dateStr) => {
+const formatPeriod = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'MMMM yyyy', { locale: idLocale });
+    const locale = lang === 'en' ? enLocale : idLocale;
+    return format(new Date(dateStr), 'MMMM yyyy', { locale });
   } catch {
     return dateStr;
   }
@@ -78,7 +98,7 @@ const getRequestStatusConfig = (t) => ({
 });
 
 const MyRentScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
@@ -305,9 +325,7 @@ const MyRentScreen = ({ navigation }) => {
                     {property?.address_line}, {property?.city}
                   </Text>
                 </View>
-                <Text style={styles.roomPrice}>
-                  {formatCurrency(contract.monthly_rate)}{t('roomDetail.perMonth', '/bulan')}
-                </Text>
+                <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)} {t('myRent.perMonth', 'per month')}</Text>
               </View>
             </View>
 
@@ -315,12 +333,12 @@ const MyRentScreen = ({ navigation }) => {
             <View style={styles.contractDates}>
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.start_date, i18n.language)}</Text>
               </View>
               <View style={styles.dateSeparator} />
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.end_date, i18n.language)}</Text>
               </View>
             </View>
 
@@ -331,7 +349,7 @@ const MyRentScreen = ({ navigation }) => {
                 <View style={styles.facilitiesWrap}>
                   {facilities.map((f, i) => (
                     <View key={i} style={styles.facilityTag}>
-                      <Text style={styles.facilityTagText}>{f}</Text>
+                      <DynamicText style={styles.facilityTagText}>{f}</DynamicText>
                     </View>
                   ))}
                 </View>
@@ -350,9 +368,9 @@ const MyRentScreen = ({ navigation }) => {
 
                 {activeContractFacilities.map((cf) => (
                   <View key={cf.id} style={styles.optionalFacilityItem}>
-                    <Text style={styles.optionalFacilityName}>
+                    <DynamicText style={styles.optionalFacilityName}>
                       {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
-                    </Text>
+                    </DynamicText>
                     <Text style={styles.optionalFacilityPrice}>
                       {formatCurrency(cf.price_per_month)}{t('roomDetail.perMonth', '/bulan')}
                     </Text>
@@ -361,9 +379,9 @@ const MyRentScreen = ({ navigation }) => {
 
                 {requestedContractFacilities.map((cf) => (
                   <View key={cf.id} style={styles.optionalFacilityItem}>
-                    <Text style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
+                    <DynamicText style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
                       {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
-                    </Text>
+                    </DynamicText>
                     <View style={styles.requestBadgeInline}>
                       <Text style={styles.requestBadgeTextInline}>{t('myRent.waitingConfirm', 'Menunggu Konfirmasi')}</Text>
                     </View>
@@ -450,7 +468,7 @@ const MyRentScreen = ({ navigation }) => {
                     <View style={styles.invoiceLeft}>
                       <Ionicons name={status.icon} size={24} color={status.color} />
                       <View>
-                        <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
+                        <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n.language)}</Text>
                         <Text style={[styles.invoiceStatus, { color: status.color }]}>
                           {status.label}
                         </Text>
@@ -500,9 +518,9 @@ const MyRentScreen = ({ navigation }) => {
                     onPress={() => handleRequestFacility(facility.id)}
                   >
                     <View style={styles.facilityOptionLeft}>
-                      <Ionicons name={facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
+                      <Ionicons name={FACILITY_ICON_MAP[facility.icon_name] || facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
                       <View style={{ marginLeft: 12 }}>
-                        <Text style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</Text>
+                        <DynamicText style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</DynamicText>
                         {isAlreadyActive ? (
                           <Text style={styles.facilityOptionStatus}>{t('myRent.installed', 'Sudah terpasang')}</Text>
                         ) : isAlreadyRequested ? (

@@ -26,6 +26,7 @@ MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
+import DynamicText from '../../components/shared/DynamicText';
 import useAuthStore from '../../store/authStore';
 import {
   getPropertyDetailForTenant,
@@ -134,14 +135,14 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <Text style={styles.noRoomsText}>{t('propertyDetail.noRooms', 'Tidak ada kamar tersedia saat ini')}</Text>
         </View>
       ) : (
-        availableRooms.map((room) => {
+        availableRooms.map((room, index) => {
           const facilities = room.room_facilities
             ?.map((rf) => rf.facility_master?.name)
             .filter(Boolean)
             .slice(0, 5);
           return (
             <TouchableOpacity
-              key={room.id}
+              key={room.id ?? index}
               style={styles.roomCard}
               onPress={() =>
                 navigation.navigate(TENANT_SCREENS.ROOM_DETAIL, { room, property })
@@ -163,7 +164,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <View style={styles.roomFacilities}>
                   {facilities.map((f, i) => (
                     <View key={i} style={styles.facilityTag}>
-                      <Text style={styles.facilityTagText}>{f}</Text>
+                      <DynamicText style={styles.facilityTagText}>{f}</DynamicText>
                     </View>
                   ))}
                 </View>
@@ -322,7 +323,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <View style={styles.facilitiesGrid}>
           {(property?.general_facilities ?? []).map((fac, i) => (
             <View key={i} style={styles.facilityGridItem}>
-              <Text style={styles.facilityGridText}>{t('facilities.' + fac.replace(/_/g, ' '), fac.replace(/_/g, ' '))}</Text>
+              <DynamicText style={styles.facilityGridText}>{fac.replace(/_/g, ' ')}</DynamicText>
             </View>
           ))}
         </View>
@@ -334,7 +335,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
           </View>
           {property.rules.split('\n').map((rule, idx) => (
-            <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+            <DynamicText key={idx} style={styles.rulesText}>{rule}</DynamicText>
           ))}
         </View>
       )}
@@ -362,8 +363,8 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       {reviews.length === 0 ? (
         <Text style={styles.noDataText}>{t('propertyDetail.noReviews', 'Belum ada ulasan untuk kosan ini.')}</Text>
       ) : (
-        reviews.map((rev) => (
-          <View key={rev.id} style={styles.reviewCard}>
+        reviews.map((rev, index) => (
+          <View key={rev.id ?? index} style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
               <View style={styles.reviewAvatar}>
                 <Text style={styles.ownerAvatarText}>{rev.users?.full_name?.[0]?.toUpperCase() ?? 'U'}</Text>

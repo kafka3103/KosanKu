@@ -929,7 +929,23 @@
     "ownerPrompt": "Have a boarding house property? You can switch to Owner mode to start managing properties.",
     "tenantPrompt": "Looking for a boarding house? You can change your account mode to Tenant mode now.",
     "aboutApp": "About Application",
-    "version": "Version"
+    "version": "Version",
+    "additionalTenantData": "Additional Tenant Data",
+    "occupationLabel": "Occupation / Status",
+    "occupationPlaceholder": "e.g., Student, Employee",
+    "emergencyNameLabel": "Emergency Contact Name",
+    "emergencyNamePlaceholder": "Relative/Family Name",
+    "emergencyPhoneLabel": "Emergency Phone No.",
+    "emergencyPhonePlaceholder": "Example: +628123456789",
+    "genderSelectTitle": "Select Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "citySelectTitle": "Select Hometown",
+    "citySearchPlaceholder": "Search city or regency...",
+    "switchRole": "Switch Role",
+    "registerOtherRole": "Other Role Registration",
+    "registerTenantBtn": "Register as Tenant",
+    "registerOwnerBtn": "Register as Owner"
   },
   "settings": {
     "title": "Settings",
@@ -1003,7 +1019,9 @@
       "btnSwitch": "Switch",
       "failTitle": "Failed",
       "switchToOwnerBtn": "Switch to Owner Mode",
-      "switchToTenantBtn": "Switch to Tenant Mode"
+      "switchToTenantBtn": "Switch to Tenant Mode",
+      "registerOwnerBtn": "Register as Owner",
+      "registerTenantBtn": "Register as Tenant"
     }
   },
   "common": {
@@ -1225,7 +1243,17 @@
     "Water Heater": "Water Heater",
     "Mesin Cuci": "Washing Machine",
     "Ruang Tamu": "Living Room",
-    "Penjaga Kos": "Security Guard"
+    "Penjaga Kos": "Security Guard",
+    "parking": "Parking",
+    "cctv": "CCTV",
+    "security 24h": "24/7 Security",
+    "wifi area": "WiFi Area",
+    "laundry": "Laundry",
+    "canteen": "Canteen",
+    "garden": "Garden",
+    "gym": "Gym",
+    "Meja Belajar": "Study Desk",
+    "Dapur Bersama": "Shared Kitchen"
   },
   "rules": {
     "Khusus penghuni perempuan": "Female tenants only",
@@ -1239,7 +1267,8 @@
     "Bebas jam malam": "No curfew",
     "Akses 24 Jam": "24-hour access",
     "Tamu lawan jenis dilarang menginap": "Opposite-sex guests are not allowed to stay overnight",
-    "Dilarang berisik di atas jam 22:00": "No noise after 22:00"
+    "Dilarang berisik di atas jam 22:00": "No noise after 22:00",
+    "Tidak boleh mabuk dan merokok": "No drunkenness or smoking"
   },
   "dbNotification": {
     "invoice_paid_tenant_title": "Invoice Paid & Payment Receipt 🧾",

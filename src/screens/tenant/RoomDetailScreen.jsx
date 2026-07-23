@@ -23,6 +23,8 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getTenantActiveContract } from '../../services/invoiceService';
 import { checkTenantProfileExists } from '../../services/userService';
+import { getRoomDetails } from '../../services/propertyService';
+import DynamicText from '../../components/shared/DynamicText';
 import { TENANT_SCREENS } from '../../constants/screenNames';
 import USER_ROLE from '../../constants/userRole';
 
@@ -231,7 +233,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                         style={{ marginRight: 4 }}
                       />
                       <View>
-                        <Text style={styles.facilityName}>{t('facilities.' + fac.name, fac.name)}</Text>
+                        <DynamicText style={styles.facilityName}>{fac.name}</DynamicText>
                         {fac.additional_cost && (
                           <Text style={styles.additionalCost}>
                             +{formatCurrency(fac.additional_cost)}
@@ -255,7 +257,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.rulesCard}>
               {property.rules.split('\n').map((rule, idx) => (
-                <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+                <DynamicText key={idx} style={styles.rulesText}>{rule}</DynamicText>
               ))}
             </View>
           </View>

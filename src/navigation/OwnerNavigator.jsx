@@ -54,7 +54,7 @@ import NotificationScreen from '../screens/shared/NotificationScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import CustomTabBar from '../components/navigation/CustomTabBar';
-import { Alert } from 'react-native';
+
 
 const OwnerDrawer = createDrawerNavigator();
 const OwnerBottomTab = createBottomTabNavigator();
@@ -246,9 +246,10 @@ const OwnerDrawerContent = ({ navigation }) => {
         ))}
       </View>
 
-      {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
-        <Text style={[styles.logoutText, { color: COLORS.white }]}>Beralih ke Mode Pencari</Text>
+        <Text style={[styles.logoutText, { color: COLORS.white }]}>
+          {hasTenantProfile ? t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari') : t('navigation.switchRole.registerTenantBtn', 'Daftar sebagai Pencari Kos')}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
