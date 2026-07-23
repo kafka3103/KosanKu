@@ -235,3 +235,31 @@ export const checkTenantProfileExists = async (userId) => {
   if (error && error.code !== 'PGRST116') return false;
   return !!data;
 };
+
+/**
+ * Cek apakah owner profile sudah diverifikasi
+ */
+export const checkOwnerVerification = async (userId) => {
+  const { data, error } = await supabaseClient
+    .from('owner_profiles')
+    .select('is_verified')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error || !data) return false;
+  return data.is_verified;
+};
+
+/**
+ * Cek apakah tenant profile sudah diverifikasi
+ */
+export const checkTenantVerification = async (userId) => {
+  const { data, error } = await supabaseClient
+    .from('tenant_profiles')
+    .select('is_verified')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error || !data) return false;
+  return data.is_verified;
+};

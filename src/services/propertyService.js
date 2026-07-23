@@ -496,7 +496,10 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
     .select(`
       *,
       rooms(room_number, base_price, properties(name, address_line, city)),
-      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, email, avatar_url)
+      users!rental_requests_tenant_id_fkey(
+        id, full_name, phone_number, email, avatar_url,
+        tenant_profiles(ktp_number, is_verified)
+      )
     `)
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
@@ -582,6 +585,12 @@ export const approveRentalRequest = async (requestId) => {
       .from('rooms')
       .update({ status: 'pending', updated_at: new Date().toISOString() })
       .eq('id', request.room_id);
+
+    // 4.b Update tenant_profiles is_verified menjadi true
+    await supabaseClient
+      .from('tenant_profiles')
+      .update({ is_verified: true, updated_at: new Date().toISOString() })
+      .eq('user_id', request.tenant_id);
 
     // 5. Buat invoice pertama agar tenant bisa langsung melakukan pembayaran ("dilanjutkan kedalam tahap pembayaran")
     if (newContract) {

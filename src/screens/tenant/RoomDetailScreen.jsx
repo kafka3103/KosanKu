@@ -81,8 +81,13 @@ const RoomDetailScreen = ({ navigation, route }) => {
     other: { text: t('roomDetail.categories.other', 'Lainnya'), icon: 'cube-outline' },
   });
   const categoryLabels = getCategoryLabels(t);
+  const isOwnProperty = property?.owner_id === currentUser?.id;
 
   const handleRequestRent = async () => {
+    if (isOwnProperty) {
+      Alert.alert('Tidak Diizinkan', 'Anda tidak dapat menyewa properti milik sendiri.');
+      return;
+    }
     // Cek kelengkapan profil tenant
     const hasProfile = await checkTenantProfileExists(currentUser?.id);
     if (!hasProfile) {
@@ -273,9 +278,10 @@ const RoomDetailScreen = ({ navigation, route }) => {
             <Text style={styles.bottomPriceValue}>{formatCurrency(room?.base_price)}</Text>
           </View>
           <TouchableOpacity
-            style={styles.rentBtn}
-            onPress={handleRequestRent}
+            style={[styles.rentBtn, isOwnProperty && { backgroundColor: COLORS.grey400 }]}
+            onPress={isOwnProperty ? () => Alert.alert('Tidak Diizinkan', 'Anda tidak dapat menyewa properti milik sendiri.') : handleRequestRent}
             activeOpacity={0.8}
+            disabled={isOwnProperty}
           >
             <Text style={styles.rentBtnText}>{t('roomDetail.btnRent', 'Ajukan Sewa')}</Text>
           </TouchableOpacity>

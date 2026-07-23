@@ -129,6 +129,23 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
             <Text style={styles.infoBold}>{formatCurrency(request.monthly_rate)}/{t('ownerRentalRequest.monthAbbr', 'bln')}</Text>
           </Text>
         </View>
+
+        {(() => {
+          const tenantNIK = Array.isArray(tenant?.tenant_profiles) 
+            ? tenant.tenant_profiles[0]?.ktp_number 
+            : tenant?.tenant_profiles?.ktp_number;
+          
+          if (!tenantNIK) return null;
+          return (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, backgroundColor: COLORS.successLight, padding: 8, borderRadius: 6 }}>
+              <Ionicons name="shield-checkmark" size={16} color={COLORS.success} style={{ marginRight: 6 }} />
+              <Text style={[styles.infoRow, { color: COLORS.textPrimary }]}>
+                Jaminan NIK: <Text style={styles.infoBold}>{tenantNIK}</Text>
+              </Text>
+            </View>
+          );
+        })()}
+
         {request.tenant_message && (
           <View style={styles.messageBox}>
             <Text style={styles.messageLabel}>{t('ownerRentalRequest.tenantMsg', 'Pesan Tenant:')}</Text>

@@ -52,6 +52,7 @@ export const searchProperties = async (filters = {}) => {
       cover_photo_url,
       photo_urls,
       rules,
+      owner_id,
       ${roomsRelation}(
         id,
         room_number,
