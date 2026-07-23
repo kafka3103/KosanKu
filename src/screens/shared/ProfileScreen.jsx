@@ -31,6 +31,7 @@ import REGIONS_DATA from '../../constants/cities.json';
 const ALL_CITIES = REGIONS_DATA.reduce((acc, region) => [...acc, ...region.kota], []).sort();
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -79,7 +80,7 @@ const SelectableInfoRow = ({ label, value, onPress, icon, placeholder }) => (
 );
 
 const ProfileScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser, currentSession, clearAuthState, setAuthenticatedUser, userRole, switchRole } = useAuthStore();
 
@@ -120,7 +121,7 @@ const ProfileScreen = ({ navigation }) => {
     if (!isOwner) {
       const { data: tenantData } = await getTenantProfile(currentUser.id);
       if (tenantData) {
-        setOccupation(tenantData.occupation || '');
+        setOccupation(getLocalizedField(tenantData, 'occupation', i18n.language) || '');
         setEmergencyName(tenantData.emergency_contact_name || '');
         setEmergencyPhone(tenantData.emergency_contact_phone || '');
       }

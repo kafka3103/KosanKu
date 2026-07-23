@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { id as idLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
@@ -78,7 +79,7 @@ const getRequestStatusConfig = (t) => ({
 });
 
 const MyRentScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
@@ -269,7 +270,7 @@ const MyRentScreen = ({ navigation }) => {
                 {req.status === 'rejected' && req.owner_rejection_reason && (
                   <View style={styles.rejectionBox}>
                     <Text style={styles.rejectionText}>
-                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: req.owner_rejection_reason })}
+                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: getLocalizedField(req, 'owner_rejection_reason', i18n.language) })}
                     </Text>
                   </View>
                 )}

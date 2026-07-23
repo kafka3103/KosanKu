@@ -6,6 +6,7 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
+import { translateMultipleFields } from './translationService';
 
 /**
  * Cari properti & kamar yang tersedia berdasarkan filter
@@ -239,6 +240,12 @@ export const submitRentalRequest = async (requestData) => {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 4);
 
+  let translated = {};
+  if (requestData.tenantMessage) {
+    const fieldsToTranslate = { tenant_message: requestData.tenantMessage };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .insert({
@@ -250,6 +257,7 @@ export const submitRentalRequest = async (requestData) => {
       monthly_rate: requestData.monthlyRate,
       ktp_photo_url: requestData.ktpPhotoUrl ?? null,
       tenant_message: requestData.tenantMessage ?? null,
+      tenant_message_en: translated.tenant_message_en ?? null,
       expires_at: expiresAt.toISOString(),
     })
     .select()

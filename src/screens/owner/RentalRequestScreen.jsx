@@ -26,6 +26,7 @@ import { id as idLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -132,7 +133,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
         {request.tenant_message && (
           <View style={styles.messageBox}>
             <Text style={styles.messageLabel}>{t('ownerRentalRequest.tenantMsg', 'Pesan Tenant:')}</Text>
-            <Text style={styles.messageText}>{request.tenant_message}</Text>
+            <Text style={styles.messageText}>{getLocalizedField(request, 'tenant_message', i18n.language)}</Text>
           </View>
         )}
       </View>
@@ -167,7 +168,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
       {request.status === 'rejected' && request.owner_rejection_reason && (
         <View style={styles.rejectionBox}>
           <Text style={styles.rejectionLabel}>{t('ownerRentalRequest.rejectReasonLabel', 'Alasan Penolakan:')}</Text>
-          <Text style={styles.rejectionText}>{request.owner_rejection_reason}</Text>
+          <Text style={styles.rejectionText}>{getLocalizedField(request, 'owner_rejection_reason', i18n.language)}</Text>
         </View>
       )}
     </View>
@@ -192,7 +193,7 @@ const FilterTab = ({ label, isActive, onPress, count }) => (
 );
 
 const RentalRequestScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useAuthStore();
 
   const [requests, setRequests] = useState([]);

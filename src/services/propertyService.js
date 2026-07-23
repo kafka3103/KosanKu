@@ -697,11 +697,18 @@ export const rejectRentalRequest = async (requestId, reason) => {
     .eq('id', requestId)
     .single();
 
+  let translated = {};
+  if (reason) {
+    const fieldsToTranslate = { owner_rejection_reason: reason };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .update({
       status: 'rejected',
       owner_rejection_reason: reason,
+      owner_rejection_reason_en: translated.owner_rejection_reason_en ?? null,
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', requestId)

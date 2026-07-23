@@ -10,6 +10,7 @@
 import supabaseClient from './supabaseClient';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { translateMultipleFields } from './translationService';
 
 // ─── Bucket Storage ───────────────────────────────────────────
 const AVATARS_BUCKET = 'avatars';
@@ -127,10 +128,16 @@ export const getTenantProfile = async (userId) => {
  * @param {Object} tenantData
  */
 export const upsertTenantProfile = async (userId, tenantData) => {
+  let translated = {};
+  if (tenantData.occupation) {
+    const fieldsToTranslate = { occupation: tenantData.occupation };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('tenant_profiles')
     .upsert(
-      { user_id: userId, ...tenantData, updated_at: new Date().toISOString() },
+      { user_id: userId, ...tenantData, ...translated, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
     .select()

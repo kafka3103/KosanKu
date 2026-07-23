@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { getInvoiceDetail } from '../../services/invoiceService';
@@ -207,7 +208,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
             items.map((item) => (
               <View key={item.id} style={styles.itemRow}>
                 <View style={styles.itemLeft}>
-                  <Text style={styles.itemName}>{item.description}</Text>
+                  <Text style={styles.itemName}>{getLocalizedField(item, 'description', i18n.language) || getLocalizedField(item, 'name', i18n.language)}</Text>
                   {item.quantity > 1 && (
                     <Text style={styles.itemQty}>
                       {item.quantity} × {formatCurrency(item.unit_price)}

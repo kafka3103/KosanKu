@@ -6,6 +6,7 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
+import { translateMultipleFields } from './translationService';
 
 // ─── Invoices ─────────────────────────────────────────────────
 
@@ -184,12 +185,19 @@ export const getContractById = async (contractId) => {
  * @param {string} reason
  */
 export const endContract = async (contractId, endStatus, reason) => {
+  let translated = {};
+  if (reason) {
+    const fieldsToTranslate = { end_reason_note: reason };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('contracts')
     .update({
       status: endStatus,
       end_reason: endStatus === 'terminated' ? 'terminated_by_owner' : 'early_exit_approved',
       end_reason_note: reason,
+      end_reason_note_en: translated.end_reason_note_en ?? null,
       actual_end_date: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString(),
     })
