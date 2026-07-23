@@ -29,6 +29,7 @@ import { DrawerActions } from '@react-navigation/native';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -130,7 +131,7 @@ const PropertyCard = ({ property, onPress }) => {
 
       <View style={styles.cardBody}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{property.name}</Text>
+          <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{getLocalizedField(property, 'name')}</Text>
           {(() => {
             const avgRating = (!property.reviews || property.reviews.length === 0) 
               ? null 
@@ -156,7 +157,7 @@ const PropertyCard = ({ property, onPress }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3], marginTop: 2 }}>
           <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
           <Text style={styles.propertyAddress} numberOfLines={1}>
-            {property.address_line}, {property.city}
+            {getLocalizedField(property, 'address_line')}, {property.city}
           </Text>
         </View>
 

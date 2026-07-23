@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -197,14 +198,14 @@ const RoomDetailScreen = ({ navigation, route }) => {
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="business" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-                <Text style={styles.metaItem}>{property?.name}</Text>
+                <Text style={styles.metaItem}>{getLocalizedField(property, 'name')}</Text>
               </View>
             </View>
           )}
 
-          {room?.description && (
+          {(getLocalizedField(room, 'description') || room?.description) && (
             <View style={styles.descriptionCard}>
-              <Text style={styles.descriptionText}>{room.description}</Text>
+              <Text style={styles.descriptionText}>{getLocalizedField(room, 'description')}</Text>
             </View>
           )}
         </View>

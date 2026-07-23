@@ -11,6 +11,7 @@ import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { translateMultipleFields } from './translationService';
 
 const PROPERTY_PHOTOS_BUCKET = 'property-photos';
 const ROOM_PHOTOS_BUCKET = 'room-photos';
@@ -79,9 +80,23 @@ export const getPropertyById = async (propertyId) => {
  * @param {Object} propertyData
  */
 export const createProperty = async (ownerId, propertyData) => {
+  // Translate fields
+  const fieldsToTranslate = {
+    name: propertyData.name,
+    description: propertyData.description,
+    address_line: propertyData.address_line,
+    rules: propertyData.rules,
+  };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...propertyData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .insert({ owner_id: ownerId, is_active: true, ...propertyData })
+    .insert({ owner_id: ownerId, is_active: true, ...finalData })
     .select()
     .single();
 
@@ -95,9 +110,24 @@ export const createProperty = async (ownerId, propertyData) => {
  * @param {Object} propertyData
  */
 export const updateProperty = async (propertyId, propertyData) => {
+  // Translate fields
+  const fieldsToTranslate = {
+    name: propertyData.name,
+    description: propertyData.description,
+    address_line: propertyData.address_line,
+    rules: propertyData.rules,
+  };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...propertyData,
+    ...translated,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .update({ ...propertyData, updated_at: new Date().toISOString() })
+    .update(finalData)
     .eq('id', propertyId)
     .select()
     .single();
@@ -228,9 +258,17 @@ export const getRoomById = async (roomId) => {
  * @param {Object} roomData
  */
 export const createRoom = async (propertyId, roomData) => {
+  const fieldsToTranslate = { description: roomData.description };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+  
+  const finalData = {
+    ...roomData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('rooms')
-    .insert({ property_id: propertyId, ...roomData })
+    .insert({ property_id: propertyId, ...finalData })
     .select()
     .single();
 
@@ -244,9 +282,18 @@ export const createRoom = async (propertyId, roomData) => {
  * @param {Object} roomData
  */
 export const updateRoom = async (roomId, roomData) => {
+  const fieldsToTranslate = { description: roomData.description };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...roomData,
+    ...translated,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabaseClient
     .from('rooms')
-    .update({ ...roomData, updated_at: new Date().toISOString() })
+    .update(finalData)
     .eq('id', roomId)
     .select()
     .single();
@@ -330,9 +377,17 @@ export const uploadMultipleRoomPhotos = async (roomId, localUris) => {
  * @param {Object[]} roomDataArray
  */
 export const createBulkRooms = async (propertyId, roomDataArray) => {
+  // Translate template description (assuming all rooms have the same template description)
+  let translated = {};
+  if (roomDataArray.length > 0 && roomDataArray[0].description) {
+     const fieldsToTranslate = { description: roomDataArray[0].description };
+     translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const inserts = roomDataArray.map(roomData => ({
     property_id: propertyId,
-    ...roomData
+    ...roomData,
+    ...translated
   }));
 
   const { data, error } = await supabaseClient

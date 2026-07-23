@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -58,12 +59,12 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete, t }) => {
       {/* Info */}
       <View style={styles.cardBody}>
         <Text style={styles.propertyName} numberOfLines={1}>
-          {property.name}
+          {getLocalizedField(property, 'name')}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
           <Ionicons name="location-outline" size={12} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
           <Text style={[styles.propertyAddress, { marginBottom: 0 }]} numberOfLines={1}>
-            {property.address_line}, {property.city}
+            {getLocalizedField(property, 'address_line')}, {property.city}
           </Text>
         </View>
 
@@ -137,7 +138,7 @@ const PropertyListScreen = ({ navigation }) => {
   const handleDelete = (property) => {
     Alert.alert(
       t('ownerPropertyList.deleteTitle', 'Hapus Properti'),
-      t('ownerPropertyList.deleteMessage', 'Yakin ingin menghapus "{{name}}"? Semua kamar dalam properti ini juga akan dihapus.', { name: property.name }),
+      t('ownerPropertyList.deleteMessage', 'Yakin ingin menghapus "{{name}}"? Semua kamar dalam properti ini juga akan dihapus.', { name: getLocalizedField(property, 'name') }),
       [
         { text: t('ownerPropertyList.cancel', 'Batal'), style: 'cancel' },
         {

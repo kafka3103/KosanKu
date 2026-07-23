@@ -1,4 +1,5 @@
 import supabaseClient from './supabaseClient';
+import { translateMultipleFields } from './translationService';
 
 /**
  * Mengambil rata-rata rating dan total ulasan untuk sebuah properti
@@ -58,6 +59,10 @@ export const submitReview = async (reviewData) => {
     
     const avg = (cleanliness + comfort + security + price + roomFacilities + publicFacilities) / 6.0;
 
+    // Translate comment
+    const fieldsToTranslate = { comment: reviewData.comment };
+    const translated = await translateMultipleFields(fieldsToTranslate);
+
     const { data, error } = await supabaseClient
       .from('reviews')
       .insert({
@@ -71,6 +76,7 @@ export const submitReview = async (reviewData) => {
         rating_public_facilities: publicFacilities,
         average_rating: avg,
         comment: reviewData.comment || null,
+        comment_en: translated.comment_en || null,
       })
       .select()
       .single();

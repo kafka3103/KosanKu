@@ -41,8 +41,11 @@ export const searchProperties = async (filters = {}) => {
     .select(`
       id,
       name,
+      name_en,
       description,
+      description_en,
       address_line,
+      address_line_en,
       city,
       district,
       latitude,
@@ -52,6 +55,7 @@ export const searchProperties = async (filters = {}) => {
       cover_photo_url,
       photo_urls,
       rules,
+      rules_en,
       ${roomsRelation}(
         id,
         room_number,
@@ -59,6 +63,7 @@ export const searchProperties = async (filters = {}) => {
         base_price,
         status,
         size_sqm,
+        description_en,
         photo_urls,
         room_facilities(
           facility_master(name, icon_name)
