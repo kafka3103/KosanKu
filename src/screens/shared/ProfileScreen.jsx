@@ -256,11 +256,28 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (currentUser.role !== USER_ROLE.BOTH) {
       const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
       navigation.navigate('RoleRegistrationScreen', { targetRole });
       return;
+    }
+
+    const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
+    if (targetRole === USER_ROLE.OWNER) {
+      const { checkOwnerVerification } = require('../../services/userService');
+      const isVerified = await checkOwnerVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
+    } else {
+      const { checkTenantVerification } = require('../../services/userService');
+      const isVerified = await checkTenantVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pencari Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
     }
 
     const targetRoleText = isOwner ? t('profile.tenant', 'Pencari Kosan') : t('profile.owner', 'Pemilik Kosan');

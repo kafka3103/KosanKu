@@ -242,3 +242,57 @@ export const checkTenantProfileExists = async (userId) => {
   if (error && error.code !== 'PGRST116') return false;
   return !!data;
 };
+
+/**
+ * Cek apakah owner profile sudah diverifikasi
+ */
+export const checkOwnerVerification = async (userId) => {
+  const { data, error } = await supabaseClient
+    .from('owner_profiles')
+    .select('is_verified')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error || !data) return false;
+  return data.is_verified;
+};
+
+/**
+ * Cek apakah tenant profile sudah diverifikasi
+ */
+export const checkTenantVerification = async (userId) => {
+  const { data, error } = await supabaseClient
+    .from('tenant_profiles')
+    .select('is_verified')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error || !data) return false;
+  return data.is_verified;
+};
+
+/**
+ * Cek apakah NIK unik (tidak dipakai oleh user lain) di owner maupun tenant profiles
+ * @param {string} nik 
+ * @param {string} currentUserId 
+ * @returns {Promise<boolean>} true jika unik/aman, false jika duplikat
+ */
+export const checkNikUnique = async (nik, currentUserId) => {
+  try {
+    const [ownerRes, tenantRes] = await Promise.all([
+      supabaseClient.from('owner_profiles').select('id, user_id').eq('ktp_number', nik),
+      supabaseClient.from('tenant_profiles').select('id, user_id').eq('ktp_number', nik),
+    ]);
+
+    const ownerDocs = ownerRes.data || [];
+    const tenantDocs = tenantRes.data || [];
+
+    const isDuplicateOwner = ownerDocs.some(doc => doc.user_id !== currentUserId);
+    const isDuplicateTenant = tenantDocs.some(doc => doc.user_id !== currentUserId);
+
+    return !(isDuplicateOwner || isDuplicateTenant);
+  } catch (error) {
+    console.error('Error checking NIK uniqueness:', error);
+    return false; // Default to fail if error
+  }
+};

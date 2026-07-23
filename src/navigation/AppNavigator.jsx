@@ -8,6 +8,7 @@ import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAuthStore from '../store/authStore';
 import { subscribeToAuthChanges, getUserProfile, updateFcmToken } from '../services/authService';
@@ -90,7 +91,15 @@ const AppNavigator = () => {
           }
 
           if (userProfile) {
-            setAuthenticatedUser(session, userProfile);
+            let lastUsedRole = null;
+            if (userProfile.role === USER_ROLE.BOTH) {
+              try {
+                lastUsedRole = await AsyncStorage.getItem(`@last_used_role_${userProfile.id}`);
+              } catch (e) {
+                console.error('Failed to get last used role:', e);
+              }
+            }
+            setAuthenticatedUser(session, userProfile, lastUsedRole);
           } else {
             // User baru — belum ada di public.users (sebelum lengkap profilnya)
             setAuthenticatedUser(session, {

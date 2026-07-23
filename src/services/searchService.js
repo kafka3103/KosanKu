@@ -57,6 +57,7 @@ export const searchProperties = async (filters = {}) => {
       photo_urls,
       rules,
       rules_en,
+      owner_id,
       ${roomsRelation}(
         id,
         room_number,
@@ -255,6 +256,7 @@ export const submitRentalRequest = async (requestData) => {
       requested_start_date: requestData.requestedStartDate,
       duration_months: requestData.durationMonths,
       monthly_rate: requestData.monthlyRate,
+      tenant_nik: requestData.tenantNik ?? null,
       ktp_photo_url: requestData.ktpPhotoUrl ?? null,
       tenant_message: requestData.tenantMessage ?? null,
       tenant_message_en: translated.tenant_message_en ?? null,

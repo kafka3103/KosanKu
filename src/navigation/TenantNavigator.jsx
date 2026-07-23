@@ -161,10 +161,17 @@ const TenantDrawerContent = ({ navigation }) => {
     }
   }, [currentUser]);
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (!hasOwnerProfile) {
       navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.OWNER });
       return;
+    }
+
+    const { checkOwnerVerification } = require('../services/userService');
+    const isVerified = await checkOwnerVerification(currentUser.id);
+    if (!isVerified) {
+       Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+       return;
     }
 
     Alert.alert(
