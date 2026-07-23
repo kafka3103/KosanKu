@@ -20,7 +20,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { upsertOwnerProfile, upsertTenantProfile, updateUserProfile, getOwnerProfile, getTenantProfile } from '../../services/userService';
+import { upsertOwnerProfile, upsertTenantProfile, updateUserProfile, getOwnerProfile, getTenantProfile, checkNikUnique } from '../../services/userService';
 import USER_ROLE from '../../constants/userRole';
 
 const RoleRegistrationScreen = ({ navigation, route }) => {
@@ -61,15 +61,28 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     if (currentUser?.id) {
       fetchExistingNIK();
     }
-  }, [targetRole, currentUser]);  const handleRegisterOwner = async () => {
+  }, [targetRole, currentUser]);
+
+  const handleRegisterOwner = async () => {
     if (!ktpNumber || ktpNumber.length !== 16 || !/^\d+$/.test(ktpNumber)) {
       Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
       return;
     }
     
     setIsLoading(true);
-    const { data: ownerData, error: ownerError } = await upsertOwnerProfile(currentUser.id, {
-      ktp_number: ktpNumber
+
+    // Cek keunikan NIK
+    const isUnique = await checkNikUnique(ktpNumber, currentUser.id);
+    if (!isUnique) {
+      setIsLoading(false);
+      Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.');
+      return;
+    }
+
+    // Insert ke owner_profiles dengan is_verified = true (hardcoded verifikasi instan)
+    const { error: ownerError } = await upsertOwnerProfile(currentUser.id, {
+      ktp_number: ktpNumber,
+      is_verified: true
     });
     
     if (ownerError) {
@@ -77,10 +90,23 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Gagal menyimpan profil pemilik.');
       return;
     }
+
+    // Sinkronisasi NIK ke tenant_profiles (agar bisa dipakai ulang jika jadi tenant)
+    const existingTenant = await getTenantProfile(currentUser.id);
+    // Hapus id dan created_at/updated_at dari data existing sebelum upsert
+    const existingData = existingTenant.data || {};
+    delete existingData.id;
+    delete existingData.created_at;
+    delete existingData.updated_at;
+    
+    await upsertTenantProfile(currentUser.id, {
+      ...existingData,
+      ktp_number: ktpNumber
+    });
     
     if (isCompletingProfile) {
       setIsLoading(false);
-      Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi! Identitas Anda akan diverifikasi oleh admin.', [
+      Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
       return;
@@ -94,7 +120,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda akan diverifikasi oleh admin.', [
+    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda sedang diverifikasi oleh admin.', [
       {
         text: 'OK',
         onPress: () => {
@@ -115,6 +141,15 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     }
     
     setIsLoading(true);
+
+    // Cek keunikan NIK
+    const isUnique = await checkNikUnique(ktpNumber, currentUser.id);
+    if (!isUnique) {
+      setIsLoading(false);
+      Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.');
+      return;
+    }
+
     const { data: tenantData, error: tenantError } = await upsertTenantProfile(currentUser.id, {
       ktp_number: ktpNumber,
       occupation,
@@ -127,10 +162,22 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Gagal menyimpan profil pencari kos.');
       return;
     }
+
+    // Sinkronisasi NIK ke owner_profiles (jika belum ada)
+    const existingOwner = await getOwnerProfile(currentUser.id);
+    const existingOwnerData = existingOwner.data || {};
+    delete existingOwnerData.id;
+    delete existingOwnerData.created_at;
+    delete existingOwnerData.updated_at;
+    
+    await upsertOwnerProfile(currentUser.id, {
+      ...existingOwnerData,
+      ktp_number: ktpNumber
+    });
     
     if (isCompletingProfile) {
       setIsLoading(false);
-      Alert.alert('Berhasil', 'Profil Pencari Kos berhasil dilengkapi! Identitas Anda akan diverifikasi oleh admin.', [
+      Alert.alert('Berhasil', 'Profil Pencari Kos berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
       return;
@@ -144,7 +191,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan! Identitas Anda akan diverifikasi oleh admin.', [
+    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan! Identitas Anda sedang diverifikasi oleh admin.', [
       {
         text: 'OK',
         onPress: () => {

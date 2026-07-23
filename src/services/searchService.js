@@ -244,6 +244,7 @@ export const submitRentalRequest = async (requestData) => {
       requested_start_date: requestData.requestedStartDate,
       duration_months: requestData.durationMonths,
       monthly_rate: requestData.monthlyRate,
+      tenant_nik: requestData.tenantNik ?? null,
       ktp_photo_url: requestData.ktpPhotoUrl ?? null,
       tenant_message: requestData.tenantMessage ?? null,
       expires_at: expiresAt.toISOString(),

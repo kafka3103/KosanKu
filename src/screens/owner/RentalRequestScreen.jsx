@@ -131,9 +131,9 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
         </View>
 
         {(() => {
-          const tenantNIK = Array.isArray(tenant?.tenant_profiles) 
+          const tenantNIK = request.tenant_nik || (Array.isArray(tenant?.tenant_profiles) 
             ? tenant.tenant_profiles[0]?.ktp_number 
-            : tenant?.tenant_profiles?.ktp_number;
+            : tenant?.tenant_profiles?.ktp_number);
           
           if (!tenantNIK) return null;
           return (

@@ -30,7 +30,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { submitRentalRequest } from '../../services/searchService';
-import { getTenantProfile } from '../../services/userService';
+import { getTenantProfile, upsertTenantProfile, checkNikUnique } from '../../services/userService';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
 
@@ -56,6 +56,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const [durationMonths, setDurationMonths] = useState(1);
   const [tenantMessage, setTenantMessage] = useState('');
   const [tenantNIK, setTenantNIK] = useState('');
+  const [isNiksLocked, setIsNiksLocked] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,6 +65,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
       const { data } = await getTenantProfile(currentUser.id);
       if (data && data.ktp_number) {
         setTenantNIK(data.ktp_number);
+        setIsNiksLocked(true);
       }
     };
     if (currentUser?.id) {
@@ -77,6 +79,13 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
 
   const handleSubmit = async () => {
+    if (!isNiksLocked) {
+      if (!tenantNIK || tenantNIK.length !== 16 || !/^\d+$/.test(tenantNIK)) {
+        Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
+        return;
+      }
+    }
+
     Alert.alert(
       t('rental.request.confirmTitle', 'Konfirmasi Pengajuan'),
       t('rental.request.confirmMsg', `Ajukan sewa kamar ${room?.room_number} di ${property?.name} selama ${durationMonths} bulan?`, { room: room?.room_number, property: property?.name, months: durationMonths }),
@@ -87,7 +96,14 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           onPress: async () => {
             setIsLoading(true);
             try {
-
+              if (!isNiksLocked) {
+                const isUnique = await checkNikUnique(tenantNIK, currentUser.id);
+                if (!isUnique) {
+                   Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain.');
+                   setIsLoading(false);
+                   return;
+                }
+              }
 
               const { data, error } = await submitRentalRequest({
                 roomId: room.id,
@@ -96,8 +112,8 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 requestedStartDate: startDate.toISOString().split('T')[0],
                 durationMonths,
                 monthlyRate: parseFloat(room.base_price ?? 0),
-
                 tenantMessage: tenantMessage.trim() || null,
+                tenantNik: isNiksLocked ? null : tenantNIK, // Only pass if it's new
               });
 
               if (error) {
@@ -247,20 +263,38 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
 
 
-        {/* Pesan ke Owner */}
+        {/* Jaminan Identitas */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.success} style={{ marginRight: 6 }} />
             <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Jaminan Identitas</Text>
           </View>
-          <View style={{ backgroundColor: COLORS.successLight, padding: SPACING[3], borderRadius: BORDER_RADIUS.md }}>
-             <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
-               NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:
-             </Text>
-             <Text style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
-               {tenantNIK || 'Memuat NIK...'}
-             </Text>
-          </View>
+          
+          {isNiksLocked ? (
+            <View style={{ backgroundColor: COLORS.successLight, padding: SPACING[3], borderRadius: BORDER_RADIUS.md }}>
+               <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
+                 NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:
+               </Text>
+               <Text style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
+                 {tenantNIK}
+               </Text>
+            </View>
+          ) : (
+            <View>
+              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 8 }}>
+                Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:
+              </Text>
+              <TextInput
+                style={[styles.messageInput, { minHeight: 48, textAlignVertical: 'center' }]}
+                placeholder="Contoh: 3201234567890123"
+                keyboardType="numeric"
+                maxLength={16}
+                value={tenantNIK}
+                onChangeText={setTenantNIK}
+                placeholderTextColor={COLORS.textTertiary}
+              />
+            </View>
+          )}
         </View>
 
         {/* Pesan ke Owner */}

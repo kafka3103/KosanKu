@@ -586,11 +586,18 @@ export const approveRentalRequest = async (requestId) => {
       .update({ status: 'pending', updated_at: new Date().toISOString() })
       .eq('id', request.room_id);
 
-    // 4.b Update tenant_profiles is_verified menjadi true
-    await supabaseClient
-      .from('tenant_profiles')
-      .update({ is_verified: true, updated_at: new Date().toISOString() })
-      .eq('user_id', request.tenant_id);
+    // 4.b Update tenant_profiles (termasuk sinkronisasi NIK jika ada) dan set is_verified menjadi true
+    // Kita gunakan RPC (Remote Procedure Call) karena operasi ini dijalankan oleh Owner,
+    // sedangkan RLS tabel tenant_profiles mencegah Owner mengubah profil Tenant.
+    const tenantNikToSave = request.tenant_nik;
+    const { error: rpcError } = await supabaseClient.rpc('verify_tenant_profile_nik', {
+      p_tenant_id: request.tenant_id,
+      p_tenant_nik: tenantNikToSave
+    });
+
+    if (rpcError) {
+      console.warn('Gagal memverifikasi profil tenant:', rpcError.message);
+    }
 
     // 5. Buat invoice pertama agar tenant bisa langsung melakukan pembayaran ("dilanjutkan kedalam tahap pembayaran")
     if (newContract) {

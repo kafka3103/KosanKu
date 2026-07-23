@@ -134,14 +134,14 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <Text style={styles.noRoomsText}>{t('propertyDetail.noRooms', 'Tidak ada kamar tersedia saat ini')}</Text>
         </View>
       ) : (
-        availableRooms.map((room) => {
+        availableRooms.map((room, index) => {
           const facilities = room.room_facilities
             ?.map((rf) => rf.facility_master?.name)
             .filter(Boolean)
             .slice(0, 5);
           return (
             <TouchableOpacity
-              key={room.id}
+              key={room.id || index}
               style={styles.roomCard}
               onPress={() =>
                 navigation.navigate(TENANT_SCREENS.ROOM_DETAIL, { room, property })
@@ -362,8 +362,8 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       {reviews.length === 0 ? (
         <Text style={styles.noDataText}>{t('propertyDetail.noReviews', 'Belum ada ulasan untuk kosan ini.')}</Text>
       ) : (
-        reviews.map((rev) => (
-          <View key={rev.id} style={styles.reviewCard}>
+        reviews.map((rev, index) => (
+          <View key={rev.id || `review-${index}`} style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
               <View style={styles.reviewAvatar}>
                 <Text style={styles.ownerAvatarText}>{rev.users?.full_name?.[0]?.toUpperCase() ?? 'U'}</Text>
