@@ -33,12 +33,12 @@ export async function registerForPushNotificationsAsync() {
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    
+
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
       console.log('Failed to get push token for push notification!');
       return null;
@@ -52,7 +52,7 @@ export async function registerForPushNotificationsAsync() {
     token = tokenData.data;
     console.log('Native Push Token:', token);
   } catch (error) {
-    console.log('Error getting push token (Firebase may not be fully configured yet):', error?.message || error);
+    console.warn('Error getting push token (Firebase may not be configured):', error.message);
   }
 
   return token;

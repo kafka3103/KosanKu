@@ -55,7 +55,6 @@ import ProfileScreen from '../screens/shared/ProfileScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import CustomTabBar from '../components/navigation/CustomTabBar';
 
-
 const OwnerDrawer = createDrawerNavigator();
 const OwnerBottomTab = createBottomTabNavigator();
 const PropertyStack = createStackNavigator();
@@ -200,19 +199,8 @@ const OwnerDrawerContent = ({ navigation }) => {
         { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
           text: t('navigation.switchRole.btnSwitch', 'Beralih'),
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.TENANT,
-            });
-            if (error) {
-              Alert.alert(t('navigation.switchRole.failTitle', 'Gagal'), error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          onPress: () => {
+            switchRole();
           },
         },
       ]

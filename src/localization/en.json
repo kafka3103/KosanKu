@@ -473,10 +473,7 @@
     "modalPolling": "System is monitoring your payment status from Xendit in Real-Time... Once paid, this page will close automatically and the bill will be paid in full!",
     "modalReopen": "Reopen Xendit Checkout",
     "modalClose": "Close / Done",
-    "methodXendit": "Xendit Auto Payment",
-    "methodTransfer": "Manual Bank Transfer",
-    "methodCash": "Cash / Direct",
-    "optionCash": "Pay Directly to Owner"
+    "methodXendit": "Xendit Auto Payment"
   },
   "ownerDashboard": {
     "greetingMorning": "Good Morning",

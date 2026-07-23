@@ -282,251 +282,251 @@ const ProfileScreen = ({ navigation }) => {
     <>
       <ScrollView
         style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <DrawerButton />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Avatar Section */}
-      <View style={styles.avatarSection}>
-        <TouchableOpacity
-          style={styles.avatarContainer}
-          onPress={handlePickAvatar}
-          disabled={isUploadingAvatar}
-          activeOpacity={0.8}
-        >
-          {profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, isOwner ? styles.avatarOwner : styles.avatarTenant]}>
-              <Text style={styles.avatarInitial}>
-                {profile?.full_name?.[0]?.toUpperCase() ?? '?'}
-              </Text>
-            </View>
-          )}
-          <View style={styles.avatarEditBadge}>
-            {isUploadingAvatar ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <Ionicons name="camera" size={16} color={COLORS.white} />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <Text style={styles.profileName}>{profile?.full_name ?? 'User'}</Text>
-        <Text style={styles.profileEmail}>{profile?.email ?? currentUser?.email}</Text>
-
-        {/* Role Badge */}
-        <View style={[styles.roleBadge, isOwner ? styles.roleBadgeOwner : styles.roleBadgeTenant]}>
-          <Text style={styles.roleBadgeText}>
-            {isOwner ? t('profile.owner', 'Pemilik Kosan') : t('profile.tenant', 'Pencari Kosan')}
-          </Text>
-        </View>
-      </View>
-
-      {/* Profile Info */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('profile.editButton')}</Text>
-        </View>
-        <EditableInfoRow
-          label={t('profile.fullNameLabel', 'Nama Lengkap')}
-          value={fullName}
-          onChangeText={setFullName}
-          icon="person-outline"
-          placeholder={t('profile.fullNameLabel', 'Nama Lengkap')}
-        />
-        <InfoRow label={t('profile.emailLabel', 'Email')} value={profile?.email ?? currentUser?.email} icon="mail-outline" />
-        <EditableInfoRow
-          label={t('profile.phoneLabel', 'Nomor Telepon')}
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          icon="call-outline"
-          placeholder="+628123456789"
-          keyboardType="phone-pad"
-        />
-        <SelectableInfoRow
-          label={t('profile.genderLabel', 'Jenis Kelamin')}
-          value={gender === 'Laki-laki' ? t('profile.genderMale', 'Laki-laki') : gender === 'Perempuan' ? t('profile.genderFemale', 'Perempuan') : gender}
-          onPress={() => setIsGenderModalVisible(true)}
-          icon="male-female-outline"
-          placeholder={t('profile.genderPlaceholder', 'Pilih Jenis Kelamin')}
-        />
-        <SelectableInfoRow
-          label={t('profile.cityLabel', 'Kota Asal')}
-          value={homeCity}
-          onPress={() => setIsCityModalVisible(true)}
-          icon="location-outline"
-          placeholder={t('profile.cityPlaceholder', 'Cari Kota/Kabupaten')}
-        />
-        <InfoRow
-          label={t('profile.statusLabel', 'Status Profil')}
-          value={profile?.is_profile_complete ? t('profile.complete', 'Lengkap') : t('profile.incomplete', 'Belum Lengkap')}
-          icon={profile?.is_profile_complete ? "checkmark-circle" : "warning"} iconColor={profile?.is_profile_complete ? COLORS.success : COLORS.warning}
-        />
-
-        {!isOwner && (
-          <>
-            <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
-              <Text style={styles.sectionTitle}>{t('profile.additionalTenantData', 'Data Tambahan Pencari Kos')}</Text>
-            </View>
-            <EditableInfoRow
-              label={t('profile.occupationLabel', 'Pekerjaan / Status')}
-              value={occupation}
-              onChangeText={setOccupation}
-              icon="briefcase-outline"
-              placeholder={t('profile.occupationPlaceholder', 'Cth: Mahasiswa, Karyawan')}
-            />
-            <EditableInfoRow
-              label={t('profile.emergencyNameLabel', 'Nama Kontak Darurat')}
-              value={emergencyName}
-              onChangeText={setEmergencyName}
-              icon="shield-checkmark-outline"
-              placeholder={t('profile.emergencyNamePlaceholder', 'Nama kerabat/keluarga')}
-            />
-            <EditableInfoRow
-              label={t('profile.emergencyPhoneLabel', 'No. Telp Darurat')}
-              value={emergencyPhone}
-              onChangeText={setEmergencyPhone}
-              icon="call-outline"
-              placeholder={t('profile.emergencyPhonePlaceholder', 'Contoh: +628123456789')}
-              keyboardType="phone-pad"
-            />
-          </>
-        )}
-
-        <TouchableOpacity
-          style={[styles.saveProfileBtn, isSaving && { opacity: 0.7 }]}
-          onPress={handleSaveProfile}
-          disabled={isSaving}
-        >
-          {isSaving ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveProfileBtnText}>{t('profile.saveButton')}</Text>}
-        </TouchableOpacity>
-      </View>
-
-      {/* Switch Role Section */}
-      <View style={[styles.section, { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primaryLight, borderWidth: 1 }]}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="swap-horizontal" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>
-            {currentUser.role === USER_ROLE.BOTH ? t('profile.switchRole', 'Beralih Peran') : t('profile.registerOtherRole', 'Daftar Peran Lain')}
-          </Text>
-        </View>
-        <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
-          {isOwner
-            ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar atau beralih ke mode Pencari Kosan sekarang.')
-            : t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa mendaftar atau beralih ke mode Pemilik Kosan untuk mulai mengelola.')}
-        </Text>
-        <TouchableOpacity
-          style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
-          onPress={handleSwitchRole}
-          disabled={isSaving}
-        >
-          <Text style={styles.saveProfileBtnText}>
-            {currentUser.role === USER_ROLE.BOTH
-              ? (isOwner ? t('profile.switchTenantBtn', 'Beralih ke Pencari Kosan') : t('profile.switchOwnerBtn', 'Beralih ke Pemilik Kosan'))
-              : (isOwner ? t('profile.registerTenantBtn', 'Daftar sebagai Pencari Kos') : t('profile.registerOwnerBtn', 'Daftar sebagai Pemilik'))}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* About App */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.aboutApp', 'Tentang Aplikasi')}</Text>
-        <View style={styles.aboutRow}>
-          <Text style={styles.aboutLabel}>{t('profile.version', 'Versi')}</Text>
-          <Text style={styles.aboutValue}>1.0.0</Text>
-        </View>
-        <View style={styles.aboutRow}>
-          <Text style={styles.aboutLabel}>App</Text>
-          <Text style={styles.aboutValue}>KosanKu</Text>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={styles.logoutBtnText}>{t('profile.logoutButton', 'Keluar')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ height: insets.bottom + 100 }} />
-    </ScrollView>
-
-    {/* Gender Modal */}
-    <Modal visible={isGenderModalVisible} transparent animationType="fade">
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsGenderModalVisible(false)}>
-        <View style={styles.actionSheet}>
-          <Text style={styles.actionSheetTitle}>{t('profile.genderSelectTitle', 'Pilih Jenis Kelamin')}</Text>
-          <TouchableOpacity style={styles.actionSheetOption} onPress={() => { setGender('Laki-laki'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>{t('profile.genderMale', 'Laki-laki')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionSheetOption, { borderBottomWidth: 0 }]} onPress={() => { setGender('Perempuan'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>{t('profile.genderFemale', 'Perempuan')}</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-
-    {/* City Modal */}
-    <Modal visible={isCityModalVisible} animationType="slide">
-      <View style={[styles.container, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={() => setIsCityModalVisible(false)}>
-            <Ionicons name="close" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.modalTitle}>{t('profile.citySelectTitle', 'Pilih Kota Asal')}</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={COLORS.textTertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('profile.citySearchPlaceholder', 'Cari kota atau kabupaten...')}
-            value={citySearchText}
-            onChangeText={setCitySearchText}
-            autoFocus
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
           />
-          {citySearchText ? (
-            <TouchableOpacity onPress={() => setCitySearchText('')}>
-              <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
-            </TouchableOpacity>
-          ) : null}
+        }
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <DrawerButton />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+            </View>
+          </View>
         </View>
-        <FlatList
-          data={filteredCities}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.cityOption}
-              onPress={() => {
-                setHomeCity(item);
-                setIsCityModalVisible(false);
-                setCitySearchText('');
-              }}
-            >
-              <Text style={styles.cityOptionText}>{item}</Text>
-            </TouchableOpacity>
+
+        {/* Avatar Section */}
+        <View style={styles.avatarSection}>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handlePickAvatar}
+            disabled={isUploadingAvatar}
+            activeOpacity={0.8}
+          >
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, isOwner ? styles.avatarOwner : styles.avatarTenant]}>
+                <Text style={styles.avatarInitial}>
+                  {profile?.full_name?.[0]?.toUpperCase() ?? '?'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              {isUploadingAvatar ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Ionicons name="camera" size={16} color={COLORS.white} />
+              )}
+            </View>
+          </TouchableOpacity>
+
+          <Text style={styles.profileName}>{profile?.full_name ?? 'User'}</Text>
+          <Text style={styles.profileEmail}>{profile?.email ?? currentUser?.email}</Text>
+
+          {/* Role Badge */}
+          <View style={[styles.roleBadge, isOwner ? styles.roleBadgeOwner : styles.roleBadgeTenant]}>
+            <Text style={styles.roleBadgeText}>
+              {isOwner ? t('profile.owner', 'Pemilik Kosan') : t('profile.tenant', 'Pencari Kosan')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Profile Info */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('profile.editButton')}</Text>
+          </View>
+          <EditableInfoRow
+            label={t('profile.fullNameLabel', 'Nama Lengkap')}
+            value={fullName}
+            onChangeText={setFullName}
+            icon="person-outline"
+            placeholder={t('profile.fullNameLabel', 'Nama Lengkap')}
+          />
+          <InfoRow label={t('profile.emailLabel', 'Email')} value={profile?.email ?? currentUser?.email} icon="mail-outline" />
+          <EditableInfoRow
+            label={t('profile.phoneLabel', 'Nomor Telepon')}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            icon="call-outline"
+            placeholder="+628123456789"
+            keyboardType="phone-pad"
+          />
+          <SelectableInfoRow
+            label={t('profile.genderLabel', 'Jenis Kelamin')}
+            value={gender === 'Laki-laki' ? t('profile.genderMale', 'Laki-laki') : gender === 'Perempuan' ? t('profile.genderFemale', 'Perempuan') : gender}
+            onPress={() => setIsGenderModalVisible(true)}
+            icon="male-female-outline"
+            placeholder={t('profile.genderPlaceholder', 'Pilih Jenis Kelamin')}
+          />
+          <SelectableInfoRow
+            label={t('profile.cityLabel', 'Kota Asal')}
+            value={homeCity}
+            onPress={() => setIsCityModalVisible(true)}
+            icon="location-outline"
+            placeholder={t('profile.cityPlaceholder', 'Cari Kota/Kabupaten')}
+          />
+          <InfoRow
+            label={t('profile.statusLabel', 'Status Profil')}
+            value={profile?.is_profile_complete ? t('profile.complete', 'Lengkap') : t('profile.incomplete', 'Belum Lengkap')}
+            icon={profile?.is_profile_complete ? "checkmark-circle" : "warning"} iconColor={profile?.is_profile_complete ? COLORS.success : COLORS.warning}
+          />
+
+          {!isOwner && (
+            <>
+              <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
+                <Text style={styles.sectionTitle}>{t('profile.additionalTenantData', 'Data Tambahan Pencari Kos')}</Text>
+              </View>
+              <EditableInfoRow
+                label={t('profile.occupationLabel', 'Pekerjaan / Status')}
+                value={occupation}
+                onChangeText={setOccupation}
+                icon="briefcase-outline"
+                placeholder={t('profile.occupationPlaceholder', 'Cth: Mahasiswa, Karyawan')}
+              />
+              <EditableInfoRow
+                label={t('profile.emergencyNameLabel', 'Nama Kontak Darurat')}
+                value={emergencyName}
+                onChangeText={setEmergencyName}
+                icon="shield-checkmark-outline"
+                placeholder={t('profile.emergencyNamePlaceholder', 'Nama kerabat/keluarga')}
+              />
+              <EditableInfoRow
+                label={t('profile.emergencyPhoneLabel', 'No. Telp Darurat')}
+                value={emergencyPhone}
+                onChangeText={setEmergencyPhone}
+                icon="call-outline"
+                placeholder={t('profile.emergencyPhonePlaceholder', 'Contoh: +628123456789')}
+                keyboardType="phone-pad"
+              />
+            </>
           )}
-          keyboardShouldPersistTaps="handled"
-        />
-      </View>
-    </Modal>
+
+          <TouchableOpacity
+            style={[styles.saveProfileBtn, isSaving && { opacity: 0.7 }]}
+            onPress={handleSaveProfile}
+            disabled={isSaving}
+          >
+            {isSaving ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveProfileBtnText}>{t('profile.saveButton')}</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* Switch Role Section */}
+        <View style={[styles.section, { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primaryLight, borderWidth: 1 }]}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="swap-horizontal" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>
+              {currentUser.role === USER_ROLE.BOTH ? t('profile.switchRole', 'Beralih Peran') : t('profile.registerOtherRole', 'Daftar Peran Lain')}
+            </Text>
+          </View>
+          <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
+            {isOwner
+              ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar atau beralih ke mode Pencari Kosan sekarang.')
+              : t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa mendaftar atau beralih ke mode Pemilik Kosan untuk mulai mengelola.')}
+          </Text>
+          <TouchableOpacity
+            style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
+            onPress={handleSwitchRole}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveProfileBtnText}>
+              {currentUser.role === USER_ROLE.BOTH
+                ? (isOwner ? t('profile.switchTenantBtn', 'Beralih ke Pencari Kosan') : t('profile.switchOwnerBtn', 'Beralih ke Pemilik Kosan'))
+                : (isOwner ? t('profile.registerTenantBtn', 'Daftar sebagai Pencari Kos') : t('profile.registerOwnerBtn', 'Daftar sebagai Pemilik'))}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* About App */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.aboutApp', 'Tentang Aplikasi')}</Text>
+          <View style={styles.aboutRow}>
+            <Text style={styles.aboutLabel}>{t('profile.version', 'Versi')}</Text>
+            <Text style={styles.aboutValue}>1.0.0</Text>
+          </View>
+          <View style={styles.aboutRow}>
+            <Text style={styles.aboutLabel}>App</Text>
+            <Text style={styles.aboutValue}>KosanKu</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
+            <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+            <Text style={styles.logoutBtnText}>{t('profile.logoutButton', 'Keluar')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: insets.bottom + 100 }} />
+      </ScrollView>
+
+      {/* Gender Modal */}
+      <Modal visible={isGenderModalVisible} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsGenderModalVisible(false)}>
+          <View style={styles.actionSheet}>
+            <Text style={styles.actionSheetTitle}>{t('profile.genderSelectTitle', 'Pilih Jenis Kelamin')}</Text>
+            <TouchableOpacity style={styles.actionSheetOption} onPress={() => { setGender('Laki-laki'); setIsGenderModalVisible(false); }}>
+              <Text style={styles.actionSheetOptionText}>{t('profile.genderMale', 'Laki-laki')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionSheetOption, { borderBottomWidth: 0 }]} onPress={() => { setGender('Perempuan'); setIsGenderModalVisible(false); }}>
+              <Text style={styles.actionSheetOptionText}>{t('profile.genderFemale', 'Perempuan')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* City Modal */}
+      <Modal visible={isCityModalVisible} animationType="slide">
+        <View style={[styles.container, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setIsCityModalVisible(false)}>
+              <Ionicons name="close" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{t('profile.citySelectTitle', 'Pilih Kota Asal')}</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={COLORS.textTertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('profile.citySearchPlaceholder', 'Cari kota atau kabupaten...')}
+              value={citySearchText}
+              onChangeText={setCitySearchText}
+              autoFocus
+            />
+            {citySearchText ? (
+              <TouchableOpacity onPress={() => setCitySearchText('')}>
+                <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <FlatList
+            data={filteredCities}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.cityOption}
+                onPress={() => {
+                  setHomeCity(item);
+                  setIsCityModalVisible(false);
+                  setCitySearchText('');
+                }}
+              >
+                <Text style={styles.cityOptionText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            keyboardShouldPersistTaps="handled"
+          />
+        </View>
+      </Modal>
     </>
   );
 };
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     backgroundColor: COLORS.primary,
-    
+
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
@@ -544,7 +544,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
+    color: COLORS.white,
+
   },
   avatarSection: {
     alignItems: 'center',
