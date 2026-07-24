@@ -290,40 +290,11 @@ export const getTenantRentalRequests = async (tenantId) => {
     .from('rental_requests')
     .select(`
       *,
-      contracts (
-        id,
-        start_date,
-        end_date,
-        status,
-        monthly_rate,
-        contract_facilities (
-          *,
-          facility_master(name, icon_name)
-        ),
-        invoices (
-          id,
-          status,
-          total_amount,
-          paid_amount,
-          due_date,
-          billing_period
-        )
-      ),
       rooms(
         room_number,
         base_price,
         photo_urls,
-        room_facilities(
-          facility_master(name, icon_name)
-        ),
-        properties(
-          name, 
-          address_line, 
-          city, 
-          cover_photo_url,
-          general_facilities,
-          users(full_name, phone_number)
-        )
+        properties(name, address_line, city, cover_photo_url)
       )
     `)
     .eq('tenant_id', tenantId)

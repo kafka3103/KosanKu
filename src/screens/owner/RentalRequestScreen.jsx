@@ -377,6 +377,7 @@ const RentalRequestScreen = ({ navigation }) => {
             )}
           />
         </View>
+      )}
 
       {/* Requests List */}
       <FlatList

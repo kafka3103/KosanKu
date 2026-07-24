@@ -100,7 +100,9 @@ export const sendNotification = async ({
         reference_id: referenceId,
         reference_type: referenceType,
         is_read: false,
-      });
+      })
+      .select()
+      .single();
 
     if (error) {
       console.warn('Gagal menyimpan notifikasi ke database:', error.message);

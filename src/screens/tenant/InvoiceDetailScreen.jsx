@@ -229,7 +229,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
               <Text style={styles.totalAmount}>{formatCurrency(invoice.total_amount)}</Text>
             </View>
 
-            {['partial', 'unpaid', 'overdue'].includes(invoice.status) && parseFloat(invoice.paid_amount || 0) > 0 && (
+            {invoice.status === 'partial' && (
               <>
                 <View style={styles.paidRow}>
                   <Text style={styles.paidLabel}>{t('invoiceDetail.paidAmount', 'Sudah Dibayar')}</Text>

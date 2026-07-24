@@ -68,16 +68,13 @@ const SearchStackNavigator = () => (
   </SearchStack.Navigator>
 );
 
-import ContractDetailScreen from '../screens/tenant/ContractDetailScreen';
-
 /**
  * Stack Navigator untuk alur hunian aktif:
- * MyRent → ContractDetail → InvoiceDetail → Payment
+ * MyRent → InvoiceDetail → Payment
  */
 const MyRentStackNavigator = () => (
   <MyRentStack.Navigator screenOptions={{ headerShown: false }}>
     <MyRentStack.Screen name={TENANT_SCREENS.MY_RENT} component={MyRentScreen} />
-    <MyRentStack.Screen name="ContractDetailScreen" component={ContractDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.INVOICE_DETAIL} component={InvoiceDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.PAYMENT} component={PaymentScreen} />
   </MyRentStack.Navigator>
