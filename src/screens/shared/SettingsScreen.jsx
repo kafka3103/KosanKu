@@ -14,6 +14,9 @@ import {
   Switch,
   Alert,
   Linking,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +25,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { logout, updatePassword } from '../../services/authService';
+import { logout, updatePassword, loginWithEmail, deleteAccount } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
@@ -34,21 +37,22 @@ const SettingsScreen = ({ navigation }) => {
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);
 
+  // States for delete account
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { currentUser } = useAuthStore();
+
   const currentLang = i18n.language;
 
   const handleChangeLanguage = () => {
     Alert.alert(
-      t('settings.languageTitle', 'Bahasa / Language'),
-      t('settings.languageMsg', 'Pilih bahasa aplikasi:'),
+      t('settings.languageTitle', 'Pilih Bahasa'),
+      t('settings.languageMsg', 'Silakan pilih bahasa aplikasi Anda.'),
       [
-        {
-          text: '🇮🇩 Bahasa Indonesia',
-          onPress: () => saveLanguagePreference('id'),
-        },
-        {
-          text: '🇬🇧 English',
-          onPress: () => saveLanguagePreference('en'),
-        },
+        { text: 'Bahasa Indonesia', onPress: () => { i18n.changeLanguage('id'); saveLanguagePreference('id'); } },
+        { text: 'English', onPress: () => { i18n.changeLanguage('en'); saveLanguagePreference('en'); } },
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       ]
     );
@@ -56,7 +60,7 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleChangePassword = () => {
     Alert.alert(
-      t('settings.changePasswordTitle', 'Ubah Password'),
+      t('settings.changePassword', 'Ubah Password'),
       t('settings.changePasswordMsg', 'Fitur ubah password akan membuka halaman reset via email.'),
       [
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -79,11 +83,49 @@ const SettingsScreen = ({ navigation }) => {
         {
           text: t('settings.btnDeleteAccount', 'Hapus Akun'),
           style: 'destructive',
-          onPress: () =>
-            Alert.alert('Hubungi Support', 'Untuk menghapus akun, hubungi support@kosanku.id'),
+          onPress: () => {
+            setDeletePassword('');
+            setModalKey((prev) => prev + 1);
+            setShowDeleteModal(true);
+          }
         },
       ]
     );
+  };
+
+  const executeDeleteAccount = async () => {
+    if (!deletePassword) {
+      Alert.alert('Error', 'Harap masukkan password Anda.');
+      return;
+    }
+    setIsDeleting(true);
+    // Verifikasi password dengan mencoba login ulang
+    const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
+    
+    if (verifyError) {
+      setIsDeleting(false);
+      Alert.alert('Gagal', 'Password salah atau terjadi kesalahan.');
+      return;
+    }
+
+    // Jika password benar, lanjutkan hapus akun
+    const { error: deleteError } = await deleteAccount();
+    setIsDeleting(false);
+    
+    if (deleteError) {
+      Alert.alert('Gagal', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id');
+    } else {
+      setShowDeleteModal(false);
+      Alert.alert('Sukses', 'Akun berhasil dihapus.', [
+        {
+          text: 'OK',
+          onPress: async () => {
+            await logout();
+            clearAuthState();
+          }
+        }
+      ]);
+    }
   };
 
   const handleLogout = () => {
@@ -115,7 +157,8 @@ const SettingsScreen = ({ navigation }) => {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         {navigation?.canGoBack?.() && (
@@ -222,6 +265,54 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
       </View>
     </ScrollView>
+
+      {/* Modal Hapus Akun */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Konfirmasi Hapus Akun</Text>
+              <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>
+              Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.
+            </Text>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+              <TextInput
+                key={modalKey}
+                style={styles.input}
+                placeholder="Password"
+                secureTextEntry
+                onChangeText={setDeletePassword}
+                editable={!isDeleting}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.modalDeleteBtn, isDeleting && { opacity: 0.7 }]} 
+              onPress={executeDeleteAccount}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.modalDeleteBtnText}>Hapus Akun Permanen</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -316,6 +407,62 @@ const styles = StyleSheet.create({
   footerSubtext: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textTertiary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING[5],
+    width: '85%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING[2],
+  },
+  modalTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  modalSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING[4],
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING[3],
+    marginBottom: SPACING[4],
+  },
+  inputIcon: { marginRight: SPACING[2] },
+  input: {
+    flex: 1,
+    paddingVertical: SPACING[3],
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
+  },
+  modalDeleteBtn: {
+    backgroundColor: COLORS.error,
+    paddingVertical: SPACING[3],
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+  },
+  modalDeleteBtnText: {
+    color: COLORS.white,
+    fontWeight: FONT_WEIGHT.bold,
+    fontSize: FONT_SIZE.base,
   },
 });
 
