@@ -78,9 +78,55 @@ serve(async (req) => {
       });
     }
 
-    // Hitung sisa tagihan yang harus dibayar
-    const defaultAmountToPay = Math.round(parseFloat(invoice.total_amount) - parseFloat(invoice.paid_amount || 0));
-    const amountToPay = requestedAmount ? Math.round(parseFloat(requestedAmount)) : defaultAmountToPay;
+    // 3. Validasi & Hitung sisa tagihan yang harus dibayar
+    const totalAmount = parseFloat(invoice.total_amount);
+    const paidAmount = parseFloat(invoice.paid_amount || 0);
+    const remainingAmount = totalAmount - paidAmount;
+    
+    // Default amount to pay is the remaining amount
+    let amountToPay = remainingAmount;
+    
+    if (requestedAmount) {
+      const parsedRequestedAmount = Math.round(parseFloat(requestedAmount));
+      
+      // Validasi 1: Cegah Overpayment
+      if (parsedRequestedAmount > remainingAmount) {
+        return new Response(JSON.stringify({ success: false, error: `Jumlah pembayaran melebihi sisa tagihan (Rp ${remainingAmount})` }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Validasi 2: Cegah Underpayment (Minimum DP 50% untuk pembayaran pertama)
+      if (paidAmount === 0) {
+        const minDP = totalAmount * 0.5;
+        if (parsedRequestedAmount < minDP) {
+          return new Response(JSON.stringify({ success: false, error: `Pembayaran pertama (DP) minimal 50% (Rp ${minDP})` }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } 
+      // Validasi 3: Cegah Underpayment cicilan (Min 10% sisa atau 100rb)
+      else {
+        let minPayment = Math.max(100000, remainingAmount * 0.1);
+        if (remainingAmount <= 100000) {
+          minPayment = remainingAmount; // Wajib lunas jika sisa dikit
+        }
+        
+        if (parsedRequestedAmount < minPayment) {
+          return new Response(JSON.stringify({ success: false, error: `Minimum pembayaran cicilan adalah Rp ${minPayment}` }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+      
+      amountToPay = parsedRequestedAmount;
+    }
+    
+    // Pastikan amountToPay dibulatkan ke integer
+    amountToPay = Math.round(amountToPay);
 
     // Ambil data penyewa (tenant) terpisah
     const { data: tenant } = await supabaseAdmin
@@ -119,8 +165,9 @@ serve(async (req) => {
 
     // 3. Panggil API Xendit untuk Create Invoice (POST https://api.xendit.co/v2/invoices)
     const basicAuth = btoa(`${XENDIT_SECRET_KEY}:`);
+    const uniqueExternalId = `${invoice.id}_${Date.now()}`;
     const xenditPayload = {
-      external_id: invoice.id,
+      external_id: uniqueExternalId,
       amount: amountToPay,
       description: `Tagihan ${invoice.invoice_number || invoice.id} - Kamar ${roomNumber} (${propName})`,
       invoice_duration: 86400, // 24 jam masa kedaluwarsa
