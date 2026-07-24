@@ -22,31 +22,27 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const { invoice_id, user_id, payment_methods } = body;
+    // 1. Parse Request
+    const reqBody = await req.json();
+    const { invoice_id, user_id: callerUserId, payment_methods, amount: requestedAmount } = reqBody;
+
     if (!invoice_id) {
-      return new Response(JSON.stringify({ success: false, error: "invoice_id is required" }), {
+      return new Response(JSON.stringify({ success: false, error: "invoice_id wajib disertakan" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 1. Verifikasi Pengguna (dari JWT Token atau fallback ke user_id)
-    const authHeader = req.headers.get("Authorization");
-    let callerUserId = user_id || null;
+    // Ekstrak token & user email untuk fallback (opsional)
+    const authHeader = req.headers.get("Authorization") || "";
     let callerEmail = "tenant@kosanku.com";
-
     if (authHeader && authHeader !== `Bearer ${SUPABASE_ANON_KEY}` && authHeader !== SUPABASE_ANON_KEY) {
       try {
-        const supabaseUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const { data: { user } } = await supabaseUser.auth.getUser();
-        if (user) {
-          callerUserId = user.id;
-          if (user.email) callerEmail = user.email;
-        }
-      } catch (_) {
+        const token = authHeader.replace("Bearer ", "");
+        const payloadStr = atob(token.split(".")[1]);
+        const payload = JSON.parse(payloadStr);
+        if (payload.email) callerEmail = payload.email;
+      } catch (e) {
         // Abaikan jika token expired, gunakan callerUserId dari body
       }
     }
@@ -83,7 +79,8 @@ serve(async (req) => {
     }
 
     // Hitung sisa tagihan yang harus dibayar
-    const amountToPay = Math.round(parseFloat(invoice.total_amount) - parseFloat(invoice.paid_amount || 0));
+    const defaultAmountToPay = Math.round(parseFloat(invoice.total_amount) - parseFloat(invoice.paid_amount || 0));
+    const amountToPay = requestedAmount ? Math.round(parseFloat(requestedAmount)) : defaultAmountToPay;
 
     // Ambil data penyewa (tenant) terpisah
     const { data: tenant } = await supabaseAdmin

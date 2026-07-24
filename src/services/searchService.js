@@ -64,7 +64,7 @@ export const searchProperties = async (filters = {}) => {
           facility_master(name, icon_name)
         )
       ),
-      users!properties_owner_id_fkey(full_name, phone_number),
+      users(full_name, phone_number),
       reviews(average_rating)
     `)
     .eq('is_active', true)
@@ -127,7 +127,7 @@ export const getPropertyDetailForTenant = async (propertyId) => {
           facility_master(name, icon_name, category)
         )
       ),
-      users!properties_owner_id_fkey(full_name, phone_number, avatar_url)
+      users(full_name, phone_number, avatar_url)
     `)
     .eq('id', propertyId)
     .eq('is_deleted', false)
@@ -230,9 +230,23 @@ export const checkIsFavorite = async (tenantId, propertyId) => {
  * @param {string} [requestData.tenantMessage]
  */
 export const submitRentalRequest = async (requestData) => {
-  // Hitung tanggal kadaluarsa pengajuan (3 hari kerja ~ 4 hari kalender)
+  // Hitung tanggal kadaluarsa pengajuan berdasarkan durasi sewa
+  // - Sewa 1 bulan: batal otomatis dalam 3 jam
+  // - Sewa 2-3 bulan: batal otomatis dalam 2 jam
+  // - Sewa 4-6 bulan: batal otomatis dalam 1 jam
+  // - Sewa >6 bulan: batal otomatis dalam 30 menit
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 4);
+  const duration = requestData.durationMonths || 1;
+  
+  if (duration === 1) {
+    expiresAt.setHours(expiresAt.getHours() + 3);
+  } else if (duration >= 2 && duration <= 3) {
+    expiresAt.setHours(expiresAt.getHours() + 2);
+  } else if (duration >= 4 && duration <= 6) {
+    expiresAt.setHours(expiresAt.getHours() + 1);
+  } else {
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+  }
 
   const { data, error } = await supabaseClient
     .from('rental_requests')
