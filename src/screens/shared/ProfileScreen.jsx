@@ -279,19 +279,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <>
-      <ScrollView
-        style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
-        />
-      }
-    >
+    <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -301,6 +289,18 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </View>
       </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
 
       {/* Avatar Section */}
       <View style={styles.avatarSection}>
@@ -532,7 +532,7 @@ const ProfileScreen = ({ navigation }) => {
         />
       </View>
     </Modal>
-    </>
+    </View>
   );
 };
 
