@@ -32,6 +32,7 @@ import RoomDetailScreen from '../screens/tenant/RoomDetailScreen';
 import FavoriteScreen from '../screens/tenant/FavoriteScreen';
 import RentalRequestFormScreen from '../screens/tenant/RentalRequestFormScreen';
 import MyRentScreen from '../screens/tenant/MyRentScreen';
+import ContractDetailScreen from '../screens/tenant/ContractDetailScreen';
 import InvoiceDetailScreen from '../screens/tenant/InvoiceDetailScreen';
 import PaymentScreen from '../screens/tenant/PaymentScreen';
 
@@ -70,11 +71,12 @@ const SearchStackNavigator = () => (
 
 /**
  * Stack Navigator untuk alur hunian aktif:
- * MyRent → InvoiceDetail → Payment
+ * MyRent → ContractDetail → InvoiceDetail → Payment
  */
 const MyRentStackNavigator = () => (
   <MyRentStack.Navigator screenOptions={{ headerShown: false }}>
     <MyRentStack.Screen name={TENANT_SCREENS.MY_RENT} component={MyRentScreen} />
+    <MyRentStack.Screen name={TENANT_SCREENS.CONTRACT_DETAIL} component={ContractDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.INVOICE_DETAIL} component={InvoiceDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.PAYMENT} component={PaymentScreen} />
   </MyRentStack.Navigator>

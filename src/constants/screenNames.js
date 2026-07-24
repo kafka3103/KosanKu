@@ -51,6 +51,7 @@ export const TENANT_SCREENS = {
   RENTAL_REQUEST_FORM: 'RentalRequestForm',
   // Stack di dalam MyRent
   MY_RENT: 'MyRent',
+  CONTRACT_DETAIL: 'ContractDetail',
   INVOICE_DETAIL: 'InvoiceDetail',
   PAYMENT: 'Payment',
   // Drawer Items
