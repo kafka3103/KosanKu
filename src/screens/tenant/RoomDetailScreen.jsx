@@ -108,16 +108,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
       return;
     }
 
-    // Cek apakah tenant sudah punya kontrak aktif
-    const { data: activeContract } = await getTenantActiveContract(currentUser?.id);
-    if (activeContract) {
-      Alert.alert(
-        t('roomDetail.alertTitle', 'Sudah Memiliki Hunian'),
-        t('roomDetail.alertMessage', 'Anda sudah memiliki kontrak hunian aktif. Selesaikan terlebih dahulu sebelum menyewa yang baru.'),
-        [{ text: 'OK' }]
-      );
-      return;
-    }
+    // Dihapus: Pengecekan kontrak aktif agar tenant bisa menyewa lebih dari 1 kamar sekaligus
 
     navigation.navigate(TENANT_SCREENS.RENTAL_REQUEST_FORM, { room, property });
   };

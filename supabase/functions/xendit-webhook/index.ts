@@ -78,7 +78,9 @@ serve(async (req) => {
         );
       }
 
-      const newPaidAmount = parseFloat(paid_amount || amount || invoice.total_amount);
+      const incomingAmount = parseFloat(paid_amount || amount || invoice.total_amount);
+      const currentPaidAmount = parseFloat(invoice.paid_amount || 0);
+      const newPaidAmount = currentPaidAmount + incomingAmount;
       const isFullPayment = newPaidAmount >= parseFloat(invoice.total_amount);
       const newStatus = isFullPayment ? "paid" : "partial";
 
@@ -108,7 +110,7 @@ serve(async (req) => {
           invoice_id: invoice.id,
           tenant_id: invoice.tenant_id,
           owner_id: invoice.owner_id,
-          amount: newPaidAmount,
+          amount: incomingAmount,
           payment_method: "bank_transfer", // Sesuai enum schema payments kita
           status: "success",
           gateway_transaction_id: xendit_id || external_id,

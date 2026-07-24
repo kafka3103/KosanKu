@@ -99,8 +99,14 @@ const PaymentScreen = ({ navigation, route }) => {
   const [xenditResult, setXenditResult] = useState(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-  const unpaidAmount =
-    parseFloat(invoice?.total_amount ?? 0) - parseFloat(invoice?.paid_amount ?? 0);
+  // Logic for DP 50% on first payment
+  const isFirstPayment = parseFloat(invoice?.paid_amount ?? 0) === 0;
+  const rawUnpaidAmount = parseFloat(invoice?.total_amount ?? 0) - parseFloat(invoice?.paid_amount ?? 0);
+  
+  // Mengunci DP 50% pada pembayaran pertama
+  const unpaidAmount = isFirstPayment 
+    ? parseFloat(invoice?.total_amount ?? 0) * 0.5 
+    : rawUnpaidAmount;
 
 
   // 1. Cek langsung status tagihan di database saat layar dibuka / fokus
@@ -198,7 +204,7 @@ const PaymentScreen = ({ navigation, route }) => {
               else if (selectedMethod.id === 'xendit_qris') paymentMethods = ['QRIS'];
               else if (selectedMethod.id === 'xendit_retail') paymentMethods = ['ALFAMART', 'INDOMARET'];
 
-              const result = await createXenditCheckout(invoice.id, paymentMethods);
+              const result = await createXenditCheckout(invoice.id, paymentMethods, unpaidAmount);
               setIsLoading(false);
 
               if (result.isAlreadyPaid) {
@@ -391,6 +397,11 @@ const PaymentScreen = ({ navigation, route }) => {
       {/* Pay Button jika belum lunas */}
       {!isInvoicePaid && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + SPACING[2], SPACING[6]) }]}>
+          {isFirstPayment ? (
+            <Text style={{ textAlign: 'center', color: COLORS.textSecondary, marginBottom: SPACING[2], fontSize: FONT_SIZE.sm }}>
+              {t('paymentScreen.dpNote', 'Ini adalah pembayaran pertama Anda (DP 50%).')}
+            </Text>
+          ) : null}
           <TouchableOpacity
             style={[styles.payBtn, isLoading && styles.payBtnDisabled]}
             onPress={handlePay}
