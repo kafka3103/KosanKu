@@ -69,6 +69,10 @@ const SearchStackNavigator = () => (
   </SearchStack.Navigator>
 );
 
+<<<<<<< HEAD
+=======
+import ContractDetailScreen from '../screens/tenant/ContractDetailScreen';
+>>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
 
 /**
  * Stack Navigator untuk alur hunian aktif:
@@ -77,7 +81,11 @@ const SearchStackNavigator = () => (
 const MyRentStackNavigator = () => (
   <MyRentStack.Navigator screenOptions={{ headerShown: false }}>
     <MyRentStack.Screen name={TENANT_SCREENS.MY_RENT} component={MyRentScreen} />
+<<<<<<< HEAD
     <MyRentStack.Screen name={TENANT_SCREENS.CONTRACT_DETAIL} component={ContractDetailScreen} />
+=======
+    <MyRentStack.Screen name="ContractDetailScreen" component={ContractDetailScreen} />
+>>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
     <MyRentStack.Screen name={TENANT_SCREENS.INVOICE_DETAIL} component={InvoiceDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.PAYMENT} component={PaymentScreen} />
   </MyRentStack.Navigator>

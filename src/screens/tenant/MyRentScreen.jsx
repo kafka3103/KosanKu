@@ -1,7 +1,7 @@
 /**
  * screens/tenant/MyRentScreen.jsx
  * Halaman kontrak & hunian aktif tenant
- * Menampilkan info kamar, tagihan terbaru, dan pengajuan sewa
+ * Menampilkan info kamar, tagihan terbaru, dan pengajuan sewa dalam satu list
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -14,9 +14,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
-  Linking,
-  Alert,
-  Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,11 +27,8 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { getTenantActiveContract } from '../../services/invoiceService';
-import { getTenantInvoices } from '../../services/invoiceService';
 import { getTenantRentalRequests } from '../../services/searchService';
 import { subscribeToUserInvoicesRealtime } from '../../services/xenditService';
-import { getFacilityMaster, requestOptionalFacility } from '../../services/propertyService';
 import { TENANT_SCREENS } from '../../constants/screenNames';
 
 const formatCurrency = (amount) =>
@@ -53,87 +47,51 @@ const formatDate = (dateStr) => {
   }
 };
 
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm', { locale: idLocale });
-  } catch {
-    return dateStr;
-  }
+const getStatusConfig = (status, t) => {
+  const config = {
+    pending: { color: COLORS.warning, bg: COLORS.warningLight, label: t('myRent.status.pending', 'Menunggu Konfirmasi'), icon: 'time' },
+    approved: { color: COLORS.success, bg: COLORS.successLight, label: t('myRent.status.approved', 'Disetujui'), icon: 'checkmark-circle' },
+    rejected: { color: COLORS.error, bg: COLORS.errorLight, label: t('myRent.status.rejected', 'Ditolak'), icon: 'close-circle' },
+    expired: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.expired', 'Kedaluwarsa'), icon: 'hourglass-outline' },
+    cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.cancelled', 'Dibatalkan'), icon: 'ban' },
+    active: { color: COLORS.success, bg: COLORS.successLight, label: t('myRent.status.active', 'Aktif'), icon: 'home' },
+    ended: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.ended', 'Selesai'), icon: 'flag' },
+  };
+  return config[status] || config.pending;
 };
-
-const formatPeriod = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'MMMM yyyy', { locale: idLocale });
-  } catch {
-    return dateStr;
-  }
-};
-
-const getInvoiceStatusConfig = (t) => ({
-  unpaid: { color: COLORS.warning, label: t('myRent.status.unpaid', 'Belum Bayar'), icon: 'time' },
-  paid: { color: COLORS.success, label: t('myRent.status.paid', 'Lunas'), icon: 'checkmark-circle' },
-  overdue: { color: COLORS.error, label: t('myRent.status.overdue', 'Terlambat'), icon: 'close-circle' },
-  partial: { color: COLORS.info, label: t('myRent.status.partial', 'Sebagian'), icon: 'pie-chart' },
-});
-
-const getRequestStatusConfig = (t) => ({
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: t('myRent.status.pending', 'Menunggu Konfirmasi'), icon: 'time' },
-  approved: { color: COLORS.success, bg: COLORS.successLight, label: t('myRent.status.approved', 'Disetujui'), icon: 'checkmark-circle' },
-  rejected: { color: COLORS.error, bg: COLORS.errorLight, label: t('myRent.status.rejected', 'Ditolak'), icon: 'close-circle' },
-  expired: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.expired', 'Kedaluwarsa'), icon: 'hourglass-outline' },
-  cancelled: { color: COLORS.grey500, bg: COLORS.grey100, label: t('myRent.status.cancelled', 'Dibatalkan'), icon: 'ban' },
-});
 
 const MyRentScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
-  const [contracts, setContracts] = useState([]);
-  const [recentInvoices, setRecentInvoices] = useState([]);
   const [rentalRequests, setRentalRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // State for rendering error on screen
-  const [contractFetchError, setContractFetchError] = useState(null);
-
-  // States for Requesting Facility
-  const [showFacilityModal, setShowFacilityModal] = useState(false);
-  const [masterFacilities, setMasterFacilities] = useState([]);
-  const [isRequesting, setIsRequesting] = useState(false);
 
   const loadData = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
 
-    const [contractResult, invoicesResult, requestsResult] = await Promise.all([
-      getTenantActiveContract(currentUser.id),
-      getTenantInvoices(currentUser.id, 'all'),
-      getTenantRentalRequests(currentUser.id),
-    ]);
+    const requestsResult = await getTenantRentalRequests(currentUser.id);
 
-    if (contractResult.error) {
-      console.warn('ERROR FETCHING CONTRACT:', contractResult.error);
-      setContractFetchError(contractResult.error);
-    } else {
-      setContractFetchError(null);
-      setContracts(contractResult.data || []);
-    }
-
-    if (!invoicesResult.error && invoicesResult.data) {
-      setRecentInvoices(invoicesResult.data);
-    }
     if (!requestsResult.error && requestsResult.data) {
-      setRentalRequests(requestsResult.data.filter((r) => ['pending', 'approved'].includes(r.status)));
-    }
-
-    // Load master facilities if modal is to be opened or pre-fetch
-    const facilityRes = await getFacilityMaster();
-    if (!facilityRes.error && facilityRes.data) {
-      setMasterFacilities(facilityRes.data.filter((f) => f.category !== 'room')); // Tampilkan umum & opsional
+      // Sort logic: active/approved first, pending next, then others
+      const sortedData = requestsResult.data.sort((a, b) => {
+        const aContract = a.contracts && a.contracts.length > 0 ? a.contracts[0] : null;
+        const bContract = b.contracts && b.contracts.length > 0 ? b.contracts[0] : null;
+        
+        const aStatus = aContract ? aContract.status : a.status;
+        const bStatus = bContract ? bContract.status : b.status;
+        
+        const priority = { active: 1, approved: 2, pending: 3, ended: 4, rejected: 5, expired: 6, cancelled: 7 };
+        const aPrio = priority[aStatus] || 99;
+        const bPrio = priority[bStatus] || 99;
+        
+        if (aPrio !== bPrio) return aPrio - bPrio;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      setRentalRequests(sortedData);
     }
 
     setIsLoading(false);
@@ -156,8 +114,11 @@ const MyRentScreen = ({ navigation }) => {
     };
   }, [currentUser?.id, loadData]);
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -166,8 +127,8 @@ const MyRentScreen = ({ navigation }) => {
     );
   }
 
-  // Belum punya hunian aktif
-  if (contracts.length === 0 && rentalRequests.length === 0) {
+  // Belum punya hunian
+  if (rentalRequests.length === 0) {
     return (
       <ScrollView
         style={styles.container}
@@ -208,88 +169,80 @@ const MyRentScreen = ({ navigation }) => {
     );
   }
 
-
-
   return (
     <>
       <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={() => { setIsRefreshing(true); loadData(true); }}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <DrawerButton />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
-            <Text style={styles.headerSubtitle}>
-              {contracts.length > 0 ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
-            </Text>
+        style={styles.container}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => { setIsRefreshing(true); loadData(true); }}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <DrawerButton />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
+              <Text style={styles.headerSubtitle}>
+                {t('myRent.yourRequest', 'Pengajuan sewa & kontrak Anda')}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Error State if contract failed */}
-      {contractFetchError && (
-        <View style={{ padding: 20, backgroundColor: '#ffebee', margin: 16, borderRadius: 8 }}>
-          <Text style={{ color: '#c62828', fontWeight: 'bold' }}>ERROR FETCHING CONTRACT:</Text>
-          <Text style={{ color: '#c62828' }}>{JSON.stringify(contractFetchError, null, 2)}</Text>
-        </View>
-      )}
-
-
-      {/* Pengajuan Pending (jika belum punya kontrak) */}
-      {(contracts.length === 0) && rentalRequests.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('myRent.rentRequest', 'Pengajuan Sewa')}</Text>
           {rentalRequests.map((req) => {
-            const statusConfig = getRequestStatusConfig(t);
-            const status = statusConfig[req.status] ?? statusConfig.pending;
             const room = req.rooms;
             const property = room?.properties;
-            return (
-              <View key={req.id} style={[styles.requestCard, { borderLeftColor: status.color }]}>
-                <View style={[styles.requestStatusBadge, { backgroundColor: status.bg }]}>
-                  <Ionicons name={status.icon} size={14} color={status.color} />
-                  <Text style={[styles.requestStatusText, { color: status.color }]}>
-                    {status.label}
-                  </Text>
-                </View>
-                <Text style={styles.requestProperty}>{property?.name}</Text>
-                <Text style={styles.requestRoom}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
-                <Text style={styles.requestDate}>
-                  {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at) })}
-                </Text>
-                {req.status === 'pending' && req.expires_at ? (
-                  <View style={styles.expiryWarning}>
-                    <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
-                    <Text style={styles.expiryText}>
-                      {t('myRent.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(req.expires_at) })}
-                    </Text>
-                  </View>
-                ) : null}
-                {req.status === 'rejected' && req.owner_rejection_reason ? (
-                  <View style={styles.rejectionBox}>
-                    <Text style={styles.rejectionText}>
-                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: req.owner_rejection_reason })}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
-      )}
+            const contract = req.contracts && req.contracts.length > 0 ? req.contracts[0] : null;
+            
+            // Status Priority: If contract is active/ended, show that. Else show request status.
+            let displayStatus = req.status;
+            if (contract && contract.status === 'active') displayStatus = 'active';
+            if (contract && contract.status === 'ended') displayStatus = 'ended';
 
+            const status = getStatusConfig(displayStatus, t);
+
+            // Invoice check for urgent payment
+            let activeInvoice = null;
+            let needsPayment = false;
+            if (contract && contract.invoices && contract.invoices.length > 0) {
+              activeInvoice = contract.invoices.find(inv => inv.status !== 'paid') || contract.invoices[0];
+              needsPayment = activeInvoice.status !== 'paid';
+            }
+
+            return (
+              <TouchableOpacity
+                key={req.id}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('ContractDetailScreen', { request: req })}
+                style={[
+                  styles.card,
+                  needsPayment && styles.cardUrgent
+                ]}
+              >
+                {needsPayment && (
+                  <View style={styles.urgentBadge}>
+                    <Text style={styles.urgentBadgeText}>{t('myRent.urgentPayment', 'Segera Bayar')}</Text>
+                  </View>
+                )}
+                
+                <View style={styles.cardHeader}>
+                  <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                    <Ionicons name={status.icon} size={14} color={status.color} />
+                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
+                </View>
+
+<<<<<<< HEAD
       {/* Kontrak Aktif */}
       {contracts.map((contract, index) => {
         const room = contract?.rooms;
@@ -312,29 +265,42 @@ const MyRentScreen = ({ navigation }) => {
                 }
               >
                 <View style={styles.roomCard}>
+=======
+                <View style={styles.cardBody}>
+>>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
                   {room?.photo_urls?.[0] || property?.cover_photo_url ? (
                     <Image
                       source={{ uri: room?.photo_urls?.[0] ?? property?.cover_photo_url }}
-                      style={styles.roomPhoto}
+                      style={styles.cardPhoto}
                     />
                   ) : (
-                    <View style={styles.roomPhotoPlaceholder}>
-                      <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
+                    <View style={styles.cardPhotoPlaceholder}>
+                      <Ionicons name="bed-outline" size={32} color={COLORS.textTertiary} />
                     </View>
                   )}
-                  <View style={styles.roomInfo}>
-                    <Text style={styles.roomPropertyName}>{property?.name}</Text>
+                  
+                  <View style={styles.cardInfo}>
+                    <Text style={styles.propertyName}>{property?.name}</Text>
                     <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
-                      <Text style={[styles.roomAddress, { marginTop: 0 }]} numberOfLines={1}>
-                        {property?.address_line}, {property?.city}
-                      </Text>
-                    </View>
-                    <Text style={styles.roomPrice}>
-                      {formatCurrency(contract.monthly_rate)}{t('roomDetail.perMonth', '/bulan')}
+                    
+                    {contract ? (
+                      <View style={styles.datesContainer}>
+                        <Text style={styles.dateText}>{formatDate(contract.start_date)} - {formatDate(contract.end_date)}</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.dateText}>{t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at) })}</Text>
+                    )}
+                  </View>
+                </View>
+
+                {contract && activeInvoice && (
+                  <View style={styles.billingSummary}>
+                    <Text style={styles.billingLabel}>{t('myRent.remainingAmount', 'Sisa Hutang')}</Text>
+                    <Text style={styles.billingValue}>
+                      {formatCurrency((activeInvoice.total_amount || 0) - (activeInvoice.paid_amount || 0))}
                     </Text>
                   </View>
+<<<<<<< HEAD
                   
                   {/* Chevron to indicate navigation */}
                   <View style={{ position: 'absolute', right: 16, top: '50%', marginTop: -12 }}>
@@ -349,6 +315,14 @@ const MyRentScreen = ({ navigation }) => {
     </ScrollView>
 
 
+=======
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
+>>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
     </>
   );
 };
@@ -365,7 +339,6 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
@@ -380,20 +353,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   section: {
-    marginHorizontal: SPACING[4],
-    marginTop: SPACING[5],
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING[3],
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING[3],
+    paddingHorizontal: SPACING[4],
+    paddingTop: SPACING[5],
   },
   // Empty State
   emptyContainer: {
@@ -422,305 +383,107 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
   },
   searchBtnText: { color: COLORS.white, fontWeight: FONT_WEIGHT.semiBold },
-  // Request Card
-  requestCard: {
+  // Card
+  card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING[4],
-    marginBottom: SPACING[3],
-    borderLeftWidth: 4,
+    marginBottom: SPACING[4],
     ...SHADOW.sm,
   },
-  requestStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    paddingHorizontal: SPACING[3],
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
-    marginBottom: SPACING[2],
+  cardUrgent: {
+    borderColor: '#F59E0B',
+    borderWidth: 1,
   },
-  requestStatusText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.bold },
-  requestProperty: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  requestRoom: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
-  requestDate: { fontSize: FONT_SIZE.xs, color: COLORS.textTertiary, marginTop: 4 },
-  expiryWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.errorLight,
-    padding: SPACING[2],
-    borderRadius: BORDER_RADIUS.md,
-    marginTop: SPACING[2],
-  },
-  expiryText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.error,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  rejectionBox: {
-    backgroundColor: COLORS.errorLight,
+  urgentBadge: {
+    position: 'absolute',
+    top: -10,
+    right: 16,
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: SPACING[2],
+    paddingVertical: 2,
     borderRadius: BORDER_RADIUS.sm,
-    padding: SPACING[2],
-    marginTop: SPACING[2],
+    zIndex: 2,
   },
-  rejectionText: { fontSize: FONT_SIZE.xs, color: COLORS.error },
-  // Room Card
-  roomCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
-    marginBottom: SPACING[3],
-    ...SHADOW.sm,
-  },
-  roomPhoto: { width: '100%', height: 160, resizeMode: 'cover' },
-  roomPhotoPlaceholder: {
-    width: '100%',
-    height: 160,
-    backgroundColor: COLORS.primarySurface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  roomInfo: { padding: SPACING[4] },
-  roomPropertyName: {
-    fontSize: FONT_SIZE.lg,
+  urgentBadgeText: {
+    color: COLORS.white,
+    fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
   },
-  roomNumber: { fontSize: FONT_SIZE.base, color: COLORS.textSecondary },
-  roomAddress: { fontSize: FONT_SIZE.sm, color: COLORS.textTertiary, marginTop: 4 },
-  roomPrice: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-    marginTop: SPACING[2],
-  },
-  contractDates: {
+  cardHeader: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SPACING[3],
-    ...SHADOW.sm,
   },
-  dateItem: { flex: 1, alignItems: 'center' },
-  dateLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginBottom: 4 },
-  dateValue: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  dateSeparator: { width: 1, backgroundColor: COLORS.border },
-  facilitiesContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
-    ...SHADOW.sm,
-  },
-  facilitiesLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING[2],
-  },
-  facilitiesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING[1] },
-  facilityTag: {
-    backgroundColor: COLORS.primarySurface,
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING[2],
     paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.sm,
+    borderRadius: BORDER_RADIUS.full,
+    gap: 4,
   },
-  facilityTagText: { fontSize: FONT_SIZE.xs, color: COLORS.primary },
-  // Owner Card
-  ownerCard: {
+  statusText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.bold,
+  },
+  cardBody: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
-    ...SHADOW.sm,
   },
-  ownerAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  cardPhoto: {
+    width: 70,
+    height: 70,
+    borderRadius: BORDER_RADIUS.lg,
+    marginRight: SPACING[3],
+  },
+  cardPhotoPlaceholder: {
+    width: 70,
+    height: 70,
+    borderRadius: BORDER_RADIUS.lg,
     backgroundColor: COLORS.primarySurface,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING[3],
   },
-  ownerAvatarText: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-  },
-  ownerInfo: { flex: 1 },
-  ownerName: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.textPrimary,
-  },
-  ownerPhone: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
-  callBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primarySurface,
-    paddingHorizontal: SPACING[3],
-    paddingVertical: SPACING[2],
-    borderRadius: BORDER_RADIUS.md,
-  },
-  callBtnText: { fontSize: FONT_SIZE.sm, color: COLORS.primary, fontWeight: FONT_WEIGHT.medium },
-  // Invoice
-  invoiceCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[4],
-    marginBottom: SPACING[2],
-    ...SHADOW.sm,
-  },
-  invoiceLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING[3] },
-  invoicePeriod: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.textPrimary,
-  },
-  invoiceStatus: { fontSize: FONT_SIZE.xs, marginTop: 2 },
-  invoiceAmount: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  emptyInvoice: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[5],
-    alignItems: 'center',
-    ...SHADOW.sm,
-  },
-  emptyInvoiceText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
-  // Optional Facilities
-  optionalFacilitiesBox: {
-    backgroundColor: COLORS.primarySurface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING[3],
-    marginTop: SPACING[3],
-  },
-  optionalFacilitiesTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-  },
-  optionalFacilityItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  optionalFacilityName: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textPrimary,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  optionalFacilityPrice: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  requestBadgeInline: {
-    backgroundColor: COLORS.warningLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  requestBadgeTextInline: {
-    fontSize: 10,
-    color: COLORS.warning,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  addFacilityBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.primarySurface,
-    paddingVertical: SPACING[3],
-    borderRadius: BORDER_RADIUS.md,
-    marginTop: SPACING[3],
-    borderWidth: 1,
-    borderColor: COLORS.primaryLight,
-    borderStyle: 'dashed',
-  },
-  addFacilityBtnText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semiBold,
-    color: COLORS.primary,
-  },
-  // Modal Styles
-  modalOverlay: {
+  cardInfo: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
   },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: BORDER_RADIUS['2xl'],
-    borderTopRightRadius: BORDER_RADIUS['2xl'],
-    padding: SPACING[5],
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING[2],
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.xl,
+  propertyName: {
+    fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
   },
-  modalCloseBtn: { padding: 4 },
-  modalSubtitle: {
+  roomNumber: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
-    marginBottom: SPACING[4],
+    marginTop: 2,
   },
-  facilityList: {
-    paddingBottom: SPACING[5],
+  datesContainer: {
+    marginTop: 4,
   },
-  facilityOption: {
+  dateText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textTertiary,
+  },
+  billingSummary: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING[3],
-    paddingHorizontal: SPACING[2],
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    marginTop: SPACING[3],
+    paddingTop: SPACING[3],
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  facilityOptionDisabled: {
-    opacity: 0.6,
+  billingLabel: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
   },
-  facilityOptionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  facilityOptionName: {
+  billingValue: {
     fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textPrimary,
-  },
-  facilityOptionStatus: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.warning,
-    marginTop: 2,
-    fontWeight: FONT_WEIGHT.medium,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.error,
   },
 });
 
