@@ -15,13 +15,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { uploadKtpPhoto, upsertOwnerProfile, upsertTenantProfile, updateUserProfile } from '../../services/userService';
+import { upsertOwnerProfile, upsertTenantProfile, updateUserProfile, getOwnerProfile, getTenantProfile, checkNikUnique } from '../../services/userService';
 import USER_ROLE from '../../constants/userRole';
 
 const RoleRegistrationScreen = ({ navigation, route }) => {
@@ -32,50 +31,58 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   
-  // Owner States
-  const [identityPhoto, setIdentityPhoto] = useState(null);
+  // States
+  const [ktpNumber, setKtpNumber] = useState('');
   
   // Tenant States
   const [occupation, setOccupation] = useState('');
   const [emergencyName, setEmergencyName] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
+  
+  const [isNiksLocked, setIsNiksLocked] = useState(false);
 
-  const pickIdentityPhoto = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Izin Ditolak', 'Dibutuhkan izin akses galeri untuk mengunggah foto identitas.');
-        return;
+  React.useEffect(() => {
+    const fetchExistingNIK = async () => {
+      let existingNIK = null;
+      if (targetRole === USER_ROLE.OWNER) {
+        const { data } = await getTenantProfile(currentUser.id);
+        if (data?.ktp_number) existingNIK = data.ktp_number;
+      } else {
+        const { data } = await getOwnerProfile(currentUser.id);
+        if (data?.ktp_number) existingNIK = data.ktp_number;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-      });
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setIdentityPhoto(result.assets[0].uri);
+      
+      if (existingNIK) {
+        setKtpNumber(existingNIK);
+        setIsNiksLocked(true);
       }
-    } catch (error) {
-      Alert.alert('Error', 'Gagal memilih foto.');
+    };
+    
+    if (currentUser?.id) {
+      fetchExistingNIK();
     }
-  };
+  }, [targetRole, currentUser]);
 
   const handleRegisterOwner = async () => {
-    if (!identityPhoto) {
-      Alert.alert('Gagal', 'Silakan unggah foto kartu identitas (KTP/SIM/Paspor/KTM).');
+    if (!ktpNumber || ktpNumber.length !== 16 || !/^\d+$/.test(ktpNumber)) {
+      Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
       return;
     }
     
     setIsLoading(true);
-    const { path, error: uploadError } = await uploadKtpPhoto(currentUser.id, identityPhoto);
-    if (uploadError) {
+
+    // Cek keunikan NIK
+    const isUnique = await checkNikUnique(ktpNumber, currentUser.id);
+    if (!isUnique) {
       setIsLoading(false);
-      Alert.alert('Gagal', 'Gagal mengunggah foto identitas.');
+      Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.');
       return;
     }
-    
-    const { data: ownerData, error: ownerError } = await upsertOwnerProfile(currentUser.id, {
-      ktp_photo_url: path
+
+    // Insert ke owner_profiles dengan is_verified = true (hardcoded verifikasi instan)
+    const { error: ownerError } = await upsertOwnerProfile(currentUser.id, {
+      ktp_number: ktpNumber,
+      is_verified: true
     });
     
     if (ownerError) {
@@ -83,10 +90,23 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Gagal menyimpan profil pemilik.');
       return;
     }
+
+    // Sinkronisasi NIK ke tenant_profiles (agar bisa dipakai ulang jika jadi tenant)
+    const existingTenant = await getTenantProfile(currentUser.id);
+    // Hapus id dan created_at/updated_at dari data existing sebelum upsert
+    const existingData = existingTenant.data || {};
+    delete existingData.id;
+    delete existingData.created_at;
+    delete existingData.updated_at;
+    
+    await upsertTenantProfile(currentUser.id, {
+      ...existingData,
+      ktp_number: ktpNumber
+    });
     
     if (isCompletingProfile) {
       setIsLoading(false);
-      Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi!', [
+      Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
       return;
@@ -100,28 +120,38 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan!', [
+    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda sedang diverifikasi oleh admin.', [
       {
         text: 'OK',
         onPress: () => {
           setAuthenticatedUser(currentSession, userData);
-          // Since BOTH defaults to TENANT, we need to explicitly switch to OWNER
-          if (useAuthStore.getState().userRole !== USER_ROLE.OWNER) {
-            useAuthStore.getState().switchRole();
-          }
         }
       }
     ]);
   };
 
   const handleRegisterTenant = async () => {
+    if (!ktpNumber || ktpNumber.length !== 16 || !/^\d+$/.test(ktpNumber)) {
+      Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
+      return;
+    }
     if (!occupation || !emergencyName || !emergencyPhone) {
       Alert.alert('Gagal', 'Harap lengkapi semua data.');
       return;
     }
     
     setIsLoading(true);
+
+    // Cek keunikan NIK
+    const isUnique = await checkNikUnique(ktpNumber, currentUser.id);
+    if (!isUnique) {
+      setIsLoading(false);
+      Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.');
+      return;
+    }
+
     const { data: tenantData, error: tenantError } = await upsertTenantProfile(currentUser.id, {
+      ktp_number: ktpNumber,
       occupation,
       emergency_contact_name: emergencyName,
       emergency_contact_phone: emergencyPhone
@@ -132,10 +162,22 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Gagal menyimpan profil pencari kos.');
       return;
     }
+
+    // Sinkronisasi NIK ke owner_profiles (jika belum ada)
+    const existingOwner = await getOwnerProfile(currentUser.id);
+    const existingOwnerData = existingOwner.data || {};
+    delete existingOwnerData.id;
+    delete existingOwnerData.created_at;
+    delete existingOwnerData.updated_at;
+    
+    await upsertOwnerProfile(currentUser.id, {
+      ...existingOwnerData,
+      ktp_number: ktpNumber
+    });
     
     if (isCompletingProfile) {
       setIsLoading(false);
-      Alert.alert('Berhasil', 'Profil Pencari Kos berhasil dilengkapi!', [
+      Alert.alert('Berhasil', 'Profil Pencari Kos berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
       return;
@@ -149,12 +191,11 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan!', [
+    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan! Identitas Anda sedang diverifikasi oleh admin.', [
       {
         text: 'OK',
         onPress: () => {
           setAuthenticatedUser(currentSession, userData);
-          // BOTH defaults to TENANT, so it will automatically switch to TENANT
         }
       }
     ]);
@@ -194,22 +235,37 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Verifikasi Identitas</Text>
               <Text style={styles.sectionSubtitle}>
-                Untuk menjaga keamanan platform, mohon unggah foto kartu identitas Anda (KTP, Paspor, SIM, atau KTM).
+                Untuk keamanan, mohon masukkan Nomor Induk Kependudukan (NIK) Anda.
               </Text>
-              <TouchableOpacity style={styles.imageUploadBtn} onPress={pickIdentityPhoto}>
-                {identityPhoto ? (
-                  <Image source={{ uri: identityPhoto }} style={styles.imagePreview} />
-                ) : (
-                  <View style={styles.imagePlaceholder}>
-                    <Ionicons name="camera-outline" size={40} color={COLORS.textTertiary} />
-                    <Text style={styles.imagePlaceholderText}>Ketuk untuk unggah foto identitas</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>NIK (16 digit angka)</Text>
+                <TextInput
+                  style={[styles.textInput, isNiksLocked && { backgroundColor: COLORS.grey200, color: COLORS.textSecondary }]}
+                  placeholder="Contoh: 3201234567890123"
+                  keyboardType="numeric"
+                  maxLength={16}
+                  value={ktpNumber}
+                  onChangeText={setKtpNumber}
+                  editable={!isNiksLocked}
+                />
+              </View>
             </View>
           ) : (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Lengkapi Profil Pencari Kos</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>NIK (16 digit angka)</Text>
+                <TextInput
+                  style={[styles.textInput, isNiksLocked && { backgroundColor: COLORS.grey200, color: COLORS.textSecondary }]}
+                  placeholder="Contoh: 3201234567890123"
+                  keyboardType="numeric"
+                  maxLength={16}
+                  value={ktpNumber}
+                  onChangeText={setKtpNumber}
+                  editable={!isNiksLocked}
+                />
+              </View>
               
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Pekerjaan / Status</Text>

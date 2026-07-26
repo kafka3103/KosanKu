@@ -255,11 +255,28 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (currentUser.role !== USER_ROLE.BOTH) {
       const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
       navigation.navigate('RoleRegistrationScreen', { targetRole });
       return;
+    }
+
+    const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
+    if (targetRole === USER_ROLE.OWNER) {
+      const { checkOwnerVerification } = require('../../services/userService');
+      const isVerified = await checkOwnerVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
+    } else {
+      const { checkTenantVerification } = require('../../services/userService');
+      const isVerified = await checkTenantVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pencari Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
     }
 
     const targetRoleText = isOwner ? t('profile.tenant', 'Pencari Kosan') : t('profile.owner', 'Pemilik Kosan');
@@ -279,7 +296,19 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <>
+      <ScrollView
+        style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
+          colors={[COLORS.primary]}
+          tintColor={COLORS.primary}
+        />
+      }
+    >
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -302,7 +331,6 @@ const ProfileScreen = ({ navigation }) => {
           />
         }
       >
-
       {/* Avatar Section */}
       <View style={styles.avatarSection}>
         <TouchableOpacity
@@ -528,7 +556,7 @@ const ProfileScreen = ({ navigation }) => {
         />
       </View>
     </Modal>
-    </View>
+    </>
   );
 };
 

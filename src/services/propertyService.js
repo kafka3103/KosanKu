@@ -496,7 +496,10 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
     .select(`
       *,
       rooms(room_number, base_price, properties(name, address_line, city)),
-      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, email, avatar_url)
+      users!rental_requests_tenant_id_fkey(
+        id, full_name, phone_number, email, avatar_url,
+        tenant_profiles(ktp_number, is_verified)
+      )
     `)
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
@@ -583,6 +586,19 @@ export const approveRentalRequest = async (requestId) => {
       .update({ status: 'pending', updated_at: new Date().toISOString() })
       .eq('id', request.room_id);
 
+    // 4.b Update tenant_profiles (termasuk sinkronisasi NIK jika ada) dan set is_verified menjadi true
+    // Kita gunakan RPC (Remote Procedure Call) karena operasi ini dijalankan oleh Owner,
+    // sedangkan RLS tabel tenant_profiles mencegah Owner mengubah profil Tenant.
+    const tenantNikToSave = request.tenant_nik;
+    const { error: rpcError } = await supabaseClient.rpc('verify_tenant_profile_nik', {
+      p_tenant_id: request.tenant_id,
+      p_tenant_nik: tenantNikToSave
+    });
+
+    if (rpcError) {
+      console.warn('Gagal memverifikasi profil tenant:', rpcError.message);
+    }
+
     // 5. Buat invoice pertama agar tenant bisa langsung melakukan pembayaran ("dilanjutkan kedalam tahap pembayaran")
     if (newContract) {
       const now = new Date();
@@ -608,14 +624,33 @@ export const approveRentalRequest = async (requestId) => {
         .single();
 
       // 6. Kirim notifikasi ke penghuni (Tenant)
+      // a. Notifikasi persetujuan pengajuan sewa
       await sendNotification({
         userId: request.tenant_id,
         title: 'rental_approved_title',
         body: JSON.stringify({ key: 'rental_approved_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
         type: 'rental_request_approved',
-        referenceId: newInvoice?.id ?? request.id,
-        referenceType: newInvoice ? 'invoice' : 'rental_request',
+        referenceId: request.id,
+        referenceType: 'rental_request',
       });
+
+      // b. Notifikasi tagihan pertama (jika berhasil dibuat)
+      if (newInvoice) {
+        await sendNotification({
+          userId: request.tenant_id,
+          title: 'invoice_generated_title',
+          body: JSON.stringify({ 
+            key: 'invoice_generated_body', 
+            params: { 
+              amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(newInvoice.total_amount || 0), 
+              dueDate: newInvoice.due_date 
+            } 
+          }),
+          type: 'invoice_generated',
+          referenceId: newInvoice.id,
+          referenceType: 'invoice',
+        });
+      }
     }
   } catch (err) {
     console.warn('Error saat membuat kontrak/invoice otomatis:', err.message);

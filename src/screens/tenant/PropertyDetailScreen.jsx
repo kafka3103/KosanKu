@@ -142,7 +142,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             .slice(0, 5);
           return (
             <TouchableOpacity
-              key={room.id ?? index}
+              key={room.id}
               style={styles.roomCard}
               onPress={() =>
                 navigation.navigate(TENANT_SCREENS.ROOM_DETAIL, { room, property })
@@ -363,8 +363,8 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       {reviews.length === 0 ? (
         <Text style={styles.noDataText}>{t('propertyDetail.noReviews', 'Belum ada ulasan untuk kosan ini.')}</Text>
       ) : (
-        reviews.map((rev, index) => (
-          <View key={rev.id ?? index} style={styles.reviewCard}>
+        reviews.map((rev) => (
+          <View key={rev.id} style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
               <View style={styles.reviewAvatar}>
                 <Text style={styles.ownerAvatarText}>{rev.users?.full_name?.[0]?.toUpperCase() ?? 'U'}</Text>

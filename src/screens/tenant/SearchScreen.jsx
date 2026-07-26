@@ -95,9 +95,11 @@ const PropertyCard = ({ property, onPress }) => {
     : null;
   const availableCount = availableRooms.length;
   const facilities = property.general_facilities ?? [];
+  const { currentUser } = useAuthStore();
+  const isOwnProperty = property.owner_id === currentUser?.id;
 
   return (
-    <TouchableOpacity style={styles.propertyCard} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.propertyCard, isOwnProperty && { borderColor: 'red', borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.cardPhoto}>
         {property.cover_photo_url ? (
           <Image source={{ uri: property.cover_photo_url }} style={styles.cardImage} />
@@ -109,6 +111,11 @@ const PropertyCard = ({ property, onPress }) => {
         <View style={styles.availableTag}>
           <Text style={styles.availableTagText}>{t('searchScreen.availableCount', '{{count}} tersedia', { count: availableCount })}</Text>
         </View>
+        {isOwnProperty && (
+          <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: 'red', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
+            <Text style={[styles.availableTagText, { color: 'white', fontWeight: 'bold' }]}>Kos Sendiri</Text>
+          </View>
+        )}
         <View style={styles.genderTag}>
           <Ionicons
             name={

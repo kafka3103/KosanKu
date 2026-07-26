@@ -14,9 +14,6 @@ import {
   Switch,
   Alert,
   Linking,
-  Modal,
-  TextInput,
-  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +22,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { logout, updatePassword, loginWithEmail, deleteAccount } from '../../services/authService';
+import { logout, updatePassword } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
@@ -46,16 +43,21 @@ const SettingsScreen = ({ navigation }) => {
 
   const providers = currentSession?.user?.app_metadata?.providers || [];
   const isGoogleOnly = providers.includes('google') && !providers.includes('email');
-
   const currentLang = i18n.language;
 
   const handleChangeLanguage = () => {
     Alert.alert(
-      t('settings.languageTitle', 'Pilih Bahasa'),
-      t('settings.languageMsg', 'Silakan pilih bahasa aplikasi Anda.'),
+      t('settings.languageTitle', 'Bahasa / Language'),
+      t('settings.languageMsg', 'Pilih bahasa aplikasi:'),
       [
-        { text: 'Bahasa Indonesia', onPress: () => { i18n.changeLanguage('id'); saveLanguagePreference('id'); } },
-        { text: 'English', onPress: () => { i18n.changeLanguage('en'); saveLanguagePreference('en'); } },
+        {
+          text: '🇮🇩 Bahasa Indonesia',
+          onPress: () => saveLanguagePreference('id'),
+        },
+        {
+          text: '🇬🇧 English',
+          onPress: () => saveLanguagePreference('en'),
+        },
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       ]
     );
@@ -63,7 +65,7 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleChangePassword = () => {
     Alert.alert(
-      t('settings.changePassword', 'Ubah Password'),
+      t('settings.changePasswordTitle', 'Ubah Password'),
       t('settings.changePasswordMsg', 'Fitur ubah password akan membuka halaman reset via email.'),
       [
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -86,11 +88,8 @@ const SettingsScreen = ({ navigation }) => {
         {
           text: t('settings.btnDeleteAccount', 'Hapus Akun'),
           style: 'destructive',
-          onPress: () => {
-            setDeletePassword('');
-            setModalKey((prev) => prev + 1);
-            setShowDeleteModal(true);
-          }
+          onPress: () =>
+            Alert.alert('Hubungi Support', 'Untuk menghapus akun, hubungi support@kosanku.id'),
         },
       ]
     );
@@ -139,7 +138,6 @@ const SettingsScreen = ({ navigation }) => {
       ]);
     }
   };
-
   const handleLogout = () => {
     Alert.alert('Keluar', 'Yakin ingin keluar dari akun?', [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -169,8 +167,7 @@ const SettingsScreen = ({ navigation }) => {
   );
 
   return (
-    <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         {navigation?.canGoBack?.() && (
@@ -277,7 +274,6 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
       </View>
     </ScrollView>
-
       {/* Modal Hapus Akun */}
       <Modal
         visible={showDeleteModal}
@@ -424,62 +420,6 @@ const styles = StyleSheet.create({
   footerSubtext: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textTertiary,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING[5],
-    width: '85%',
-    maxWidth: 400,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING[2],
-  },
-  modalTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-  },
-  modalSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING[4],
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING[3],
-    marginBottom: SPACING[4],
-  },
-  inputIcon: { marginRight: SPACING[2] },
-  input: {
-    flex: 1,
-    paddingVertical: SPACING[3],
-    fontSize: FONT_SIZE.base,
-    color: COLORS.textPrimary,
-  },
-  modalDeleteBtn: {
-    backgroundColor: COLORS.error,
-    paddingVertical: SPACING[3],
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: 'center',
-  },
-  modalDeleteBtnText: {
-    color: COLORS.white,
-    fontWeight: FONT_WEIGHT.bold,
-    fontSize: FONT_SIZE.base,
   },
 });
 

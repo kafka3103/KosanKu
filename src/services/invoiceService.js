@@ -92,10 +92,6 @@ export const getTenantActiveContract = async (tenantId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(
         room_number,
         base_price,
@@ -132,10 +128,6 @@ export const getOwnerContracts = async (ownerId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(room_number, properties(name)),
       users!contracts_tenant_id_fkey(full_name, phone_number)
     `)
@@ -155,10 +147,6 @@ export const getContractById = async (contractId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(
         *,
         room_facilities(facility_master(name, icon_name)),
