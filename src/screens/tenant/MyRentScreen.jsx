@@ -160,6 +160,25 @@ const MyRentScreen = ({ navigation }) => {
     setIsRefreshing(false);
   }, [currentUser?.id]);
 
+  const handleCallOwner = (phoneNumber) => {
+    if (!phoneNumber) return;
+    const url = `tel:${phoneNumber}`;
+    Linking.openURL(url).catch(() => Alert.alert(t('myRent.callFail', 'Gagal'), 'Tidak dapat membuka aplikasi telepon'));
+  };
+
+  const handleRequestFacility = async (facilityId) => {
+    setIsRequesting(true);
+    try {
+      // Stub implementation for now
+      Alert.alert(t('myRent.success', 'Sukses'), t('myRent.facilityRequested', 'Fasilitas tambahan berhasil diajukan.'));
+      setShowFacilityModal(false);
+    } catch (error) {
+      Alert.alert(t('myRent.error', 'Error'), error.message);
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -229,6 +248,11 @@ const MyRentScreen = ({ navigation }) => {
   }
 
 
+
+  // Provide facility scope for the modal (assuming single active contract for modal context)
+  const modalContract = contracts[0];
+  const activeContractFacilities = modalContract?.contract_facilities?.filter(cf => cf.status === 'active') || [];
+  const requestedContractFacilities = modalContract?.contract_facilities?.filter(cf => cf.status === 'pending') || [];
 
   return (
     <>
