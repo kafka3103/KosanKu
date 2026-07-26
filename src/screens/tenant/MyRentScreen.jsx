@@ -491,49 +491,52 @@ const MyRentScreen = ({ navigation }) => {
             </View>
           )}
 
-          {/* Recent Invoices */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
-            </View>
-
-            {recentInvoices.length === 0 ? (
-              <View style={styles.emptyInvoice}>
-                <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
-              </View>
-            ) : (
-              recentInvoices.map((invoice) => {
-                const statusConfig = getInvoiceStatusConfig(t);
-                const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
-                return (
-                  <TouchableOpacity
-                    key={invoice.id}
-                    style={styles.invoiceCard}
-                    onPress={() =>
-                      navigation.navigate(TENANT_SCREENS.INVOICE_DETAIL, { invoice })
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.invoiceLeft}>
-                      <Ionicons name={status.icon} size={24} color={status.color} />
-                      <View>
-                        <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
-                        <Text style={[styles.invoiceStatus, { color: status.color }]}>
-                          {status.label}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={styles.invoiceAmount}>
-                      {formatCurrency(invoice.total_amount)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })
-            )}
-          </View>
           </View>
         );
       })}
+
+      {/* Recent Invoices - Dipindahkan ke luar agar penyewa tanpa kontrak aktif tetap bisa membayar */}
+      {(recentInvoices.length > 0 || contracts.length > 0) && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
+          </View>
+
+          {recentInvoices.length === 0 ? (
+            <View style={styles.emptyInvoice}>
+              <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
+            </View>
+          ) : (
+            recentInvoices.map((invoice) => {
+              const statusConfig = getInvoiceStatusConfig(t);
+              const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
+              return (
+                <TouchableOpacity
+                  key={invoice.id}
+                  style={styles.invoiceCard}
+                  onPress={() =>
+                    navigation.navigate(TENANT_SCREENS.INVOICE_DETAIL, { invoice })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.invoiceLeft}>
+                    <Ionicons name={status.icon} size={24} color={status.color} />
+                    <View>
+                      <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
+                      <Text style={[styles.invoiceStatus, { color: status.color }]}>
+                        {status.label}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.invoiceAmount}>
+                    {formatCurrency(invoice.total_amount)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </View>
+      )}
     </ScrollView>
 
       {/* Facility Request Modal */}
