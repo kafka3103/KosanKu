@@ -601,7 +601,7 @@ export const approveRentalRequest = async (requestId) => {
           invoice_number: invoiceNumber,
           billing_period: request.requested_start_date,
           due_date: dueDate.toISOString().split('T')[0],
-          total_amount: request.monthly_rate,
+          total_amount: request.monthly_rate * (request.duration_months || 1),
           status: 'unpaid',
         })
         .select()

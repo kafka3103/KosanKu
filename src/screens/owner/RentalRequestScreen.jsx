@@ -62,6 +62,15 @@ const formatDate = (dateStr) => {
   }
 };
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '—';
+  try {
+    return format(new Date(dateStr), 'd MMM yyyy, HH:mm', { locale: idLocale });
+  } catch {
+    return dateStr;
+  }
+};
+
 const RequestCard = ({ request, onApprove, onReject, t }) => {
   const statusConfig = STATUS_CONFIG(t);
   const status = statusConfig[request.status] ?? statusConfig.pending;
@@ -87,7 +96,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
           <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
           <Text style={styles.tenantPhone}>{tenant?.phone_number ?? tenant?.email ?? '—'}</Text>
         </View>
-        {tenant?.phone_number && (
+        {tenant?.phone_number ? (
           <TouchableOpacity
             style={{ padding: 8, backgroundColor: '#E8F9F0', borderRadius: 20, marginLeft: 8 }}
             onPress={() => {
@@ -100,7 +109,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
           >
             <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
       {/* Room Info */}
@@ -129,16 +138,26 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
             <Text style={styles.infoBold}>{formatCurrency(request.monthly_rate)}/{t('ownerRentalRequest.monthAbbr', 'bln')}</Text>
           </Text>
         </View>
-        {request.tenant_message && (
+        {request.tenant_message ? (
           <View style={styles.messageBox}>
             <Text style={styles.messageLabel}>{t('ownerRentalRequest.tenantMsg', 'Pesan Tenant:')}</Text>
             <Text style={styles.messageText}>{request.tenant_message}</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
+      {/* Expiry Warning */}
+      {request.status === 'pending' && request.expires_at ? (
+        <View style={styles.expiryWarning}>
+          <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
+          <Text style={styles.expiryText}>
+            {t('ownerRentalRequest.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(request.expires_at) })}
+          </Text>
+        </View>
+      ) : null}
+
       {/* Actions (hanya untuk status pending) */}
-      {request.status === 'pending' && (
+      {request.status === 'pending' ? (
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={styles.rejectBtn}
@@ -161,15 +180,15 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
             </View>
           </TouchableOpacity>
         </View>
-      )}
+      ) : null}
 
       {/* Rejection reason (jika ditolak) */}
-      {request.status === 'rejected' && request.owner_rejection_reason && (
+      {request.status === 'rejected' && request.owner_rejection_reason ? (
         <View style={styles.rejectionBox}>
           <Text style={styles.rejectionLabel}>{t('ownerRentalRequest.rejectReasonLabel', 'Alasan Penolakan:')}</Text>
           <Text style={styles.rejectionText}>{request.owner_rejection_reason}</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 };
@@ -288,42 +307,6 @@ const RentalRequestScreen = ({ navigation }) => {
     }
   };
 
-  // Facility Actions
-  const handleApproveFacility = (request) => {
-    setApproveFacilityModal({ visible: true, request });
-    setFacilityPrice('');
-  };
-
-  const confirmApproveFacility = async () => {
-    const price = parseInt(facilityPrice.replace(/\D/g, ''), 10);
-    if (isNaN(price) || price < 0) {
-      Alert.alert('Error', t('ownerRentalRequest.reqPriceError', 'Harga valid wajib diisi'));
-      return;
-    }
-    setIsProcessing(true);
-    const { error } = await approveFacilityRequest(approveFacilityModal.request.id, price);
-    setIsProcessing(false);
-    if (error) {
-      Alert.alert(t('ownerRentalRequest.failTitle', 'Gagal'), error.message);
-    } else {
-      setFacilityRequests(prev => prev.filter(r => r.id !== approveFacilityModal.request.id));
-      setApproveFacilityModal({ visible: false, request: null });
-      Alert.alert(t('ownerRentalRequest.approveSuccessTitle', 'Berhasil'), t('ownerRentalRequest.facilityApproveSuccessMsg', 'Fasilitas disetujui, tagihan akan bertambah di bulan berikutnya.'));
-    }
-  };
-
-  const handleRejectFacility = (request) => {
-    Alert.alert(t('ownerRentalRequest.rejectTitle', 'Tolak Pengajuan'), t('ownerRentalRequest.facilityRejectConfirmMsg', 'Yakin ingin menolak pengajuan fasilitas ini?'), [
-      { text: t('ownerRentalRequest.cancel', 'Batal'), style: 'cancel' },
-      { text: t('ownerRentalRequest.btnReject', 'Tolak'), style: 'destructive', onPress: async () => {
-        setIsProcessing(true);
-        const { error } = await rejectFacilityRequest(request.id);
-        setIsProcessing(false);
-        if (error) Alert.alert(t('ownerRentalRequest.failTitle', 'Gagal'), error.message);
-        else setFacilityRequests(prev => prev.filter(r => r.id !== request.id));
-      }}
-    ]);
-  };
 
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const filters = [
@@ -355,39 +338,13 @@ const RentalRequestScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('ownerRentalRequest.headerTitle', 'Pengajuan Sewa')}</Text>
-        {pendingCount > 0 && activeTab === 'rental' && (
+        {pendingCount > 0 && (
           <Text style={styles.headerSubtitle}>{t('ownerRentalRequest.pendingSubtitleRental', '{{count}} pengajuan menunggu konfirmasi', { count: pendingCount })}</Text>
         )}
-        {facilityRequests.length > 0 && activeTab === 'facility' && (
-          <Text style={styles.headerSubtitle}>{t('ownerRentalRequest.pendingSubtitleFacility', '{{count}} fasilitas perlu persetujuan', { count: facilityRequests.length })}</Text>
-        )}
       </View>
 
-      {/* Main Tabs (Sewa Kos vs Fasilitas) */}
-      <View style={styles.mainTabsContainer}>
-        <TouchableOpacity 
-          style={[styles.mainTab, activeTab === 'rental' && styles.mainTabActive]}
-          onPress={() => setActiveTab('rental')}
-        >
-          <Text style={[styles.mainTabText, activeTab === 'rental' && styles.mainTabTextActive]}>{t('ownerRentalRequest.tabRental', 'Sewa Kos')}</Text>
-          {pendingCount > 0 && (
-            <View style={styles.mainTabBadge}><Text style={styles.mainTabBadgeText}>{pendingCount}</Text></View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.mainTab, activeTab === 'facility' && styles.mainTabActive]}
-          onPress={() => setActiveTab('facility')}
-        >
-          <Text style={[styles.mainTabText, activeTab === 'facility' && styles.mainTabTextActive]}>{t('ownerRentalRequest.tabFacility', 'Fasilitas Opsional')}</Text>
-          {facilityRequests.length > 0 && (
-            <View style={styles.mainTabBadge}><Text style={styles.mainTabBadgeText}>{facilityRequests.length}</Text></View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Filter Tabs (hanya untuk rental) */}
-      {activeTab === 'rental' && (
-        <View style={styles.filterContainer}>
+      {/* Filter Tabs */}
+      <View style={styles.filterContainer}>
           <FlatList
             data={filters}
             horizontal
@@ -408,7 +365,7 @@ const RentalRequestScreen = ({ navigation }) => {
 
       {/* Requests List */}
       <FlatList
-        data={activeTab === 'rental' ? filteredRequests : facilityRequests}
+        data={filteredRequests}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
@@ -422,54 +379,20 @@ const RentalRequestScreen = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Ionicons name={activeTab === 'rental' ? "mail-open-outline" : "sparkles-outline"} size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>{activeTab === 'rental' ? t('ownerRentalRequest.emptyTitleRental', 'Belum Ada Pengajuan') : t('ownerRentalRequest.emptyTitleFacility', 'Tidak Ada Pengajuan')}</Text>
-            <Text style={styles.emptySubtitle}>{activeTab === 'rental' ? t('ownerRentalRequest.emptySubtitleRental', 'Pengajuan sewa dari calon penghuni akan muncul di sini') : t('ownerRentalRequest.emptySubtitleFacility', 'Belum ada tenant yang mengajukan fasilitas tambahan.')}</Text>
+            <Ionicons name="mail-open-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
+            <Text style={styles.emptyTitle}>{t('ownerRentalRequest.emptyTitleRental', 'Belum Ada Pengajuan')}</Text>
+            <Text style={styles.emptySubtitle}>{t('ownerRentalRequest.emptySubtitleRental', 'Pengajuan sewa dari calon penghuni akan muncul di sini')}</Text>
           </View>
         )}
         renderItem={({ item }) => {
-          if (activeTab === 'rental') {
-            return (
-              <RequestCard
-                request={item}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                t={t}
-              />
-            );
-          } else {
-            // Facility Request Card
-            const tenant = item.contracts?.users;
-            const room = item.contracts?.rooms;
-            const property = room?.properties;
-            return (
-              <View style={styles.card}>
-                <View style={[styles.cardStatusBadge, { backgroundColor: COLORS.warningLight }]}>
-                  <Text style={[styles.cardStatusText, { color: COLORS.warning }]}>{t('ownerRentalRequest.statusPending', 'Menunggu')}</Text>
-                </View>
-                <View style={styles.tenantRow}>
-                  <View style={styles.tenantAvatar}><Text style={styles.tenantAvatarText}>{tenant?.full_name?.[0]?.toUpperCase() ?? 'T'}</Text></View>
-                  <View style={styles.tenantInfo}>
-                    <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
-                    <Text style={styles.tenantPhone}>{tenant?.phone_number ?? '—'}</Text>
-                  </View>
-                </View>
-                <View style={styles.roomInfoBox}>
-                  <Text style={styles.infoRow}><Text style={styles.infoBold}>{property?.name}</Text> · {t('ownerRentalRequest.room', 'Kamar')} {room?.room_number}</Text>
-                  <Text style={[styles.infoRow, { marginTop: 4 }]}><Text style={styles.infoBold}>{t('ownerRentalRequest.facilityLabel', 'Fasilitas:')}</Text> {item.facility_master?.name}</Text>
-                  <Text style={[styles.infoRow, { marginTop: 4 }]}><Text style={styles.infoBold}>{t('ownerRentalRequest.submittedLabel', 'Diajukan:')}</Text> {formatDate(item.created_at)}</Text>
-                </View>
-                <View style={styles.cardActions}>
-                  <TouchableOpacity style={styles.rejectBtn} onPress={() => handleRejectFacility(item)}>
-                    <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} /><Text style={styles.rejectBtnText}>{t('ownerRentalRequest.btnReject', 'Tolak')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.approveBtn} onPress={() => handleApproveFacility(item)}>
-                    <Ionicons name="checkmark" size={16} color={COLORS.white} style={{ marginRight: 4 }} /><Text style={styles.approveBtnText}>{t('ownerRentalRequest.btnSetApprove', 'Set Harga & Setujui')}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          }
+          return (
+            <RequestCard
+              request={item}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              t={t}
+            />
+          );
         }}
       />
 
@@ -518,54 +441,7 @@ const RentalRequestScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-      {/* Approve Facility Modal */}
-      <Modal
-        visible={approveFacilityModal.visible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setApproveFacilityModal({ visible: false, request: null })}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{t('ownerRentalRequest.facilityApproveTitle', 'Setujui Fasilitas Tambahan')}</Text>
-            <Text style={styles.modalSubtitle}>
-              {t('ownerRentalRequest.facilityApproveSubtitle', 'Tentukan harga sewa per bulan untuk fasilitas {{facility}}:', { facility: approveFacilityModal.request?.facility_master?.name })}
-            </Text>
-            <View style={styles.priceInputContainer}>
-              <Text style={styles.currencyPrefix}>Rp</Text>
-              <TextInput
-                style={styles.priceInput}
-                placeholder="0"
-                keyboardType="number-pad"
-                value={facilityPrice}
-                onChangeText={(text) => {
-                  const num = text.replace(/\D/g, '');
-                  setFacilityPrice(num ? parseInt(num, 10).toLocaleString('id-ID') : '');
-                }}
-              />
-            </View>
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setApproveFacilityModal({ visible: false, request: null })}
-              >
-                <Text style={styles.modalCancelText}>{t('ownerRentalRequest.cancel', 'Batal')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalApproveBtn, isProcessing && { opacity: 0.7 }]}
-                onPress={confirmApproveFacility}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator color={COLORS.white} size="small" />
-                ) : (
-                  <Text style={styles.modalApproveText}>{t('ownerRentalRequest.btnApprove', 'Setujui')}</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+
     </View>
   );
 };
@@ -721,6 +597,19 @@ const styles = StyleSheet.create({
     padding: SPACING[3],
     gap: SPACING[1],
     marginBottom: SPACING[3],
+  },
+  expiryWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.errorLight,
+    padding: SPACING[2],
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING[3],
+  },
+  expiryText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.error,
+    fontWeight: FONT_WEIGHT.medium,
   },
   infoRow: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   infoBold: { fontWeight: FONT_WEIGHT.semiBold, color: COLORS.textPrimary },

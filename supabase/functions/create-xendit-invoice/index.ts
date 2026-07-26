@@ -22,31 +22,27 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const { invoice_id, user_id, payment_methods } = body;
+    // 1. Parse Request
+    const reqBody = await req.json();
+    const { invoice_id, user_id: callerUserId, payment_methods, amount: requestedAmount } = reqBody;
+
     if (!invoice_id) {
-      return new Response(JSON.stringify({ success: false, error: "invoice_id is required" }), {
+      return new Response(JSON.stringify({ success: false, error: "invoice_id wajib disertakan" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 1. Verifikasi Pengguna (dari JWT Token atau fallback ke user_id)
-    const authHeader = req.headers.get("Authorization");
-    let callerUserId = user_id || null;
+    // Ekstrak token & user email untuk fallback (opsional)
+    const authHeader = req.headers.get("Authorization") || "";
     let callerEmail = "tenant@kosanku.com";
-
     if (authHeader && authHeader !== `Bearer ${SUPABASE_ANON_KEY}` && authHeader !== SUPABASE_ANON_KEY) {
       try {
-        const supabaseUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const { data: { user } } = await supabaseUser.auth.getUser();
-        if (user) {
-          callerUserId = user.id;
-          if (user.email) callerEmail = user.email;
-        }
-      } catch (_) {
+        const token = authHeader.replace("Bearer ", "");
+        const payloadStr = atob(token.split(".")[1]);
+        const payload = JSON.parse(payloadStr);
+        if (payload.email) callerEmail = payload.email;
+      } catch (e) {
         // Abaikan jika token expired, gunakan callerUserId dari body
       }
     }
@@ -82,8 +78,55 @@ serve(async (req) => {
       });
     }
 
-    // Hitung sisa tagihan yang harus dibayar
-    const amountToPay = Math.round(parseFloat(invoice.total_amount) - parseFloat(invoice.paid_amount || 0));
+    // 3. Validasi & Hitung sisa tagihan yang harus dibayar
+    const totalAmount = parseFloat(invoice.total_amount);
+    const paidAmount = parseFloat(invoice.paid_amount || 0);
+    const remainingAmount = totalAmount - paidAmount;
+    
+    // Default amount to pay is the remaining amount
+    let amountToPay = remainingAmount;
+    
+    if (requestedAmount) {
+      const parsedRequestedAmount = Math.round(parseFloat(requestedAmount));
+      
+      // Validasi 1: Cegah Overpayment
+      if (parsedRequestedAmount > remainingAmount) {
+        return new Response(JSON.stringify({ success: false, error: `Jumlah pembayaran melebihi sisa tagihan (Rp ${remainingAmount})` }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Validasi 2: Cegah Underpayment (Minimum DP 50% untuk pembayaran pertama)
+      if (paidAmount === 0) {
+        const minDP = totalAmount * 0.5;
+        if (parsedRequestedAmount < minDP) {
+          return new Response(JSON.stringify({ success: false, error: `Pembayaran pertama (DP) minimal 50% (Rp ${minDP})` }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } 
+      // Validasi 3: Cegah Underpayment cicilan (Min 10% sisa atau 100rb)
+      else {
+        let minPayment = Math.max(100000, remainingAmount * 0.1);
+        if (remainingAmount <= 100000) {
+          minPayment = remainingAmount; // Wajib lunas jika sisa dikit
+        }
+        
+        if (parsedRequestedAmount < minPayment) {
+          return new Response(JSON.stringify({ success: false, error: `Minimum pembayaran cicilan adalah Rp ${minPayment}` }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+      
+      amountToPay = parsedRequestedAmount;
+    }
+    
+    // Pastikan amountToPay dibulatkan ke integer
+    amountToPay = Math.round(amountToPay);
 
     // Ambil data penyewa (tenant) terpisah
     const { data: tenant } = await supabaseAdmin
@@ -122,8 +165,9 @@ serve(async (req) => {
 
     // 3. Panggil API Xendit untuk Create Invoice (POST https://api.xendit.co/v2/invoices)
     const basicAuth = btoa(`${XENDIT_SECRET_KEY}:`);
+    const uniqueExternalId = `${invoice.id}_${Date.now()}`;
     const xenditPayload = {
-      external_id: invoice.id,
+      external_id: uniqueExternalId,
       amount: amountToPay,
       description: `Tagihan ${invoice.invoice_number || invoice.id} - Kamar ${roomNumber} (${propName})`,
       invoice_duration: 86400, // 24 jam masa kedaluwarsa

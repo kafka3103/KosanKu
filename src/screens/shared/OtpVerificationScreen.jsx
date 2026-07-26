@@ -68,8 +68,8 @@ const OtpVerificationScreen = ({ route, navigation }) => {
         </TouchableOpacity>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>{t('auth.login.forgotPassword.otpTitle') || 'Enter OTP to Verify Your Identity'}</Text>
-          <Text style={styles.subtitle}>{t('auth.login.forgotPassword.otpSubtitle') || 'A one-time password (OTP) has been sent to your registered email address.'}</Text>
+          <Text style={styles.title}>{t('auth.forgotPassword.otpTitle') || 'Enter OTP to Verify Your Identity'}</Text>
+          <Text style={styles.subtitle}>{t('auth.forgotPassword.otpSubtitle') || 'A one-time password (OTP) has been sent to your registered email address.'}</Text>
 
           <View style={styles.otpInputContainer}>
             <TextInput
@@ -86,7 +86,7 @@ const OtpVerificationScreen = ({ route, navigation }) => {
           <View style={styles.resendContainer}>
             {countdown > 0 ? (
               <Text style={styles.resendText}>
-                {t('auth.login.forgotPassword.resendCode') || 'Resend code in'} 00:{countdown.toString().padStart(2, '0')}
+                {t('auth.forgotPassword.resendCode') || 'Resend code in'} 00:{countdown.toString().padStart(2, '0')}
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResendOtp} disabled={isResending}>
@@ -109,7 +109,7 @@ const OtpVerificationScreen = ({ route, navigation }) => {
             {isVerifying ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
-              <Text style={styles.buttonText}>{t('auth.login.forgotPassword.confirmButton') || 'Confirm'}</Text>
+              <Text style={styles.buttonText}>{t('auth.forgotPassword.confirmButton') || 'Confirm'}</Text>
             )}
           </TouchableOpacity>
         </View>

@@ -40,13 +40,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>{t('auth.login.forgotPassword.title') || 'Enter Your Email to Proceed'}</Text>
-        <Text style={styles.subtitle}>{t('auth.login.forgotPassword.subtitle') || 'Please enter your registered email to continue.'}</Text>
+        <Text style={styles.title}>{t('auth.forgotPassword.title') || 'Enter Your Email to Proceed'}</Text>
+        <Text style={styles.subtitle}>{t('auth.forgotPassword.subtitle') || 'Please enter your registered email to continue.'}</Text>
 
-        <Text style={styles.label}>{t('auth.login.forgotPassword.emailLabel') || 'Email'}</Text>
+        <Text style={styles.label}>{t('auth.forgotPassword.emailLabel') || 'Email'}</Text>
         <TextInput
           style={styles.input}
-          placeholder={t('auth.login.forgotPassword.emailPlaceholder') || 'xxxx@gmail.com'}
+          placeholder={t('auth.forgotPassword.emailPlaceholder') || 'xxxx@gmail.com'}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -62,7 +62,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           {isLoading ? (
             <ActivityIndicator color={COLORS.white} />
           ) : (
-            <Text style={styles.buttonText}>{t('auth.login.forgotPassword.sendOtpButton') || 'Send OTP'}</Text>
+            <Text style={styles.buttonText}>{t('auth.forgotPassword.sendOtpButton') || 'Send OTP'}</Text>
           )}
         </TouchableOpacity>
       </View>

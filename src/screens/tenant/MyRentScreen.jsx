@@ -72,6 +72,15 @@ const formatDate = (dateStr, lang) => {
   }
 };
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '—';
+  try {
+    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm', { locale: idLocale });
+  } catch {
+    return dateStr;
+  }
+};
+
 const formatPeriod = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
@@ -102,11 +111,14 @@ const MyRentScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
-  const [contract, setContract] = useState(null);
+  const [contracts, setContracts] = useState([]);
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [rentalRequests, setRentalRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // State for rendering error on screen
+  const [contractFetchError, setContractFetchError] = useState(null);
 
   // States for Requesting Facility
   const [showFacilityModal, setShowFacilityModal] = useState(false);
@@ -123,9 +135,16 @@ const MyRentScreen = ({ navigation }) => {
       getTenantRentalRequests(currentUser.id),
     ]);
 
-    if (!contractResult.error) setContract(contractResult.data);
+    if (contractResult.error) {
+      console.warn('ERROR FETCHING CONTRACT:', contractResult.error);
+      setContractFetchError(contractResult.error);
+    } else {
+      setContractFetchError(null);
+      setContracts(contractResult.data || []);
+    }
+
     if (!invoicesResult.error && invoicesResult.data) {
-      setRecentInvoices(invoicesResult.data.slice(0, 3));
+      setRecentInvoices(invoicesResult.data);
     }
     if (!requestsResult.error && requestsResult.data) {
       setRentalRequests(requestsResult.data.filter((r) => ['pending', 'approved'].includes(r.status)));
@@ -157,27 +176,7 @@ const MyRentScreen = ({ navigation }) => {
     };
   }, [currentUser?.id, loadData]);
 
-  const handleCallOwner = (phone) => {
-    if (!phone) return;
-    Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() =>
-      Alert.alert(t('myRent.callFail', 'Gagal'), t('myRent.callFailMsg', 'Tidak bisa membuka aplikasi telepon'))
-    );
-  };
 
-  const handleRequestFacility = async (facilityId) => {
-    if (!contract?.id) return;
-    setIsRequesting(true);
-    const { error } = await requestOptionalFacility(contract.id, facilityId);
-    setIsRequesting(false);
-    
-    if (error) {
-      Alert.alert(t('myRent.reqFail', 'Gagal'), error.message || t('myRent.reqFailMsg', 'Terjadi kesalahan saat mengajukan fasilitas.'));
-    } else {
-      setShowFacilityModal(false);
-      Alert.alert(t('myRent.reqSuccess', 'Berhasil'), t('myRent.reqSuccessMsg', 'Pengajuan fasilitas terkirim. Menunggu persetujuan pemilik.'));
-      loadData(true);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -188,7 +187,7 @@ const MyRentScreen = ({ navigation }) => {
   }
 
   // Belum punya hunian aktif
-  if (!contract && rentalRequests.length === 0) {
+  if (contracts.length === 0 && rentalRequests.length === 0) {
     return (
       <ScrollView
         style={styles.container}
@@ -229,12 +228,7 @@ const MyRentScreen = ({ navigation }) => {
     );
   }
 
-  const room = contract?.rooms;
-  const property = room?.properties;
-  const owner = property?.users;
-  const facilities = room?.room_facilities?.map((rf) => rf.facility_master?.name).filter(Boolean) ?? [];
-  const activeContractFacilities = (contract?.contract_facilities || []).filter((f) => f.status === 'active');
-  const requestedContractFacilities = (contract?.contract_facilities || []).filter((f) => f.status === 'requested');
+
 
   return (
     <>
@@ -258,14 +252,23 @@ const MyRentScreen = ({ navigation }) => {
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
             <Text style={styles.headerSubtitle}>
-              {contract ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
+              {contracts.length > 0 ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
             </Text>
           </View>
         </View>
       </View>
 
+      {/* Error State if contract failed */}
+      {contractFetchError && (
+        <View style={{ padding: 20, backgroundColor: '#ffebee', margin: 16, borderRadius: 8 }}>
+          <Text style={{ color: '#c62828', fontWeight: 'bold' }}>ERROR FETCHING CONTRACT:</Text>
+          <Text style={{ color: '#c62828' }}>{JSON.stringify(contractFetchError, null, 2)}</Text>
+        </View>
+      )}
+
+
       {/* Pengajuan Pending (jika belum punya kontrak) */}
-      {!contract && rentalRequests.length > 0 && (
+      {(contracts.length === 0) && rentalRequests.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('myRent.rentRequest', 'Pengajuan Sewa')}</Text>
           {rentalRequests.map((req) => {
@@ -286,13 +289,21 @@ const MyRentScreen = ({ navigation }) => {
                 <Text style={styles.requestDate}>
                   {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at) })}
                 </Text>
-                {req.status === 'rejected' && req.owner_rejection_reason && (
+                {req.status === 'pending' && req.expires_at ? (
+                  <View style={styles.expiryWarning}>
+                    <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
+                    <Text style={styles.expiryText}>
+                      {t('myRent.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(req.expires_at) })}
+                    </Text>
+                  </View>
+                ) : null}
+                {req.status === 'rejected' && req.owner_rejection_reason ? (
                   <View style={styles.rejectionBox}>
                     <Text style={styles.rejectionText}>
                       {t('myRent.reason', 'Alasan: {{reason}}', { reason: req.owner_rejection_reason })}
                     </Text>
                   </View>
-                )}
+                ) : null}
               </View>
             );
           })}
@@ -325,7 +336,9 @@ const MyRentScreen = ({ navigation }) => {
                     {property?.address_line}, {property?.city}
                   </Text>
                 </View>
-                <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)} {t('myRent.perMonth', 'per month')}</Text>
+                <Text style={styles.roomPrice}>
+                  {formatCurrency(contract.monthly_rate)}{t('roomDetail.perMonth', '/bulan')}
+                </Text>
               </View>
             </View>
 
@@ -333,12 +346,12 @@ const MyRentScreen = ({ navigation }) => {
             <View style={styles.contractDates}>
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.start_date, i18n.language)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
               </View>
               <View style={styles.dateSeparator} />
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.end_date, i18n.language)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
               </View>
             </View>
 
@@ -349,7 +362,7 @@ const MyRentScreen = ({ navigation }) => {
                 <View style={styles.facilitiesWrap}>
                   {facilities.map((f, i) => (
                     <View key={i} style={styles.facilityTag}>
-                      <DynamicText style={styles.facilityTagText}>{f}</DynamicText>
+                      <Text style={styles.facilityTagText}>{f}</Text>
                     </View>
                   ))}
                 </View>
@@ -368,9 +381,9 @@ const MyRentScreen = ({ navigation }) => {
 
                 {activeContractFacilities.map((cf) => (
                   <View key={cf.id} style={styles.optionalFacilityItem}>
-                    <DynamicText style={styles.optionalFacilityName}>
+                    <Text style={styles.optionalFacilityName}>
                       {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
-                    </DynamicText>
+                    </Text>
                     <Text style={styles.optionalFacilityPrice}>
                       {formatCurrency(cf.price_per_month)}{t('roomDetail.perMonth', '/bulan')}
                     </Text>
@@ -379,9 +392,9 @@ const MyRentScreen = ({ navigation }) => {
 
                 {requestedContractFacilities.map((cf) => (
                   <View key={cf.id} style={styles.optionalFacilityItem}>
-                    <DynamicText style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
+                    <Text style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
                       {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
-                    </DynamicText>
+                    </Text>
                     <View style={styles.requestBadgeInline}>
                       <Text style={styles.requestBadgeTextInline}>{t('myRent.waitingConfirm', 'Menunggu Konfirmasi')}</Text>
                     </View>
@@ -468,7 +481,7 @@ const MyRentScreen = ({ navigation }) => {
                     <View style={styles.invoiceLeft}>
                       <Ionicons name={status.icon} size={24} color={status.color} />
                       <View>
-                        <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n.language)}</Text>
+                        <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
                         <Text style={[styles.invoiceStatus, { color: status.color }]}>
                           {status.label}
                         </Text>
@@ -518,9 +531,9 @@ const MyRentScreen = ({ navigation }) => {
                     onPress={() => handleRequestFacility(facility.id)}
                   >
                     <View style={styles.facilityOptionLeft}>
-                      <Ionicons name={FACILITY_ICON_MAP[facility.icon_name] || facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
+                      <Ionicons name={facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
                       <View style={{ marginLeft: 12 }}>
-                        <DynamicText style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</DynamicText>
+                        <Text style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</Text>
                         {isAlreadyActive ? (
                           <Text style={styles.facilityOptionStatus}>{t('myRent.installed', 'Sudah terpasang')}</Text>
                         ) : isAlreadyRequested ? (
@@ -636,6 +649,19 @@ const styles = StyleSheet.create({
   },
   requestRoom: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   requestDate: { fontSize: FONT_SIZE.xs, color: COLORS.textTertiary, marginTop: 4 },
+  expiryWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.errorLight,
+    padding: SPACING[2],
+    borderRadius: BORDER_RADIUS.md,
+    marginTop: SPACING[2],
+  },
+  expiryText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.error,
+    fontWeight: FONT_WEIGHT.medium,
+  },
   rejectionBox: {
     backgroundColor: COLORS.errorLight,
     borderRadius: BORDER_RADIUS.sm,

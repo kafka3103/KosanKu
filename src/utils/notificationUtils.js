@@ -57,3 +57,54 @@ export async function registerForPushNotificationsAsync() {
 
   return token;
 }
+
+/**
+ * Schedule a local notification to be shown after a certain delay.
+ * @param {string} title - The title of the notification.
+ * @param {string} body - The body message of the notification.
+ * @param {object} data - Optional data payload to pass with the notification.
+ * @param {number} delaySeconds - Delay in seconds before showing the notification.
+ */
+export async function scheduleLocalNotification(title, body, data = {}, delaySeconds = 2) {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: title,
+      body: body,
+      data: data,
+      sound: true,
+    },
+    trigger: {
+      seconds: delaySeconds,
+      channelId: 'default',
+    },
+  });
+}
+
+/**
+ * Setup listeners for foreground notifications and background/terminated notification interactions.
+ * @param {function} onNotificationReceived - Callback when a notification is received in foreground.
+ * @param {function} onNotificationResponse - Callback when a user taps a notification (background/terminated).
+ * @returns {function} Cleanup function to remove listeners.
+ */
+export function setupNotificationListeners(onNotificationReceived, onNotificationResponse) {
+  // Listener untuk Foreground Notification
+  const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
+    console.log('Foreground Notification Received:', notification);
+    if (onNotificationReceived) {
+      onNotificationReceived(notification);
+    }
+  });
+
+  // Listener untuk interaksi pengguna (saat menekan banner notifikasi dari Background/Terminated)
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    console.log('Notification Response Received (Tapped):', response);
+    if (onNotificationResponse) {
+      onNotificationResponse(response);
+    }
+  });
+
+  return () => {
+    foregroundSubscription.remove();
+    responseSubscription.remove();
+  };
+}
