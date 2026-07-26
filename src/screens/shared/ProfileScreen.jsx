@@ -319,18 +319,7 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
 
-          />
-        }
-      >
       {/* Avatar Section */}
       <View style={styles.avatarSection}>
         <TouchableOpacity
