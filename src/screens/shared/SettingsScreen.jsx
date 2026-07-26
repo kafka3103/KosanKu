@@ -276,7 +276,7 @@ const SettingsScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Konfirmasi Hapus Akun</Text>
+              <Text style={styles.modalTitle}>{t('settings.deleteAccountConfirm', 'Konfirmasi Hapus Akun')}</Text>
               <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
                 <Ionicons name="close" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
@@ -311,7 +311,7 @@ const SettingsScreen = ({ navigation }) => {
               {isDeleting ? (
                 <ActivityIndicator color={COLORS.white} />
               ) : (
-                <Text style={styles.modalDeleteBtnText}>Hapus Akun Permanen</Text>
+                <Text style={styles.modalDeleteBtnText}>{t('settings.deleteAccountPermanent', 'Hapus Akun Permanen')}</Text>
               )}
             </TouchableOpacity>
           </View>

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
@@ -48,7 +49,7 @@ const ContractDetailScreen = ({ route, navigation }) => {
   if (!request) {
     return (
       <View style={styles.center}>
-        <Text>Data tidak ditemukan</Text>
+        <Text>{t('common.dataNotFound', 'Data tidak ditemukan')}</Text>
       </View>
     );
   }
@@ -108,7 +109,18 @@ const ContractDetailScreen = ({ route, navigation }) => {
           {request.status === 'rejected' && request.owner_rejection_reason && (
             <View style={styles.rejectionBox}>
               <Text style={styles.rejectionText}>
-                {t('myRent.reason', 'Alasan: {{reason}}', { reason: request.owner_rejection_reason })}
+                {t('myRent.reason', 'Alasan: {{reason}}', { reason: getLocalizedField(request, 'owner_rejection_reason') })}
+              </Text>
+            </View>
+          )}
+
+          {request.status === 'approved' && !contract && (
+            <View style={{ backgroundColor: COLORS.warningLight, padding: 12, borderRadius: 8, marginTop: 12 }}>
+              <Text style={{ color: COLORS.warning, fontWeight: 'bold' }}>
+                {t('myRent.waitingInvoice', 'Menunggu Pembuatan Tagihan')}
+              </Text>
+              <Text style={{ color: COLORS.warning, fontSize: 12, marginTop: 4 }}>
+                {t('myRent.waitingInvoiceMsg', 'Kontrak dan tagihan sedang diproses. Silakan hubungi pemilik kos jika ini memakan waktu terlalu lama.')}
               </Text>
             </View>
           )}

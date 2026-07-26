@@ -334,7 +334,7 @@ const MyRentScreen = ({ navigation }) => {
                 {req.status === 'rejected' && req.owner_rejection_reason ? (
                   <View style={styles.rejectionBox}>
                     <Text style={styles.rejectionText}>
-                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: getLocalizedField(req, 'owner_rejection_reason', i18n.language) })}
+                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: getLocalizedField(req, 'owner_rejection_reason') })}
                     </Text>
                   </View>
                 ) : null}

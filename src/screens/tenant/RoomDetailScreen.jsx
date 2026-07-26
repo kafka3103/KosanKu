@@ -222,7 +222,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                 </View>
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
-                    <View key={t('facilities.' + fac.name, fac.name)} style={styles.facilityItem}>
+                    <View key={fac.id || fac.name} style={styles.facilityItem}>
                       <Ionicons
                         name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
                         size={20}
@@ -230,7 +230,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                         style={{ marginRight: 4 }}
                       />
                       <View>
-                        <DynamicText style={styles.facilityName}>{fac.name}</DynamicText>
+                        <DynamicText style={styles.facilityName}>{getLocalizedField(fac, 'name')}</DynamicText>
                         {fac.additional_cost && (
                           <Text style={styles.additionalCost}>
                             +{formatCurrency(fac.additional_cost)}

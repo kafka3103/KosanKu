@@ -114,7 +114,7 @@ const PropertyCard = ({ property, onPress }) => {
         </View>
         {isOwnProperty && (
           <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: 'red', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
-            <Text style={[styles.availableTagText, { color: 'white', fontWeight: 'bold' }]}>Kos Sendiri</Text>
+            <Text style={[styles.availableTagText, { color: 'white', fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Sendiri')}</Text>
           </View>
         )}
         <View style={styles.genderTag}>

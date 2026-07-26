@@ -233,12 +233,12 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
         <View style={styles.content}>
           {targetRole === USER_ROLE.OWNER ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Verifikasi Identitas</Text>
+              <Text style={styles.sectionTitle}>{t('auth.roleRegistration.verifyIdentity', 'Verifikasi Identitas')}</Text>
               <Text style={styles.sectionSubtitle}>
-                Untuk keamanan, mohon masukkan Nomor Induk Kependudukan (NIK) Anda.
+                {t('auth.roleRegistration.verifyIdentitySubtitle', 'Untuk keamanan, mohon masukkan Nomor Induk Kependudukan (NIK) Anda.')}
               </Text>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>NIK (16 digit angka)</Text>
+                <Text style={styles.inputLabel}>{t('auth.roleRegistration.nikLabel', 'NIK (16 digit angka)')}</Text>
                 <TextInput
                   style={[styles.textInput, isNiksLocked && { backgroundColor: COLORS.grey200, color: COLORS.textSecondary }]}
                   placeholder="Contoh: 3201234567890123"
@@ -252,7 +252,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
             </View>
           ) : (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Lengkapi Profil Pencari Kos</Text>
+              <Text style={styles.sectionTitle}>{t('auth.roleRegistration.completeTenantProfile', 'Lengkapi Profil Pencari Kos')}</Text>
               
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>NIK (16 digit angka)</Text>
@@ -278,7 +278,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
               </View>
               
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Nama Kontak Darurat</Text>
+                <Text style={styles.inputLabel}>{t('auth.roleRegistration.emergencyContactName', 'Nama Kontak Darurat')}</Text>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Nama kerabat/keluarga terdekat"

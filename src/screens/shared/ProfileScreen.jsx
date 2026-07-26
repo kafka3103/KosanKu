@@ -402,28 +402,28 @@ const ProfileScreen = ({ navigation }) => {
         {!isOwner && (
           <>
             <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
-              <Text style={styles.sectionTitle}>Data Tambahan Pencari Kos</Text>
+              <Text style={styles.sectionTitle}>{t('profile.tenantExtraData', 'Data Tambahan Pencari Kos')}</Text>
             </View>
             <EditableInfoRow
-              label="Pekerjaan / Status"
+              label={t('profile.occupation', 'Pekerjaan / Status')}
               value={occupation}
               onChangeText={setOccupation}
               icon="briefcase-outline"
-              placeholder="Cth: Mahasiswa, Karyawan"
+              placeholder={t('profile.occupationPlaceholder', 'Cth: Mahasiswa, Karyawan')}
             />
             <EditableInfoRow
-              label="Nama Kontak Darurat"
+              label={t('profile.emergencyName', 'Nama Kontak Darurat')}
               value={emergencyName}
               onChangeText={setEmergencyName}
               icon="shield-checkmark-outline"
-              placeholder="Nama kerabat/keluarga"
+              placeholder={t('profile.emergencyNamePlaceholder', 'Nama kerabat/keluarga')}
             />
             <EditableInfoRow
-              label="No. Telp Darurat"
+              label={t('profile.emergencyPhone', 'No. Telp Darurat')}
               value={emergencyPhone}
               onChangeText={setEmergencyPhone}
               icon="call-outline"
-              placeholder="Contoh: +628123456789"
+              placeholder={t('profile.emergencyPhonePlaceholder', 'Contoh: +628123456789')}
               keyboardType="phone-pad"
             />
           </>
@@ -477,7 +477,7 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.aboutValue}>1.0.0</Text>
         </View>
         <View style={styles.aboutRow}>
-          <Text style={styles.aboutLabel}>App</Text>
+          <Text style={styles.aboutLabel}>{t('profile.app', 'App')}</Text>
           <Text style={styles.aboutValue}>KosanKu</Text>
         </View>
       </View>
@@ -496,12 +496,12 @@ const ProfileScreen = ({ navigation }) => {
     <Modal visible={isGenderModalVisible} transparent animationType="fade">
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsGenderModalVisible(false)}>
         <View style={styles.actionSheet}>
-          <Text style={styles.actionSheetTitle}>Pilih Jenis Kelamin</Text>
+          <Text style={styles.actionSheetTitle}>{t('profile.selectGenderTitle', 'Pilih Jenis Kelamin')}</Text>
           <TouchableOpacity style={styles.actionSheetOption} onPress={() => { setGender('Laki-laki'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>Laki-laki</Text>
+            <Text style={styles.actionSheetOptionText}>{t('profile.genderMale', 'Laki-laki')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionSheetOption, { borderBottomWidth: 0 }]} onPress={() => { setGender('Perempuan'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>Perempuan</Text>
+            <Text style={styles.actionSheetOptionText}>{t('profile.genderFemale', 'Perempuan')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -514,14 +514,14 @@ const ProfileScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => setIsCityModalVisible(false)}>
             <Ionicons name="close" size={24} color={COLORS.text} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Pilih Kota Asal</Text>
+          <Text style={styles.modalTitle}>{t('profile.selectCityTitle', 'Pilih Kota Asal')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari kota atau kabupaten..."
+            placeholder={t('profile.citySearchPlaceholder', 'Cari kota atau kabupaten...')}
             value={citySearchText}
             onChangeText={setCitySearchText}
             autoFocus

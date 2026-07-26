@@ -62,7 +62,8 @@
       "registerButton": "Sign Up",
       "loginLink": "Already have an account? Sign In",
       "termsText": "By signing up, you agree to our",
-      "termsLink": "Terms & Conditions"
+      "termsLink": "Terms & Conditions",
+      "signUpGoogle": "Sign up with Google"
     },
     "otp": {
       "title": "OTP Verification",
@@ -100,7 +101,15 @@
     },
     "loginFailedTitle": "Login Failed",
     "registerFailedTitle": "Registration Failed",
-    "emailFormatInvalid": "Invalid email format. Make sure you use a valid format (e.g. name@email.com)"
+    "emailFormatInvalid": "Invalid email format. Make sure you use a valid format (e.g. name@email.com)",
+    "signInGoogle": "Sign in with Google",
+    "roleRegistration": {
+      "verifyIdentity": "Verify Identity",
+      "verifyIdentitySubtitle": "For security, please enter your Identity Number (NIK).",
+      "nikLabel": "NIK (16 digit number)",
+      "completeTenantProfile": "Complete Tenant Profile",
+      "emergencyContactName": "Emergency Contact Name"
+    }
   },
   "property": {
     "list": {
@@ -213,7 +222,11 @@
       "mapDirWest": "◀ West",
       "mapDirEast": "East ▶",
       "mapSavePreviewLabel": "📌 Coordinates to be saved:",
-      "mapSavePointBtn": "✅ Save This Point"
+      "mapSavePointBtn": "✅ Save This Point",
+      "descriptionEnLabel": "Description (English)",
+      "descriptionEnPlaceholder": "Type description in English",
+      "rulesEnLabel": "House Rules (English)",
+      "rulesEnPlaceholder": "Write house rules in English"
     },
     "detail": {
       "roomsTab": "Rooms",
@@ -288,7 +301,9 @@
       "catConnectivity": "📶 Connectivity",
       "catShared": "🤝 Shared",
       "catSpace": "🌅 Space",
-      "catOther": "📦 Other"
+      "catOther": "📦 Other",
+      "descriptionEnLabel": "Description (English)",
+      "descriptionEnPlaceholder": "Type description in English..."
     },
     "status": {
       "available": "Available",
@@ -743,7 +758,8 @@
     "genderFilter": "Gender Policy",
     "facilityFilter": "Facilities",
     "distanceUnit": "{{distance}} km",
-    "availableRooms": "{{count}} room(s) available"
+    "availableRooms": "{{count}} room(s) available",
+    "myProperty": "My Property"
   },
   "favorites": {
     "title": "My Favorites",
@@ -826,7 +842,9 @@
     "requestFacility": "Request Facility",
     "chooseFacility": "Choose the additional facility you want to install in this room.",
     "installed": "Already installed",
-    "waitingApproval": "Waiting for approval"
+    "waitingApproval": "Waiting for approval",
+    "waitingInvoice": "Waiting for Invoice Generation",
+    "waitingInvoiceMsg": "Contract and invoice are being processed. Please contact the boarding house owner if this takes too long."
   },
   "notification": {
     "title": "Notifications",
@@ -923,26 +941,34 @@
     "tenant": "Tenant",
     "switchTenantBtn": "Switch to Tenant",
     "switchOwnerBtn": "Switch to Owner",
-    "ownerPrompt": "Have a boarding house property? You can switch to Owner mode to start managing properties.",
-    "tenantPrompt": "Looking for a boarding house? You can change your account mode to Tenant mode now.",
-    "aboutApp": "About Application",
+    "ownerPrompt": "Have a property? You can switch to Owner mode to manage it.",
+    "tenantPrompt": "Looking for a boarding house? You can switch your account to Tenant mode now.",
+    "aboutApp": "About App",
     "version": "Version",
     "additionalTenantData": "Additional Tenant Data",
     "occupationLabel": "Occupation / Status",
     "occupationPlaceholder": "e.g., Student, Employee",
     "emergencyNameLabel": "Emergency Contact Name",
-    "emergencyNamePlaceholder": "Relative/Family Name",
+    "emergencyNamePlaceholder": "Relative/Family name",
     "emergencyPhoneLabel": "Emergency Phone No.",
     "emergencyPhonePlaceholder": "Example: +628123456789",
     "genderSelectTitle": "Select Gender",
     "genderMale": "Male",
     "genderFemale": "Female",
     "citySelectTitle": "Select Hometown",
-    "citySearchPlaceholder": "Search city or regency...",
-    "switchRole": "Switch Role",
+    "citySearchPlaceholder": "Search city or district...",
     "registerOtherRole": "Other Role Registration",
     "registerTenantBtn": "Register as Tenant",
-    "registerOwnerBtn": "Register as Owner"
+    "registerOwnerBtn": "Register as Owner",
+    "tenantExtraData": "Tenant Additional Data",
+    "occupation": "Occupation / Status",
+    "emergencyName": "Emergency Contact Name",
+    "emergencyPhone": "Emergency Contact Phone",
+    "selectGenderTitle": "Select Gender",
+    "selectCityTitle": "Select Hometown City",
+    "registerTenantPrompt": "Looking for a boarding house? You can register for Tenant mode now.",
+    "registerOwnerPrompt": "Have a property? You can register for Owner mode to manage it.",
+    "app": "App"
   },
   "settings": {
     "title": "Settings",
@@ -986,7 +1012,9 @@
     "deleteAccountMsg": "Deleted accounts cannot be recovered. All your data will be lost.",
     "btnDeleteAccount": "Delete Account",
     "contactSupport": "Contact Support",
-    "accountSection": "Account"
+    "accountSection": "Account",
+    "deleteAccountConfirm": "Confirm Account Deletion",
+    "deleteAccountPermanent": "Delete Account Permanently"
   },
   "navigation": {
     "owner": {
@@ -1066,7 +1094,8 @@
     },
     "success": "Success",
     "error": "Error",
-    "sent": "Sent"
+    "sent": "Sent",
+    "dataNotFound": "Data not found"
   },
   "searchScreen": {
     "genderOptions": {
@@ -1297,5 +1326,8 @@
     "Tagihan Baru": "New Invoice",
     "Pembayaran Diterima": "Payment Received",
     "Pembayaran Berhasil": "Payment Successful"
+  },
+  "rentalRequest": {
+    "identityGuarantee": "Identity Guarantee"
   }
 }

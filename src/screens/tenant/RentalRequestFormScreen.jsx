@@ -267,7 +267,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
             <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.success} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Jaminan Identitas</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rentalRequest.identityGuarantee', 'Jaminan Identitas')}</Text>
           </View>
           
           {isNiksLocked ? (

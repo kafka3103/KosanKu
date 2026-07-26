@@ -175,7 +175,7 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           {/* Nomor Handphone */}
-          <Text style={styles.label}>Nomor Handphone</Text>
+            <Text style={styles.label}>{t('auth.register.phoneLabel', 'Nomor Handphone')}</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
@@ -265,14 +265,14 @@ const RegisterScreen = ({ navigation }) => {
                 source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
                 style={styles.socialIcon}
               />
-              <Text style={styles.socialButtonText}>Sign up with Google</Text>
+              <Text style={styles.socialButtonText}>{t('auth.register.signUpGoogle', 'Sign up with Google')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footerContainer}>
             <Text style={styles.footerText}>{t('auth.register.alreadyHaveAccount', 'Already have an account?')} </Text>
             <TouchableOpacity onPress={() => navigation.navigate(AUTH_SCREENS.LOGIN)}>
-              <Text style={styles.footerLink}>Login</Text>
+              <Text style={styles.footerLink}>{t('auth.login', 'Login')}</Text>
             </TouchableOpacity>
           </View>
 

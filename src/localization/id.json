@@ -62,7 +62,8 @@
       "registerButton": "Daftar",
       "loginLink": "Sudah punya akun? Masuk",
       "termsText": "Dengan mendaftar, Anda menyetujui",
-      "termsLink": "Syarat & Ketentuan"
+      "termsLink": "Syarat & Ketentuan",
+      "signUpGoogle": "Daftar dengan Google"
     },
     "otp": {
       "title": "Verifikasi OTP",
@@ -100,7 +101,15 @@
     },
     "loginFailedTitle": "Login Gagal",
     "registerFailedTitle": "Registrasi Gagal",
-    "emailFormatInvalid": "Format email tidak valid. Pastikan Anda menggunakan format email yang benar (contoh: nama@email.com)"
+    "emailFormatInvalid": "Format email tidak valid. Pastikan Anda menggunakan format email yang benar (contoh: nama@email.com)",
+    "signInGoogle": "Masuk dengan Google",
+    "roleRegistration": {
+      "verifyIdentity": "Verifikasi Identitas",
+      "verifyIdentitySubtitle": "Untuk keamanan, mohon masukkan Nomor Induk Kependudukan (NIK) Anda.",
+      "nikLabel": "NIK (16 digit angka)",
+      "completeTenantProfile": "Lengkapi Profil Pencari Kos",
+      "emergencyContactName": "Nama Kontak Darurat"
+    }
   },
   "property": {
     "list": {
@@ -213,7 +222,11 @@
       "mapDirWest": "◀ Barat",
       "mapDirEast": "Timur ▶",
       "mapSavePreviewLabel": "📌 Koordinat yang akan disimpan:",
-      "mapSavePointBtn": "✅ Simpan Titik Ini"
+      "mapSavePointBtn": "✅ Simpan Titik Ini",
+      "descriptionEnLabel": "Deskripsi (Bahasa Inggris)",
+      "descriptionEnPlaceholder": "Ketik deskripsi dalam bahasa Inggris",
+      "rulesEnLabel": "Peraturan Kosan (Bahasa Inggris)",
+      "rulesEnPlaceholder": "Tuliskan peraturan kos dalam bahasa Inggris"
     },
     "detail": {
       "roomsTab": "Kamar",
@@ -288,7 +301,9 @@
       "catConnectivity": "📶 Konektivitas",
       "catShared": "🤝 Bersama",
       "catSpace": "🌅 Ruang",
-      "catOther": "📦 Lainnya"
+      "catOther": "📦 Lainnya",
+      "descriptionEnLabel": "Deskripsi (Bahasa Inggris)",
+      "descriptionEnPlaceholder": "Ketik deskripsi dalam bahasa Inggris..."
     },
     "status": {
       "available": "Tersedia",
@@ -743,7 +758,8 @@
     "genderFilter": "Kebijakan Gender",
     "facilityFilter": "Fasilitas",
     "distanceUnit": "{{distance}} km",
-    "availableRooms": "{{count}} kamar tersedia"
+    "availableRooms": "{{count}} kamar tersedia",
+    "myProperty": "Kos Sendiri"
   },
   "favorites": {
     "title": "Favorit Saya",
@@ -826,7 +842,9 @@
     "requestFacility": "Ajukan Fasilitas",
     "chooseFacility": "Pilih fasilitas tambahan yang ingin Anda pasang di kamar ini.",
     "installed": "Sudah terpasang",
-    "waitingApproval": "Menunggu persetujuan"
+    "waitingApproval": "Menunggu persetujuan",
+    "waitingInvoice": "Menunggu Pembuatan Tagihan",
+    "waitingInvoiceMsg": "Kontrak dan tagihan sedang diproses. Silakan hubungi pemilik kos jika ini memakan waktu terlalu lama."
   },
   "notification": {
     "title": "Notifikasi",
@@ -926,7 +944,22 @@
     "ownerPrompt": "Punya properti kosan? Anda bisa beralih ke mode Pemilik Kosan untuk mulai mengelola properti.",
     "tenantPrompt": "Ingin mencari kosan? Anda bisa mengubah mode akun Anda ke mode Pencari Kosan sekarang.",
     "aboutApp": "Tentang Aplikasi",
-    "version": "Versi"
+    "version": "Versi",
+    "tenantExtraData": "Data Tambahan Pencari Kos",
+    "occupation": "Pekerjaan / Status",
+    "occupationPlaceholder": "Cth: Mahasiswa, Karyawan",
+    "emergencyName": "Nama Kontak Darurat",
+    "emergencyNamePlaceholder": "Nama kerabat/keluarga",
+    "emergencyPhone": "No. Telp Darurat",
+    "emergencyPhonePlaceholder": "Contoh: +628123456789",
+    "selectGenderTitle": "Pilih Jenis Kelamin",
+    "genderMale": "Laki-laki",
+    "genderFemale": "Perempuan",
+    "selectCityTitle": "Pilih Kota Asal",
+    "citySearchPlaceholder": "Cari kota atau kabupaten...",
+    "registerTenantPrompt": "Ingin mencari kosan? Anda bisa mendaftar ke mode Pencari Kosan sekarang.",
+    "registerOwnerPrompt": "Punya properti kosan? Anda bisa mendaftar ke mode Pemilik Kosan untuk mulai mengelola properti.",
+    "app": "Aplikasi"
   },
   "settings": {
     "title": "Pengaturan",
@@ -970,7 +1003,9 @@
     "deleteAccountMsg": "Akun yang dihapus tidak dapat dipulihkan. Seluruh data Anda akan hilang.",
     "btnDeleteAccount": "Hapus Akun",
     "contactSupport": "Hubungi Support",
-    "accountSection": "Akun"
+    "accountSection": "Akun",
+    "deleteAccountConfirm": "Konfirmasi Hapus Akun",
+    "deleteAccountPermanent": "Hapus Akun Permanen"
   },
   "navigation": {
     "owner": {
@@ -1048,7 +1083,8 @@
     },
     "success": "Berhasil",
     "error": "Error",
-    "sent": "Terkirim"
+    "sent": "Terkirim",
+    "dataNotFound": "Data tidak ditemukan"
   },
   "searchScreen": {
     "genderOptions": {
@@ -1268,5 +1304,8 @@
     "Tagihan Baru": "Tagihan Baru",
     "Pembayaran Diterima": "Pembayaran Diterima",
     "Pembayaran Berhasil": "Pembayaran Berhasil"
+  },
+  "rentalRequest": {
+    "identityGuarantee": "Jaminan Identitas"
   }
 }

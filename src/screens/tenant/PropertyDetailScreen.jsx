@@ -338,19 +338,19 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <View style={styles.facilitiesGrid}>
           {(property?.general_facilities ?? []).map((fac, i) => (
             <View key={i} style={styles.facilityGridItem}>
-              <DynamicText style={styles.facilityGridText}>{fac.replace(/_/g, ' ')}</DynamicText>
+              <DynamicText style={styles.facilityGridText}>{t(`property.form.fac${fac.charAt(0).toUpperCase() + fac.slice(1).replace(/_([a-z])/g, (g) => g[1].toUpperCase())}`, fac.replace(/_/g, ' '))}</DynamicText>
             </View>
           ))}
         </View>
       )}
-      {property?.rules && (
+      {(getLocalizedField(property, 'rules') || property?.rules) && (
         <View style={styles.rulesCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
           </View>
-          {property.rules.split('\n').map((rule, idx) => (
-            <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+          {(getLocalizedField(property, 'rules') || property.rules).split('\n').map((rule, idx) => (
+            <Text key={idx} style={styles.rulesText}>{rule.replace(/^\d+\.\s*/, '').trim()}</Text>
           ))}
         </View>
       )}
