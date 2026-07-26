@@ -38,11 +38,14 @@ const SettingsScreen = ({ navigation }) => {
   const [emailNotif, setEmailNotif] = useState(true);
 
   // States for delete account
+  const { currentUser, currentSession } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [modalKey, setModalKey] = useState(0);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const { currentUser } = useAuthStore();
+  const [modalKey, setModalKey] = useState(0);
+
+  const providers = currentSession?.user?.app_metadata?.providers || [];
+  const isGoogleOnly = providers.includes('google') && !providers.includes('email');
 
   const currentLang = i18n.language;
 
@@ -95,17 +98,26 @@ const SettingsScreen = ({ navigation }) => {
 
   const executeDeleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert('Error', 'Harap masukkan password Anda.');
+      Alert.alert('Error', isGoogleOnly ? `Harap ketik ${currentUser?.email} untuk konfirmasi.` : 'Harap masukkan password Anda.');
       return;
     }
-    setIsDeleting(true);
-    // Verifikasi password dengan mencoba login ulang
-    const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
-    
-    if (verifyError) {
-      setIsDeleting(false);
-      Alert.alert('Gagal', 'Password salah atau terjadi kesalahan.');
+
+    if (isGoogleOnly && deletePassword.trim().toLowerCase() !== currentUser?.email?.toLowerCase()) {
+      Alert.alert('Error', 'Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.');
       return;
+    }
+
+    setIsDeleting(true);
+
+    if (!isGoogleOnly) {
+      // Verifikasi password dengan mencoba login ulang
+      const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
+      
+      if (verifyError) {
+        setIsDeleting(false);
+        Alert.alert('Gagal', 'Password salah atau terjadi kesalahan.');
+        return;
+      }
     }
 
     // Jika password benar, lanjutkan hapus akun
@@ -283,18 +295,23 @@ const SettingsScreen = ({ navigation }) => {
             </View>
 
             <Text style={styles.modalSubtitle}>
-              Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.
+              {isGoogleOnly 
+                ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
+                : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
             </Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+              {!isGoogleOnly && (
+                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+              )}
               <TextInput
                 key={modalKey}
                 style={styles.input}
-                placeholder="Password"
-                secureTextEntry
+                placeholder={isGoogleOnly ? `Ketik "${currentUser?.email}"` : "Password"}
+                secureTextEntry={!isGoogleOnly}
                 onChangeText={setDeletePassword}
                 editable={!isDeleting}
+                autoCapitalize="none"
               />
             </View>
 

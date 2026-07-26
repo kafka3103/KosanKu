@@ -30,7 +30,6 @@ const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState(USER_ROLE.TENANT);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +62,7 @@ const RegisterScreen = ({ navigation }) => {
     const { data, error } = await registerWithEmail({
       email: email.trim().toLowerCase(),
       password,
-      role: selectedRole,
+      role: USER_ROLE.TENANT,
       fullName: fullName.trim(),
       phoneNumber: phoneNumber.trim(),
     });
@@ -94,17 +93,22 @@ const RegisterScreen = ({ navigation }) => {
         [{ text: 'OK', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
       );
     } else {
+      // User registered successfully with email and got a session (confirm email is OFF).
+      // We manually sign them out to force them to login as per requirements.
+      const { logout } = require('../../services/authService');
+      await logout();
+      
       Alert.alert(
         t('auth.registerSuccessTitle2', 'Registrasi Berhasil! 🎉'),
-        t('auth.registerSuccessMsg', 'Akun Anda berhasil dibuat. Anda sekarang masuk.'),
-        [{ text: t('common.buttons.next', 'Lanjutkan'), onPress: () => { } }] // AppNavigator will auto route
+        'Akun Anda berhasil dibuat. Silakan masuk (Login) menggunakan email dan kata sandi Anda.',
+        [{ text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
       );
     }
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await signInWithGoogle(selectedRole);
+    const { data, error } = await signInWithGoogle(USER_ROLE.TENANT);
     setIsLoading(false);
 
     if (error) {
@@ -123,27 +127,17 @@ const RegisterScreen = ({ navigation }) => {
       } else {
         Alert.alert(t('common.error', 'Error'), error.message);
       }
+    } else if (data?.registrationSuccess) {
+      // Registration successful! Direct user to login.
+      Alert.alert(
+        t('auth.registerSuccessTitle2', 'Registrasi Berhasil! 🎉'),
+        'Akun Anda berhasil didaftarkan. Silakan login menggunakan opsi Sign In dengan Google.',
+        [{ text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
+      );
     }
   };
 
-  const RoleCard = ({ role, label, description, style }) => {
-    const isSelected = selectedRole === role;
-    return (
-      <TouchableOpacity
-        style={[styles.roleCard, style, isSelected && styles.roleCardSelected]}
-        onPress={() => setSelectedRole(role)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.roleLabel, isSelected && styles.roleLabelSelected]}>{label}</Text>
-        <Text style={[styles.roleDescription, isSelected && styles.roleDescriptionSelected]}>{description}</Text>
-        {isSelected && (
-          <View style={styles.roleCheckBadge}>
-            <Ionicons name="checkmark" size={12} color={COLORS.white} />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
+
 
   return (
     <KeyboardAvoidingView 
@@ -167,22 +161,6 @@ const RegisterScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.formContainer}>
-          {/* Role Selector */}
-          <View style={[styles.roleRow, { flexWrap: 'wrap' }]}>
-            <RoleCard
-              role={USER_ROLE.TENANT}
-              label={t('auth.register.roleTenant') || 'Pencari Kosan'}
-              description="Cari & sewa kos"
-              style={{ minWidth: '47%' }}
-            />
-            <RoleCard
-              role={USER_ROLE.OWNER}
-              label={t('auth.register.roleOwner') || 'Pemilik Kosan'}
-              description="Kelola properti"
-              style={{ minWidth: '47%' }}
-            />
-          </View>
-
           {/* Nama Lengkap */}
           <Text style={styles.label}>{t('auth.register.fullNameLabel') || 'Nama Lengkap'}</Text>
           <View style={styles.inputWrapper}>

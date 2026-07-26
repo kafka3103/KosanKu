@@ -176,17 +176,24 @@ serve(async (req) => {
       console.log(`🔔 Notifikasi & invoice lunas telah dikirim ke Tenant (${invoice.tenant_id}) dan Owner (${invoice.owner_id})`);
 
       // 6. Kirim Push Notification (FCM) ke device Tenant & Owner
+      // Untuk push notification OS, gunakan teks string langsung (karena OS tidak bisa merender JSON i18n key)
+      const pushTitleTenant = "Pembayaran Berhasil 💸";
+      const pushBodyTenant = `Tagihan ${invoice.invoice_number || 'Kos'} sebesar ${formattedAmt} telah terbayar.`;
+      
+      const pushTitleOwner = "Pembayaran Diterima 💰";
+      const pushBodyOwner = `Pembayaran tagihan ${invoice.invoice_number || 'Kos'} untuk kamar ${roomNum} sebesar ${formattedAmt} telah diterima.`;
+
       await Promise.all([
         triggerPushNotification(
           invoice.tenant_id,
-          notifications[0].title,
-          notifications[0].body,
+          pushTitleTenant,
+          pushBodyTenant,
           { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
         ),
         triggerPushNotification(
           invoice.owner_id,
-          notifications[1].title,
-          notifications[1].body,
+          pushTitleOwner,
+          pushBodyOwner,
           { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
         ),
       ]);

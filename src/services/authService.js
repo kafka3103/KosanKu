@@ -167,17 +167,26 @@ export const signInWithGoogle = async (role = null) => {
             console.error('UPSERT ERROR:', upsertError);
             // Sign out karena proses registrasi profile gagal
             await supabaseClient.auth.signOut();
+            useAuthStore.getState().setIsAuthValidating(false);
             return { error: { message: 'Gagal menyimpan profil: ' + upsertError.message } };
           }
-
-          // Fix Race Condition: update store secara manual setelah pendaftaran selesai
-          const store = useAuthStore.getState();
-          store.setAuthenticatedUser(data.session, {
-            ...store.currentUser,
-            ...upsertData,
-            email: data.session.user.email,
-          });
         }
+
+        // Jika ini adalah Sign Up (role !== null), kita TIDAK ingin login otomatis. 
+        // Keluarkan mereka lalu suruh login manual!
+        if (role) {
+          await supabaseClient.auth.signOut();
+          useAuthStore.getState().setIsAuthValidating(false);
+          return { data: { registrationSuccess: true }, error: null };
+        }
+
+        // Jika ini adalah Sign In, Fix Race Condition dengan update store secara manual
+        const store = useAuthStore.getState();
+        store.setAuthenticatedUser(data.session, {
+          ...store.currentUser,
+          ...upsertData,
+          email: data.session.user.email,
+        });
       }
 
       return { data, error };
