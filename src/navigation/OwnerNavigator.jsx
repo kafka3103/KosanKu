@@ -241,7 +241,6 @@ const OwnerDrawerContent = ({ navigation }) => {
         ))}
       </View>
 
-      {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
         <Text style={[styles.logoutText, { color: COLORS.white }]}>
           {hasTenantProfile ? t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari') : t('navigation.switchRole.registerTenantBtn', 'Daftar sebagai Pencari Kos')}
