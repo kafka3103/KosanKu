@@ -394,15 +394,77 @@ const NotificationScreen = () => {
         navigation.navigate('OwnerInvoiceList');
       }
     } else if (currentUser?.role === 'tenant') {
-      if (notif.type === 'rental_request_approved' || notif.reference_type === 'invoice') {
+      if (notif.type === 'rental_request_approved' || notif.reference_type === 'invoice' || notif.reference_type === 'rental_request') {
         if (notif.reference_id && notif.reference_type === 'invoice') {
-          navigation.navigate('MyRentStack', {
-            screen: 'InvoiceDetail',
-            params: { invoiceId: notif.reference_id },
-          });
-        } else {
-          navigation.navigate('MyRentStack');
+          try {
+            // Fetch the invoice to get contract_id, then get rental_request_id
+            const { data: invData } = await supabaseClient.from('invoices').select('contract_id').eq('id', notif.reference_id).single();
+            if (invData?.contract_id) {
+              const { data: contractData } = await supabaseClient.from('contracts').select('rental_request_id').eq('id', invData.contract_id).single();
+              if (contractData?.rental_request_id) {
+                const { data: reqData } = await supabaseClient
+                  .from('rental_requests')
+                  .select(`
+                    *,
+                    contracts (
+                      id, start_date, end_date, status, monthly_rate,
+                      contract_facilities (*, facility_master(name, icon_name)),
+                      invoices (id, status, total_amount, paid_amount, due_date, billing_period)
+                    ),
+                    rooms(
+                      room_number, base_price, photo_urls,
+                      room_facilities(facility_master(name, icon_name)),
+                      properties(name, address_line, city, cover_photo_url, general_facilities, users(full_name, phone_number))
+                    )
+                  `)
+                  .eq('id', contractData.rental_request_id)
+                  .single();
+                  
+                if (reqData) {
+                  navigation.navigate('MyRentStack', {
+                    screen: 'ContractDetailScreen',
+                    params: { request: reqData },
+                  });
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to fetch request for notification', e);
+          }
+        } else if (notif.reference_id && notif.reference_type === 'rental_request') {
+          try {
+            const { data: reqData } = await supabaseClient
+              .from('rental_requests')
+              .select(`
+                *,
+                contracts (
+                  id, start_date, end_date, status, monthly_rate,
+                  contract_facilities (*, facility_master(name, icon_name)),
+                  invoices (id, status, total_amount, paid_amount, due_date, billing_period)
+                ),
+                rooms(
+                  room_number, base_price, photo_urls,
+                  room_facilities(facility_master(name, icon_name)),
+                  properties(name, address_line, city, cover_photo_url, general_facilities, users(full_name, phone_number))
+                )
+              `)
+              .eq('id', notif.reference_id)
+              .single();
+              
+            if (reqData) {
+              navigation.navigate('MyRentStack', {
+                screen: 'ContractDetailScreen',
+                params: { request: reqData },
+              });
+              return;
+            }
+          } catch (e) {
+            console.error('Failed to fetch request for notification', e);
+          }
         }
+        
+        navigation.navigate('MyRentStack');
       } else if (notif.type === 'rental_request_rejected' || notif.type === 'rental_request_pending') {
         navigation.navigate('MyRentStack');
       }
