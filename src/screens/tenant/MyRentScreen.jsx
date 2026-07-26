@@ -301,7 +301,16 @@ const MyRentScreen = ({ navigation }) => {
             const room = req.rooms;
             const property = room?.properties;
             return (
-              <View key={req.id} style={[styles.requestCard, { borderLeftColor: status.color }]}>
+              <TouchableOpacity 
+                key={req.id} 
+                style={[styles.requestCard, { borderLeftColor: status.color }]}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (req.status === 'approved') {
+                    Alert.alert('Info', 'Pengajuan disetujui. Silakan cek bagian Tagihan Terbaru untuk melakukan pembayaran.');
+                  }
+                }}
+              >
                 <View style={[styles.requestStatusBadge, { backgroundColor: status.bg }]}>
                   <Ionicons name={status.icon} size={14} color={status.color} />
                   <Text style={[styles.requestStatusText, { color: status.color }]}>
@@ -328,7 +337,7 @@ const MyRentScreen = ({ navigation }) => {
                     </Text>
                   </View>
                 ) : null}
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>

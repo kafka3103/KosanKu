@@ -106,6 +106,7 @@ const PaymentScreen = ({ navigation, route }) => {
   const remainingDebt = Math.max(totalAmount - paidAmount, 0);
   const isFirstPayment = paidAmount === 0;
   const minimumDP = Math.ceil(totalAmount * 0.5);
+  const minimumSubsequent = Math.min(50000, remainingDebt);
   const paymentProgress = totalAmount > 0 ? paidAmount / totalAmount : 0;
 
   // State untuk nominal cicilan custom (setelah DP pertama)
@@ -121,7 +122,7 @@ const PaymentScreen = ({ navigation, route }) => {
     }
     if (customAmountText) {
       const parsed = parseInt(customAmountText.replace(/\D/g, ''), 10);
-      if (!isNaN(parsed) && parsed > 0) return Math.min(parsed, remainingDebt);
+      if (!isNaN(parsed) && parsed >= minimumSubsequent) return Math.min(parsed, remainingDebt);
     }
     return remainingDebt; // default = bayar sisa penuh
   };
@@ -432,7 +433,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   <Text style={styles.installmentTitle}>{t('paymentScreen.installmentTitle', 'Nominal Cicilan')}</Text>
                 </View>
                 <Text style={styles.installmentDesc}>
-                  {t('paymentScreen.installmentDesc', 'Masukkan nominal yang ingin dibayarkan. Maksimal: {{max}}', { max: formatCurrency(remainingDebt) })}
+                  {t('paymentScreen.installmentDesc', 'Masukkan nominal yang ingin dibayarkan. Minimal: {{min}}, Maksimal: {{max}}', { min: formatCurrency(minimumSubsequent), max: formatCurrency(remainingDebt) })}
                 </Text>
                 <View style={styles.installmentInputRow}>
                   <Text style={styles.installmentPrefix}>Rp</Text>
@@ -452,6 +453,11 @@ const PaymentScreen = ({ navigation, route }) => {
                 {customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt && (
                   <Text style={styles.installmentError}>
                     {t('paymentScreen.installmentOverpay', 'Nominal melebihi sisa hutang!')}
+                  </Text>
+                )}
+                {customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) < minimumSubsequent && (
+                  <Text style={styles.installmentError}>
+                    Minimal pembayaran adalah {formatCurrency(minimumSubsequent)}
                   </Text>
                 )}
               </View>
@@ -503,9 +509,9 @@ const PaymentScreen = ({ navigation, route }) => {
             </View>
           )}
           <TouchableOpacity
-            style={[styles.payBtn, isLoading && styles.payBtnDisabled, (customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt) && styles.payBtnDisabled]}
+            style={[styles.payBtn, isLoading ? styles.payBtnDisabled : null, (customAmountText && (parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt || parseInt(customAmountText.replace(/\D/g, ''), 10) < minimumSubsequent)) ? styles.payBtnDisabled : null]}
             onPress={handlePay}
-            disabled={isLoading || (customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt)}
+            disabled={Boolean(isLoading || (customAmountText && (parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt || parseInt(customAmountText.replace(/\D/g, ''), 10) < minimumSubsequent)))}
             activeOpacity={0.8}
           >
             {isLoading ? (
