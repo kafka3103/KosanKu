@@ -186,7 +186,7 @@ const DashboardScreen = ({ navigation }) => {
   return (
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: Math.max(insets.bottom + 140, 140) }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

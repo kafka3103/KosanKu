@@ -145,7 +145,6 @@ const TenantDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: t('navigation.tenant.profile'), screen: TENANT_SCREENS.PROFILE, icon: '👤' },
     { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: '⚙️' },
   ];
   const [hasOwnerProfile, setHasOwnerProfile] = React.useState(false);
@@ -240,11 +239,7 @@ const TenantNavigator = () => {
         component={TenantBottomTabNavigator}
         options={{ drawerItemStyle: { display: 'none' } }}
       />
-      <TenantDrawer.Screen
-        name={TENANT_SCREENS.PROFILE}
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
+
       <TenantDrawer.Screen
         name={TENANT_SCREENS.SETTINGS}
         component={SettingsScreen}

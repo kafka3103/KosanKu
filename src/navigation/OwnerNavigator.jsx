@@ -168,7 +168,6 @@ const OwnerDrawerContent = ({ navigation }) => {
     { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
     { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: '👥' },
     { label: t('navigation.owner.reports'), screen: OWNER_SCREENS.REPORT, icon: '📈' },
-    { label: t('navigation.owner.profile'), screen: OWNER_SCREENS.PROFILE, icon: '👤' },
     { label: t('navigation.owner.settings'), screen: OWNER_SCREENS.SETTINGS, icon: '⚙️' },
   ];
 
@@ -303,11 +302,6 @@ const OwnerNavigator = () => {
       <OwnerDrawer.Screen
         name="RoleRegistrationScreen"
         component={RoleRegistrationScreen}
-        options={{ headerShown: false }}
-      />
-      <OwnerDrawer.Screen
-        name={OWNER_SCREENS.PROFILE}
-        component={ProfileScreen}
         options={{ headerShown: false }}
       />
       <OwnerDrawer.Screen
