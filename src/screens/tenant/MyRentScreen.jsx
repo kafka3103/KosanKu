@@ -311,9 +311,21 @@ const MyRentScreen = ({ navigation }) => {
       )}
 
       {/* Kontrak Aktif */}
-      {contract && (
-        <>
-          {/* Room Card */}
+      {contracts.map((contract) => {
+        const room = contract.rooms;
+        const property = room?.properties;
+        const facilities = property?.facilities || [];
+        
+        // Ambil owner
+        const owner = property?.users;
+        
+        // Filter fasilitas tambahan
+        const activeContractFacilities = contract.contract_facilities?.filter(cf => cf.status === 'active') || [];
+        const requestedContractFacilities = contract.contract_facilities?.filter(cf => cf.status === 'pending') || [];
+
+        return (
+          <View key={contract.id}>
+            {/* Room Card */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>
             <View style={styles.roomCard}>
@@ -495,8 +507,9 @@ const MyRentScreen = ({ navigation }) => {
               })
             )}
           </View>
-        </>
-      )}
+          </View>
+        );
+      })}
     </ScrollView>
 
       {/* Facility Request Modal */}
