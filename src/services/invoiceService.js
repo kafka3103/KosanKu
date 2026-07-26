@@ -93,10 +93,6 @@ export const getTenantActiveContract = async (tenantId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(
         room_number,
         base_price,
@@ -110,20 +106,17 @@ export const getTenantActiveContract = async (tenantId) => {
           city,
           cover_photo_url,
           general_facilities,
-          users!properties_owner_id_fkey(full_name, phone_number)
+          users(full_name, phone_number)
         )
       )
     `)
     .eq('tenant_id', tenantId)
     .eq('status', 'active')
-    .order('start_date', { ascending: false })
-    .limit(1)
-    .single();
+    .order('start_date', { ascending: false });
 
-  // PGRST116 = no rows found — bukan error kritis untuk tenant baru
-  if (error?.code === 'PGRST116') return { data: null, error: null };
+  if (error) return { data: null, error };
 
-  return { data, error };
+  return { data: data || [], error: null };
 };
 
 /**
@@ -136,10 +129,6 @@ export const getOwnerContracts = async (ownerId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(room_number, properties(name)),
       users!contracts_tenant_id_fkey(full_name, phone_number)
     `)
@@ -159,10 +148,6 @@ export const getContractById = async (contractId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(
         *,
         room_facilities(facility_master(name, icon_name)),

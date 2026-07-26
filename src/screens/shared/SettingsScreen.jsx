@@ -14,6 +14,9 @@ import {
   Switch,
   Alert,
   Linking,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +25,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { logout, updatePassword } from '../../services/authService';
+import { logout, updatePassword, deleteAccount } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
@@ -34,6 +37,15 @@ const SettingsScreen = ({ navigation }) => {
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);
 
+  // States for delete account
+  const { currentUser, currentSession } = useAuthStore();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
+
+  const providers = currentSession?.user?.app_metadata?.providers || [];
+  const isGoogleOnly = providers.includes('google') && !providers.includes('email');
   const currentLang = i18n.language;
 
   const handleChangeLanguage = () => {
@@ -71,21 +83,52 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      t('settings.deleteAccountTitle', '⚠️ Hapus Akun'),
-      t('settings.deleteAccountMsg', 'Akun yang dihapus tidak dapat dipulihkan. Seluruh data Anda akan hilang.'),
-      [
-        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
-        {
-          text: t('settings.btnDeleteAccount', 'Hapus Akun'),
-          style: 'destructive',
-          onPress: () =>
-            Alert.alert('Hubungi Support', 'Untuk menghapus akun, hubungi support@kosanku.id'),
-        },
-      ]
-    );
+    setShowDeleteModal(true);
   };
 
+  const executeDeleteAccount = async () => {
+    if (!deletePassword) {
+      Alert.alert('Error', isGoogleOnly ? `Harap ketik ${currentUser?.email} untuk konfirmasi.` : 'Harap masukkan password Anda.');
+      return;
+    }
+
+    if (isGoogleOnly && deletePassword.trim().toLowerCase() !== currentUser?.email?.toLowerCase()) {
+      Alert.alert('Error', 'Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.');
+      return;
+    }
+
+    setIsDeleting(true);
+
+    if (!isGoogleOnly) {
+      // Verifikasi password dengan mencoba login ulang
+      const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
+      
+      if (verifyError) {
+        setIsDeleting(false);
+        Alert.alert('Gagal', 'Password salah atau terjadi kesalahan.');
+        return;
+      }
+    }
+
+    // Jika password benar, lanjutkan hapus akun
+    const { error: deleteError } = await deleteAccount();
+    setIsDeleting(false);
+    
+    if (deleteError) {
+      Alert.alert('Gagal', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id');
+    } else {
+      setShowDeleteModal(false);
+      Alert.alert('Sukses', 'Akun berhasil dihapus.', [
+        {
+          text: 'OK',
+          onPress: async () => {
+            await logout();
+            clearAuthState();
+          }
+        }
+      ]);
+    }
+  };
   const handleLogout = () => {
     Alert.alert('Keluar', 'Yakin ingin keluar dari akun?', [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -115,7 +158,8 @@ const SettingsScreen = ({ navigation }) => {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         {navigation?.canGoBack?.() && (
@@ -222,6 +266,58 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
       </View>
     </ScrollView>
+      {/* Modal Hapus Akun */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Konfirmasi Hapus Akun</Text>
+              <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>
+              {isGoogleOnly 
+                ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
+                : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
+            </Text>
+
+            <View style={styles.inputContainer}>
+              {!isGoogleOnly && (
+                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+              )}
+              <TextInput
+                key={modalKey}
+                style={styles.input}
+                placeholder={isGoogleOnly ? `Ketik "${currentUser?.email}"` : "Password"}
+                secureTextEntry={!isGoogleOnly}
+                onChangeText={setDeletePassword}
+                editable={!isDeleting}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.modalDeleteBtn, isDeleting && { opacity: 0.7 }]} 
+              onPress={executeDeleteAccount}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.modalDeleteBtnText}>Hapus Akun Permanen</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -316,6 +412,66 @@ const styles = StyleSheet.create({
   footerSubtext: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textTertiary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING[4],
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING[5],
+    ...SHADOW.md,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING[3],
+  },
+  modalTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  modalSubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING[4],
+    lineHeight: 20,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING[3],
+    marginBottom: SPACING[5],
+  },
+  inputIcon: {
+    marginRight: SPACING[2],
+  },
+  input: {
+    flex: 1,
+    paddingVertical: SPACING[3],
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
+  },
+  modalDeleteBtn: {
+    backgroundColor: COLORS.error,
+    paddingVertical: SPACING[3],
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+  },
+  modalDeleteBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });
 

@@ -61,24 +61,33 @@ serve(async (req) => {
     if (status === "PAID" || status === "SETTLED") {
       const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+      // Extract real invoice ID (handle both normal UUID and UUID_timestamp)
+      const actual_invoice_id = external_id.split('_')[0];
+
       // Ambil invoice terkait dari database (sederhana tanpa join fkey untuk mencegah PGRST error)
       const { data: invoice, error: fetchErr } = await supabaseAdmin
         .from("invoices")
         .select("*")
-        .eq("id", external_id)
+        .eq("id", actual_invoice_id)
         .single();
 
       // Jika invoice tidak ditemukan (misal saat Xendit menekan tombol "Tes dan simpan" dengan external_id="invoice_123124123")
       // Kita TETAP harus merespons HTTP 200 OK agar Xendit berhasil menyimpan URL webhook ini
       if (fetchErr || !invoice) {
-        console.log(`ℹ️ Invoice ${external_id} tidak ditemukan di DB (Tes Webhook dari Xendit Dashboard berhasil diverifikasi).`);
+        console.log(`ℹ️ Invoice ${actual_invoice_id} tidak ditemukan di DB (Tes Webhook dari Xendit Dashboard berhasil diverifikasi).`);
         return new Response(
           JSON.stringify({ success: true, message: "Webhook test verified (invoice not found or test payload)" }),
           { status: 200, headers: { "Content-Type": "application/json" } }
         );
       }
 
-      const newPaidAmount = parseFloat(paid_amount || amount || invoice.total_amount);
+      const incomingAmount = parseFloat(paid_amount || amount || invoice.total_amount);
+      const currentPaidAmount = parseFloat(invoice.paid_amount || 0);
+      let newPaidAmount = currentPaidAmount + incomingAmount;
+      // Cap the paid amount to avoid overpayment
+      if (newPaidAmount > parseFloat(invoice.total_amount)) {
+        newPaidAmount = parseFloat(invoice.total_amount);
+      }
       const isFullPayment = newPaidAmount >= parseFloat(invoice.total_amount);
       const newStatus = isFullPayment ? "paid" : "partial";
 
@@ -92,7 +101,7 @@ serve(async (req) => {
           paid_at: paid_at ? new Date(paid_at).toISOString() : new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq("id", external_id);
+        .eq("id", actual_invoice_id);
 
       if (updateErr) {
         console.error("❌ Gagal update database invoices:", updateErr);
@@ -108,10 +117,11 @@ serve(async (req) => {
           invoice_id: invoice.id,
           tenant_id: invoice.tenant_id,
           owner_id: invoice.owner_id,
-          amount: newPaidAmount,
+          amount: incomingAmount,
           payment_method: "bank_transfer", // Sesuai enum schema payments kita
+          payment_channel: payment_channel || "XENDIT_AUTO",
           status: "success",
-          gateway_transaction_id: xendit_id || external_id,
+          payment_gateway_reference: xendit_id,
           gateway_payment_code: payment_channel || payment_method || "XENDIT",
           gateway_raw_response: payload,
           paid_at: paid_at ? new Date(paid_at).toISOString() : new Date().toISOString(),
@@ -166,17 +176,24 @@ serve(async (req) => {
       console.log(`🔔 Notifikasi & invoice lunas telah dikirim ke Tenant (${invoice.tenant_id}) dan Owner (${invoice.owner_id})`);
 
       // 6. Kirim Push Notification (FCM) ke device Tenant & Owner
+      // Untuk push notification OS, gunakan teks string langsung (karena OS tidak bisa merender JSON i18n key)
+      const pushTitleTenant = "Pembayaran Berhasil 💸";
+      const pushBodyTenant = `Tagihan ${invoice.invoice_number || 'Kos'} sebesar ${formattedAmt} telah terbayar.`;
+      
+      const pushTitleOwner = "Pembayaran Diterima 💰";
+      const pushBodyOwner = `Pembayaran tagihan ${invoice.invoice_number || 'Kos'} untuk kamar ${roomNum} sebesar ${formattedAmt} telah diterima.`;
+
       await Promise.all([
         triggerPushNotification(
           invoice.tenant_id,
-          notifications[0].title,
-          notifications[0].body,
+          pushTitleTenant,
+          pushBodyTenant,
           { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
         ),
         triggerPushNotification(
           invoice.owner_id,
-          notifications[1].title,
-          notifications[1].body,
+          pushTitleOwner,
+          pushBodyOwner,
           { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
         ),
       ]);

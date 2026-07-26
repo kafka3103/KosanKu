@@ -32,6 +32,7 @@ import RoomDetailScreen from '../screens/tenant/RoomDetailScreen';
 import FavoriteScreen from '../screens/tenant/FavoriteScreen';
 import RentalRequestFormScreen from '../screens/tenant/RentalRequestFormScreen';
 import MyRentScreen from '../screens/tenant/MyRentScreen';
+import ContractDetailScreen from '../screens/tenant/ContractDetailScreen';
 import InvoiceDetailScreen from '../screens/tenant/InvoiceDetailScreen';
 import PaymentScreen from '../screens/tenant/PaymentScreen';
 
@@ -68,13 +69,16 @@ const SearchStackNavigator = () => (
   </SearchStack.Navigator>
 );
 
+
+
 /**
  * Stack Navigator untuk alur hunian aktif:
- * MyRent → InvoiceDetail → Payment
+ * MyRent → ContractDetail → InvoiceDetail → Payment
  */
 const MyRentStackNavigator = () => (
   <MyRentStack.Navigator screenOptions={{ headerShown: false }}>
     <MyRentStack.Screen name={TENANT_SCREENS.MY_RENT} component={MyRentScreen} />
+    <MyRentStack.Screen name="ContractDetailScreen" component={ContractDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.INVOICE_DETAIL} component={InvoiceDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.PAYMENT} component={PaymentScreen} />
   </MyRentStack.Navigator>
@@ -170,8 +174,8 @@ const TenantDrawerContent = ({ navigation }) => {
     const { checkOwnerVerification } = require('../services/userService');
     const isVerified = await checkOwnerVerification(currentUser.id);
     if (!isVerified) {
-       Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
-       return;
+      Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+      return;
     }
 
     Alert.alert(

@@ -11,7 +11,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAuthStore from '../store/authStore';
-import { subscribeToAuthChanges, getUserProfile, updateFcmToken } from '../services/authService';
+import { subscribeToAuthChanges, getUserProfile, updateFcmToken, getCurrentSession } from '../services/authService';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '../utils/notificationUtils';
 import COLORS from '../constants/colors';
 
@@ -47,6 +47,7 @@ const AppNavigator = () => {
     setAuthenticatedUser,
     clearAuthState,
     setIsLoading,
+    isAuthValidating,
   } = useAuthStore();
 
   useEffect(() => {
@@ -87,6 +88,15 @@ const AppNavigator = () => {
           const currentRole = useAuthStore.getState().userRole;
           if (currentRole && !userProfile?.role) {
             console.log('AppNavigator: Mengabaikan data usang karena role sudah terupdate di store.');
+            return;
+          }
+
+          // Fix Race Condition 2: Karena event ini berjalan asynchronous (await), ada kemungkinan
+          // fungsi signInWithGoogle sudah memanggil signOut() jika user tidak terdaftar.
+          // Kita harus mengecek ulang apakah sesi masih benar-benar ada di Supabase.
+          const { data: currentSessionData } = await getCurrentSession();
+          if (!currentSessionData?.session) {
+            console.log('AppNavigator: Sesi dibatalkan secara internal (SIGNED_OUT). Menghentikan auto-login.');
             return;
           }
 
@@ -133,7 +143,7 @@ const AppNavigator = () => {
     };
   }, []);
 
-  if (isLoading) {
+  if (isLoading || isAuthValidating) {
     return <SplashScreen />;
   }
 

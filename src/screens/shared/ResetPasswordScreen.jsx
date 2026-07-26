@@ -67,14 +67,14 @@ const ResetPasswordScreen = ({ route, navigation }) => {
         </TouchableOpacity>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>{t('auth.login.forgotPassword.newPasswordTitle') || 'Enter New Password'}</Text>
-          <Text style={styles.subtitle}>{t('auth.login.forgotPassword.newPasswordSubtitle') || 'Please enter your new password.'}</Text>
+          <Text style={styles.title}>{t('auth.forgotPassword.newPasswordTitle') || 'Enter New Password'}</Text>
+          <Text style={styles.subtitle}>{t('auth.forgotPassword.newPasswordSubtitle') || 'Please enter your new password.'}</Text>
 
-          <Text style={styles.label}>{t('auth.login.forgotPassword.newPasswordLabel') || 'New Password'}</Text>
+          <Text style={styles.label}>{t('auth.forgotPassword.newPasswordLabel') || 'New Password'}</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
-              placeholder={t('auth.login.forgotPassword.newPasswordPlaceholder') || 'Enter your new password'}
+              placeholder={t('auth.forgotPassword.newPasswordPlaceholder') || 'Enter your new password'}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -88,11 +88,11 @@ const ResetPasswordScreen = ({ route, navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.label}>{t('auth.login.forgotPassword.confirmPasswordLabel') || 'Confirm Password'}</Text>
+          <Text style={styles.label}>{t('auth.forgotPassword.confirmPasswordLabel') || 'Confirm Password'}</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
-              placeholder={t('auth.login.forgotPassword.confirmPasswordPlaceholder') || 'Enter your confirm password'}
+              placeholder={t('auth.forgotPassword.confirmPasswordPlaceholder') || 'Enter your confirm password'}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
@@ -114,7 +114,7 @@ const ResetPasswordScreen = ({ route, navigation }) => {
             {isLoading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
-              <Text style={styles.buttonText}>{t('auth.login.forgotPassword.confirmButton') || 'Confirm'}</Text>
+              <Text style={styles.buttonText}>{t('auth.forgotPassword.confirmButton') || 'Confirm'}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -130,12 +130,12 @@ const ResetPasswordScreen = ({ route, navigation }) => {
               <View style={styles.modalIconContainer}>
                 <Ionicons name="checkmark" size={40} color={COLORS.white} />
               </View>
-              <Text style={styles.modalTitle}>{t('auth.login.forgotPassword.successTitle') || 'Successful'}</Text>
+              <Text style={styles.modalTitle}>{t('auth.forgotPassword.successTitle') || 'Successful'}</Text>
               <Text style={styles.modalSubtitle}>
-                {t('auth.login.forgotPassword.successSubtitle') || 'Your password has been updated successfully. You can now use your new password to log in securely.'}
+                {t('auth.forgotPassword.successSubtitle') || 'Your password has been updated successfully. You can now use your new password to log in securely.'}
               </Text>
               <TouchableOpacity style={styles.modalButton} onPress={handleDone}>
-                <Text style={styles.modalButtonText}>{t('auth.login.forgotPassword.doneButton') || 'Done'}</Text>
+                <Text style={styles.modalButtonText}>{t('auth.forgotPassword.doneButton') || 'Done'}</Text>
               </TouchableOpacity>
             </View>
           </View>

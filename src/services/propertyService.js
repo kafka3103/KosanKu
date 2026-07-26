@@ -672,21 +672,40 @@ export const approveRentalRequest = async (requestId) => {
           invoice_number: invoiceNumber,
           billing_period: request.requested_start_date,
           due_date: dueDate.toISOString().split('T')[0],
-          total_amount: request.monthly_rate,
+          total_amount: request.monthly_rate * (request.duration_months || 1),
           status: 'unpaid',
         })
         .select()
         .single();
 
       // 6. Kirim notifikasi ke penghuni (Tenant)
+      // a. Notifikasi persetujuan pengajuan sewa
       await sendNotification({
         userId: request.tenant_id,
         title: 'rental_approved_title',
         body: JSON.stringify({ key: 'rental_approved_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
         type: 'rental_request_approved',
-        referenceId: newInvoice?.id ?? request.id,
-        referenceType: newInvoice ? 'invoice' : 'rental_request',
+        referenceId: request.id,
+        referenceType: 'rental_request',
       });
+
+      // b. Notifikasi tagihan pertama (jika berhasil dibuat)
+      if (newInvoice) {
+        await sendNotification({
+          userId: request.tenant_id,
+          title: 'invoice_generated_title',
+          body: JSON.stringify({ 
+            key: 'invoice_generated_body', 
+            params: { 
+              amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(newInvoice.total_amount || 0), 
+              dueDate: newInvoice.due_date 
+            } 
+          }),
+          type: 'invoice_generated',
+          referenceId: newInvoice.id,
+          referenceType: 'invoice',
+        });
+      }
     }
   } catch (err) {
     console.warn('Error saat membuat kontrak/invoice otomatis:', err.message);

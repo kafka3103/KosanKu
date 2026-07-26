@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Modal,
   Linking,
+  TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -99,8 +100,33 @@ const PaymentScreen = ({ navigation, route }) => {
   const [xenditResult, setXenditResult] = useState(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-  const unpaidAmount =
-    parseFloat(invoice?.total_amount ?? 0) - parseFloat(invoice?.paid_amount ?? 0);
+  // ── Logika DP 50% & Cicilan ──
+  const totalAmount = parseFloat(invoice?.total_amount ?? 0);
+  const paidAmount = parseFloat(invoice?.paid_amount ?? 0);
+  const remainingDebt = Math.max(totalAmount - paidAmount, 0);
+  const isFirstPayment = paidAmount === 0;
+  const minimumDP = Math.ceil(totalAmount * 0.5);
+  const minimumSubsequent = Math.min(50000, remainingDebt);
+  const paymentProgress = totalAmount > 0 ? paidAmount / totalAmount : 0;
+
+  // State untuk nominal cicilan custom (setelah DP pertama)
+  const [customAmountText, setCustomAmountText] = useState('');
+  
+  // State untuk pilihan pembayaran pertama (DP atau Lunas)
+  const [firstPaymentType, setFirstPaymentType] = useState('dp'); // 'dp' atau 'full'
+
+  // Tentukan nominal yang akan dibayar
+  const getPayAmount = () => {
+    if (isFirstPayment) {
+      return firstPaymentType === 'dp' ? minimumDP : totalAmount;
+    }
+    if (customAmountText) {
+      const parsed = parseInt(customAmountText.replace(/\D/g, ''), 10);
+      if (!isNaN(parsed) && parsed >= minimumSubsequent) return Math.min(parsed, remainingDebt);
+    }
+    return remainingDebt; // default = bayar sisa penuh
+  };
+  const unpaidAmount = getPayAmount();
 
 
   // 1. Cek langsung status tagihan di database saat layar dibuka / fokus
@@ -198,7 +224,7 @@ const PaymentScreen = ({ navigation, route }) => {
               else if (selectedMethod.id === 'xendit_qris') paymentMethods = ['QRIS'];
               else if (selectedMethod.id === 'xendit_retail') paymentMethods = ['ALFAMART', 'INDOMARET'];
 
-              const result = await createXenditCheckout(invoice.id, paymentMethods);
+              const result = await createXenditCheckout(invoice.id, paymentMethods, unpaidAmount);
               setIsLoading(false);
 
               if (result.isAlreadyPaid) {
@@ -294,6 +320,22 @@ const PaymentScreen = ({ navigation, route }) => {
             {isInvoicePaid ? t('paymentScreen.fullyPaid', 'TELAH LUNAS') : formatCurrency(unpaidAmount)}
           </Text>
           <Text style={styles.amountNote}>Invoice #{invoice?.invoice_number || invoice?.id?.slice(0, 8)}</Text>
+
+          {/* Progress Bar */}
+          {!isInvoicePaid && totalAmount > 0 && (
+            <View style={{ width: '100%', marginTop: 12 }}>
+              <View style={styles.progressBarBg}>
+                <View style={[styles.progressBarFill, { width: `${Math.min(paymentProgress * 100, 100)}%` }]} />
+              </View>
+              <Text style={styles.progressText}>
+                {t('paymentScreen.progressInfo', 'Terbayar {{paid}} dari {{total}} (Sisa {{remaining}})', {
+                  paid: formatCurrency(paidAmount),
+                  total: formatCurrency(totalAmount),
+                  remaining: formatCurrency(remainingDebt),
+                })}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Jika Sudah Lunas */}
@@ -383,6 +425,44 @@ const PaymentScreen = ({ navigation, route }) => {
               </Text>
             </View>
 
+            {/* Form Cicilan Custom (hanya muncul setelah DP pertama) */}
+            {!isFirstPayment && remainingDebt > 0 && (
+              <View style={styles.installmentBox}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+                  <Ionicons name="calculator" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+                  <Text style={styles.installmentTitle}>{t('paymentScreen.installmentTitle', 'Nominal Cicilan')}</Text>
+                </View>
+                <Text style={styles.installmentDesc}>
+                  {t('paymentScreen.installmentDesc', 'Masukkan nominal yang ingin dibayarkan. Minimal: {{min}}, Maksimal: {{max}}', { min: formatCurrency(minimumSubsequent), max: formatCurrency(remainingDebt) })}
+                </Text>
+                <View style={styles.installmentInputRow}>
+                  <Text style={styles.installmentPrefix}>Rp</Text>
+                  <TextInput
+                    style={styles.installmentInput}
+                    placeholder={remainingDebt.toLocaleString('id-ID')}
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={customAmountText}
+                    onChangeText={(text) => {
+                      // Hanya terima angka
+                      const digits = text.replace(/\D/g, '');
+                      setCustomAmountText(digits);
+                    }}
+                    keyboardType="numeric"
+                  />
+                </View>
+                {customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt && (
+                  <Text style={styles.installmentError}>
+                    {t('paymentScreen.installmentOverpay', 'Nominal melebihi sisa hutang!')}
+                  </Text>
+                )}
+                {customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) < minimumSubsequent && (
+                  <Text style={styles.installmentError}>
+                    Minimal pembayaran adalah {formatCurrency(minimumSubsequent)}
+                  </Text>
+                )}
+              </View>
+            )}
+
             <View style={{ height: 180 }} />
           </View>
         )}
@@ -391,10 +471,47 @@ const PaymentScreen = ({ navigation, route }) => {
       {/* Pay Button jika belum lunas */}
       {!isInvoicePaid && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + SPACING[2], SPACING[6]) }]}>
+          {isFirstPayment && (
+            <View style={{ marginBottom: SPACING[3] }}>
+              <Text style={{ textAlign: 'center', color: COLORS.textSecondary, marginBottom: SPACING[2], fontSize: FONT_SIZE.sm }}>
+                {t('paymentScreen.firstPaymentChoice', 'Pilih nominal pembayaran pertama Anda:')}
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: SPACING[2] }}>
+                <TouchableOpacity
+                  style={[
+                    { flex: 1, padding: SPACING[2], borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+                    firstPaymentType === 'dp' && { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}10` }
+                  ]}
+                  onPress={() => setFirstPaymentType('dp')}
+                >
+                  <Text style={[{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semiBold }, firstPaymentType === 'dp' ? { color: COLORS.primary } : { color: COLORS.textPrimary }]}>
+                    DP 50%
+                  </Text>
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 4 }}>
+                    {formatCurrency(minimumDP)}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    { flex: 1, padding: SPACING[2], borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+                    firstPaymentType === 'full' && { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}10` }
+                  ]}
+                  onPress={() => setFirstPaymentType('full')}
+                >
+                  <Text style={[{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semiBold }, firstPaymentType === 'full' ? { color: COLORS.primary } : { color: COLORS.textPrimary }]}>
+                    Bayar Lunas
+                  </Text>
+                  <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 4 }}>
+                    {formatCurrency(totalAmount)}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
           <TouchableOpacity
-            style={[styles.payBtn, isLoading && styles.payBtnDisabled]}
+            style={[styles.payBtn, isLoading ? styles.payBtnDisabled : null, (customAmountText && (parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt || parseInt(customAmountText.replace(/\D/g, ''), 10) < minimumSubsequent)) ? styles.payBtnDisabled : null]}
             onPress={handlePay}
-            disabled={isLoading}
+            disabled={Boolean(isLoading || (customAmountText && (parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt || parseInt(customAmountText.replace(/\D/g, ''), 10) < minimumSubsequent)))}
             activeOpacity={0.8}
           >
             {isLoading ? (
@@ -443,13 +560,14 @@ const PaymentScreen = ({ navigation, route }) => {
                     url.includes('app.kosanku.com/payment/success')
                   ) {
                     setIsFinalizing(true);
-                    setTimeout(() => {
+                    setTimeout(async () => {
                       setXenditResult(null);
                       setIsFinalizing(false);
-                      setIsInvoicePaid(true);
+                      // Cek status real dari DB, jangan langsung set paid
+                      await checkStatusNow();
                       Alert.alert(
-                        t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
-                        t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
+                        t('paymentScreen.paymentProcessed', '✅ Pembayaran Diproses!'),
+                        t('paymentScreen.paymentProcessedDesc', 'Pembayaran Anda telah diterima. Status tagihan akan diperbarui secara otomatis.'),
                         [{ text: 'OK', onPress: () => navigation.popToTop() }]
                       );
                     }, 300);
@@ -500,14 +618,15 @@ const PaymentScreen = ({ navigation, route }) => {
                       errorUrl.startsWith('kosanku://payment/success') ||
                       errorUrl.includes('app.kosanku.com/payment/success');
                     setIsFinalizing(true);
-                    setTimeout(() => {
+                    setTimeout(async () => {
                       setXenditResult(null);
                       setIsFinalizing(false);
                       if (isSuccess) {
-                        setIsInvoicePaid(true);
+                        // Cek status real dari DB, jangan langsung set paid
+                        await checkStatusNow();
                         Alert.alert(
-                          t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
-                          t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
+                          t('paymentScreen.paymentProcessed', '✅ Pembayaran Diproses!'),
+                          t('paymentScreen.paymentProcessedDesc', 'Pembayaran Anda telah diterima. Status tagihan akan diperbarui secara otomatis.'),
                           [{ text: 'OK', onPress: () => navigation.popToTop() }]
                         );
                       } else {
@@ -531,7 +650,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   // Fallback — jika lolos dari onShouldStartLoadWithRequest
                   if (isSuccessUrl && !isFinalizing) {
                     setXenditResult(null);
-                    setIsInvoicePaid(true);
+                    checkStatusNow(); // Cek status real dari DB
                   } else if (isFailedUrl && !isFinalizing) {
                     setXenditResult(null);
                   }
@@ -770,6 +889,73 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   openUrlBtnText: { color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.semiBold, fontSize: FONT_SIZE.sm },
+  // ── Progress Bar ──
+  progressBarBg: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 3,
+  },
+  progressText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: FONT_SIZE.xs,
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  // ── Cicilan Form ──
+  installmentBox: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING[4],
+    marginTop: SPACING[3],
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    ...SHADOW.sm,
+  },
+  installmentTitle: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
+  },
+  installmentDesc: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING[3],
+    lineHeight: 18,
+  },
+  installmentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING[3],
+    backgroundColor: COLORS.grey50,
+  },
+  installmentPrefix: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textSecondary,
+    marginRight: SPACING[2],
+  },
+  installmentInput: {
+    flex: 1,
+    paddingVertical: SPACING[3],
+    fontSize: FONT_SIZE.lg,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textPrimary,
+  },
+  installmentError: {
+    color: COLORS.error,
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semiBold,
+    marginTop: SPACING[1],
+  },
 });
 
 export default PaymentScreen;
