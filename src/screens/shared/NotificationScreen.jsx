@@ -26,6 +26,7 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import useNotificationStore from '../../store/notificationStore';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 import supabaseClient from '../../services/supabaseClient';
 
 const formatRelativeTime = (dateStr, i18n) => {
@@ -421,7 +422,7 @@ const NotificationScreen = () => {
                   
                 if (reqData) {
                   navigation.navigate('MyRentStack', {
-                    screen: 'ContractDetailScreen',
+                    screen: TENANT_SCREENS.CONTRACT_DETAIL,
                     params: { request: reqData },
                   });
                   return;
@@ -452,7 +453,7 @@ const NotificationScreen = () => {
               
             if (reqData) {
               navigation.navigate('MyRentStack', {
-                screen: 'ContractDetailScreen',
+                screen: TENANT_SCREENS.CONTRACT_DETAIL,
                 params: { request: reqData },
               });
               return;
