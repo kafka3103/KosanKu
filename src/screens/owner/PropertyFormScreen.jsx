@@ -370,23 +370,22 @@ const PropertyFormScreen = ({ navigation, route }) => {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 180 }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {isEdit ? t('property.form.editTitle') : t('property.form.addTitle')}
           </Text>
         </View>
+      </View>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + SPACING[8] }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* Cover Photo */}
         <TouchableOpacity
@@ -417,22 +416,23 @@ const PropertyFormScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             )}
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], paddingHorizontal: SPACING[5] }}>
-            {additionalPhotos.map((photoUri, index) => (
-              <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
-                <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
-                <TouchableOpacity
-                  style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
-                  onPress={() => removeAdditionalPhoto(index)}
-                >
-                  <Ionicons name="close" size={16} color="white" />
-                </TouchableOpacity>
-              </View>
-            ))}
-            {additionalPhotos.length === 0 && (
-              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>{t('property.form.noAdditionalPhoto', 'Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.')}</Text>
-            )}
-          </ScrollView>
+          {additionalPhotos.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], paddingHorizontal: SPACING[5] }}>
+              {additionalPhotos.map((photoUri, index) => (
+                <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
+                  <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
+                  <TouchableOpacity
+                    style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
+                    onPress={() => removeAdditionalPhoto(index)}
+                  >
+                    <Ionicons name="close" size={16} color="white" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>{t('property.form.noAdditionalPhoto', 'Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.')}</Text>
+          )}
         </View>
 
         {/* Informasi Dasar */}
@@ -910,16 +910,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   container: {
-    paddingBottom: 100,
   },
   header: {
     backgroundColor: COLORS.primary,
-    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
   backBtn: {
-    marginBottom: SPACING[3],
+    marginRight: SPACING[3],
   },
   backBtnText: {
     color: COLORS.primaryLight,

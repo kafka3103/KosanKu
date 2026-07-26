@@ -19,6 +19,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
@@ -165,10 +166,9 @@ const OwnerDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
-    { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: '👥' },
-    { label: t('navigation.owner.reports'), screen: OWNER_SCREENS.REPORT, icon: '📈' },
-    { label: t('navigation.owner.settings'), screen: OWNER_SCREENS.SETTINGS, icon: '⚙️' },
+    { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: 'clipboard-outline' },
+    { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: 'people-outline' },
+    { label: t('navigation.owner.settings'), screen: OWNER_SCREENS.SETTINGS, icon: 'settings-outline' },
   ];
 
 
@@ -227,7 +227,7 @@ const OwnerDrawerContent = ({ navigation }) => {
             style={styles.drawerMenuItem}
             onPress={() => navigation.navigate(item.screen)}
           >
-            <Text style={styles.drawerMenuIcon}>{item.icon}</Text>
+            <Ionicons name={item.icon} size={24} color={COLORS.textSecondary} style={styles.drawerMenuIcon} />
             <Text style={styles.drawerMenuLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}

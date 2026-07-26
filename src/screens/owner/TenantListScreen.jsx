@@ -194,12 +194,13 @@ const TenantListScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-          
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('ownerTenantList.title', 'Daftar Penghuni')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('ownerTenantList.title', 'Daftar Penghuni')}</Text>
+        </View>
         <Text style={styles.headerSubtitle}>
           {t('ownerTenantList.activeTenants', '{{count}} penghuni aktif', { count: contracts.length })}
         </Text>
@@ -255,14 +256,14 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3], flexDirection: 'row', alignItems: 'center' },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
   },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2, marginLeft: 32 },
   listContent: { padding: SPACING[4], gap: SPACING[3], paddingBottom: SPACING[10] },
   card: {
     backgroundColor: COLORS.white,

@@ -19,6 +19,7 @@ import {
   Platform,
   Linking,
   Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -646,7 +647,7 @@ const SearchScreen = ({ navigation }) => {
         transparent
         onRequestClose={() => setShowFilter(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding">
           <View style={[styles.filterModal, { paddingBottom: (insets?.bottom || 0) + SPACING[5] }]}>
             <View style={styles.filterModalHeader}>
               <Text style={styles.filterModalTitle}>{t('searchScreen.filterTitle', 'Filter Pencarian')}</Text>
@@ -670,7 +671,7 @@ const SearchScreen = ({ navigation }) => {
                   </TouchableOpacity>
                   {availableCities.map((city) => (
                     <TouchableOpacity
-                      key={city}
+                      key={city}    
                       style={[styles.chip, filterCity === city && styles.chipActive]}
                       onPress={() => setFilterCity(city)}
                     >
@@ -747,7 +748,7 @@ const SearchScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
