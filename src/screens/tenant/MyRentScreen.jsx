@@ -114,11 +114,7 @@ const MyRentScreen = ({ navigation }) => {
     };
   }, [currentUser?.id, loadData]);
 
-<<<<<<< HEAD
 
-
-=======
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -242,32 +238,7 @@ const MyRentScreen = ({ navigation }) => {
                   <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
                 </View>
 
-<<<<<<< HEAD
-      {/* Kontrak Aktif */}
-      {contracts.map((contract, index) => {
-        const room = contract?.rooms;
-        const property = room?.properties;
-        const contractInvoices = recentInvoices.filter(inv => inv.contract_id === contract.id);
-        
-        return (
-          <View key={contract.id} style={{ marginBottom: 32 }}>
-            {/* Room Card */}
-            <View style={styles.section}>
-              {index === 0 && <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>}
-              
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() =>
-                  navigation.navigate(TENANT_SCREENS.CONTRACT_DETAIL, {
-                    contract,
-                    invoices: contractInvoices,
-                  })
-                }
-              >
-                <View style={styles.roomCard}>
-=======
                 <View style={styles.cardBody}>
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
                   {room?.photo_urls?.[0] || property?.cover_photo_url ? (
                     <Image
                       source={{ uri: room?.photo_urls?.[0] ?? property?.cover_photo_url }}
@@ -300,29 +271,12 @@ const MyRentScreen = ({ navigation }) => {
                       {formatCurrency((activeInvoice.total_amount || 0) - (activeInvoice.paid_amount || 0))}
                     </Text>
                   </View>
-<<<<<<< HEAD
-                  
-                  {/* Chevron to indicate navigation */}
-                  <View style={{ position: 'absolute', right: 16, top: '50%', marginTop: -12 }}>
-                    <Ionicons name="chevron-forward" size={24} color={COLORS.textTertiary} />
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-      })}
-    </ScrollView>
-
-
-=======
                 )}
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
     </>
   );
 };

@@ -409,10 +409,7 @@ const NotificationScreen = () => {
                     *,
                     contracts (
                       id, start_date, end_date, status, monthly_rate,
-<<<<<<< HEAD
-=======
-                      contract_facilities (*, facility_master(name, icon_name)),
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
+
                       invoices (id, status, total_amount, paid_amount, due_date, billing_period)
                     ),
                     rooms(
@@ -426,11 +423,7 @@ const NotificationScreen = () => {
                   
                 if (reqData) {
                   navigation.navigate('MyRentStack', {
-<<<<<<< HEAD
-                    screen: TENANT_SCREENS.CONTRACT_DETAIL,
-=======
                     screen: 'ContractDetailScreen',
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
                     params: { request: reqData },
                   });
                   return;
@@ -448,10 +441,7 @@ const NotificationScreen = () => {
                 *,
                 contracts (
                   id, start_date, end_date, status, monthly_rate,
-<<<<<<< HEAD
-=======
-                  contract_facilities (*, facility_master(name, icon_name)),
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
+
                   invoices (id, status, total_amount, paid_amount, due_date, billing_period)
                 ),
                 rooms(
@@ -465,11 +455,7 @@ const NotificationScreen = () => {
               
             if (reqData) {
               navigation.navigate('MyRentStack', {
-<<<<<<< HEAD
-                screen: TENANT_SCREENS.CONTRACT_DETAIL,
-=======
                 screen: 'ContractDetailScreen',
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
                 params: { request: reqData },
               });
               return;

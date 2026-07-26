@@ -100,27 +100,6 @@ const PaymentScreen = ({ navigation, route }) => {
   const [xenditResult, setXenditResult] = useState(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-<<<<<<< HEAD
-  // Logic for Minimum Payment and DP
-  const totalAmount = parseFloat(invoice?.total_amount ?? 0);
-  const paidAmount = parseFloat(invoice?.paid_amount ?? 0);
-  const isFirstPayment = paidAmount === 0;
-  const rawUnpaidAmount = totalAmount - paidAmount;
-  
-  // Calculate minimum payment
-  let minAmount = 0;
-  if (isFirstPayment) {
-    minAmount = totalAmount * 0.5; // Minimal DP 50%
-  } else {
-    minAmount = Math.max(100000, rawUnpaidAmount * 0.1); // Min cicilan 100rb atau 10% sisa
-    if (rawUnpaidAmount <= 100000) {
-      minAmount = rawUnpaidAmount; // Wajib lunas jika sisa <= 100rb
-    }
-  }
-
-  // Payment amount input state
-  const [paymentAmountStr, setPaymentAmountStr] = useState(rawUnpaidAmount.toString());
-=======
   // ── Logika DP 50% & Cicilan ──
   const totalAmount = parseFloat(invoice?.total_amount ?? 0);
   const paidAmount = parseFloat(invoice?.paid_amount ?? 0);
@@ -147,7 +126,6 @@ const PaymentScreen = ({ navigation, route }) => {
     return remainingDebt; // default = bayar sisa penuh
   };
   const unpaidAmount = getPayAmount();
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
 
 
   // 1. Cek langsung status tagihan di database saat layar dibuka / fokus
@@ -195,23 +173,14 @@ const PaymentScreen = ({ navigation, route }) => {
     const subscription = subscribeToInvoiceRealtime(invoiceId, (updatedInvoice) => {
       if (!isMountedRef.current) return;
       setInvoice((prev) => ({ ...prev, ...updatedInvoice }));
-      if (updatedInvoice.status === 'paid' || updatedInvoice.status === 'partial') {
-        setIsInvoicePaid(updatedInvoice.status === 'paid');
+      if (updatedInvoice.status === 'paid') {
+        setIsInvoicePaid(true);
         setXenditResult(null);
-        
-        if (updatedInvoice.status === 'paid') {
-          Alert.alert(
-            t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
-            t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
-            [{ text: 'OK', onPress: () => navigation.popToTop() }]
-          );
-        } else {
-          Alert.alert(
-            'Pembayaran Parsial Terverifikasi',
-            `Pembayaran sebesar ${formatCurrency(updatedInvoice.paid_amount - paidAmount)} telah masuk. Sisa tagihan: ${formatCurrency(totalAmount - updatedInvoice.paid_amount)}`,
-            [{ text: 'OK', onPress: () => navigation.popToTop() }]
-          );
-        }
+        Alert.alert(
+          t('paymentScreen.statusPaid', '🎉 Pembayaran Terverifikasi!'),
+          t('paymentScreen.paidDesc', 'Tagihan kos Anda telah berhasil dibayar lunas via Xendit secara otomatis.'),
+          [{ text: 'OK', onPress: () => navigation.popToTop() }]
+        );
       }
     });
 
@@ -235,22 +204,11 @@ const PaymentScreen = ({ navigation, route }) => {
       return;
     }
 
-    const parsedPaymentAmount = parseFloat(paymentAmountStr) || 0;
-    
-    if (parsedPaymentAmount < minAmount) {
-      Alert.alert('Jumlah Terlalu Kecil', `Minimal pembayaran adalah ${formatCurrency(minAmount)}.`);
-      return;
-    }
-    if (parsedPaymentAmount > rawUnpaidAmount) {
-      Alert.alert('Jumlah Terlalu Besar', `Maksimal pembayaran adalah sejumlah sisa tagihan: ${formatCurrency(rawUnpaidAmount)}.`);
-      return;
-    }
-
     if (selectedMethod.isAuto) {
       // Proses pembayaran otomatis melalui Xendit Checkout
       Alert.alert(
         t('paymentScreen.xenditAutoAlertTitle', 'Pembayaran Otomatis Xendit'),
-        t('paymentScreen.xenditAutoAlertMsg', 'Buka halaman pembayaran resmi Xendit senilai {{amount}}? Anda dapat memilih metode QRIS, Virtual Account, atau E-Wallet di sana. Status tagihan akan otomatis ter-update setelah Anda membayar.', { amount: formatCurrency(parsedPaymentAmount) }),
+        t('paymentScreen.xenditAutoAlertMsg', 'Buka halaman pembayaran resmi Xendit senilai {{amount}}? Anda dapat memilih metode QRIS, Virtual Account, atau E-Wallet di sana. Status tagihan akan lunas otomatis setelah Anda membayar.', { amount: formatCurrency(unpaidAmount) }),
         [
           { text: t('paymentScreen.cancel', 'Batal'), style: 'cancel' },
           {
@@ -265,7 +223,7 @@ const PaymentScreen = ({ navigation, route }) => {
               else if (selectedMethod.id === 'xendit_qris') paymentMethods = ['QRIS'];
               else if (selectedMethod.id === 'xendit_retail') paymentMethods = ['ALFAMART', 'INDOMARET'];
 
-              const result = await createXenditCheckout(invoice.id, paymentMethods, parsedPaymentAmount);
+              const result = await createXenditCheckout(invoice.id, paymentMethods, unpaidAmount);
               setIsLoading(false);
 
               if (result.isAlreadyPaid) {
@@ -299,7 +257,7 @@ const PaymentScreen = ({ navigation, route }) => {
     // Proses pembayaran manual
     Alert.alert(
       t('paymentScreen.manualAlertTitle', 'Konfirmasi Pembayaran Manual'),
-      t('paymentScreen.manualAlertMsg', 'Bayar {{amount}} via {{method}}?', { amount: formatCurrency(parsedPaymentAmount), method: selectedOption ?? selectedMethod.name }),
+      t('paymentScreen.manualAlertMsg', 'Bayar {{amount}} via {{method}}?', { amount: formatCurrency(unpaidAmount), method: selectedOption ?? selectedMethod.name }),
       [
         { text: t('paymentScreen.cancel', 'Batal'), style: 'cancel' },
         {
@@ -310,7 +268,7 @@ const PaymentScreen = ({ navigation, route }) => {
             const { error } = await recordManualPayment({
               invoice_id: invoice.id,
               tenant_id: currentUser.id,
-              amount: parsedPaymentAmount,
+              amount: unpaidAmount,
               payment_method: selectedMethod.id,
               payment_channel: selectedOption ?? selectedMethod.name,
             });
@@ -358,7 +316,7 @@ const PaymentScreen = ({ navigation, route }) => {
             {isInvoicePaid ? t('paymentScreen.statusPaid', '🎉 Status Tagihan') : t('paymentScreen.totalToPay', 'Total yang Harus Dibayar')}
           </Text>
           <Text style={styles.amountValue}>
-            {isInvoicePaid ? t('paymentScreen.fullyPaid', 'TELAH LUNAS') : formatCurrency(rawUnpaidAmount)}
+            {isInvoicePaid ? t('paymentScreen.fullyPaid', 'TELAH LUNAS') : formatCurrency(unpaidAmount)}
           </Text>
           <Text style={styles.amountNote}>Invoice #{invoice?.invoice_number || invoice?.id?.slice(0, 8)}</Text>
 
@@ -394,36 +352,6 @@ const PaymentScreen = ({ navigation, route }) => {
         ) : (
           /* Payment Methods */
           <View style={styles.content}>
-            {/* Payment Amount Input */}
-            <Text style={styles.sectionTitle}>Jumlah Pembayaran</Text>
-            <View style={styles.amountInputContainer}>
-              <Text style={styles.currencyPrefix}>Rp</Text>
-              <TextInput
-                style={styles.amountInput}
-                keyboardType="numeric"
-                value={paymentAmountStr}
-                onChangeText={(text) => {
-                  // Only allow digits
-                  const cleaned = text.replace(/[^0-9]/g, '');
-                  setPaymentAmountStr(cleaned);
-                }}
-                placeholder="Masukkan nominal bayar"
-                placeholderTextColor={COLORS.textTertiary}
-              />
-            </View>
-            <View style={styles.amountInfoContainer}>
-              <Text style={styles.amountInfoText}>
-                Minimal bayar: <Text style={{ fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>{formatCurrency(minAmount)}</Text>
-              </Text>
-              {isFirstPayment ? (
-                <Text style={styles.amountSubInfoText}>Ini adalah pembayaran pertama (minimal DP 50%).</Text>
-              ) : (
-                <Text style={styles.amountSubInfoText}>Cicilan minimal 10% dari sisa tagihan atau Rp 100.000.</Text>
-              )}
-            </View>
-            
-            <View style={{ height: SPACING[4] }} />
-
             <Text style={styles.sectionTitle}>{t('paymentScreen.selectMethod', 'Pilih Metode Pembayaran')}</Text>
             {PAYMENT_METHODS.map((method) => {
               const isMethodSelected = selectedMethod?.id === method.id;
@@ -537,12 +465,6 @@ const PaymentScreen = ({ navigation, route }) => {
       {/* Pay Button jika belum lunas */}
       {!isInvoicePaid && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + SPACING[2], SPACING[6]) }]}>
-<<<<<<< HEAD
-          {parseFloat(paymentAmountStr) < minAmount && (
-            <Text style={{ textAlign: 'center', color: COLORS.error, marginBottom: SPACING[2], fontSize: FONT_SIZE.xs }}>
-              Jumlah tidak mencapai minimum pembayaran.
-            </Text>
-=======
           {isFirstPayment && (
             <View style={{ marginBottom: SPACING[3] }}>
               <Text style={{ textAlign: 'center', color: COLORS.textSecondary, marginBottom: SPACING[2], fontSize: FONT_SIZE.sm }}>
@@ -579,7 +501,6 @@ const PaymentScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               </View>
             </View>
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
           )}
           <TouchableOpacity
             style={[styles.payBtn, isLoading && styles.payBtnDisabled, (customAmountText && parseInt(customAmountText.replace(/\D/g, ''), 10) > remainingDebt) && styles.payBtnDisabled]}
@@ -591,7 +512,7 @@ const PaymentScreen = ({ navigation, route }) => {
               <ActivityIndicator color={COLORS.white} />
             ) : (
               <Text style={styles.payBtnText}>
-                {t('paymentScreen.payAmount', 'Bayar {{amount}}', { amount: formatCurrency(parseFloat(paymentAmountStr) || 0) })}
+                {t('paymentScreen.payAmount', 'Bayar {{amount}}', { amount: formatCurrency(unpaidAmount) })}
               </Text>
             )}
           </TouchableOpacity>
@@ -636,18 +557,11 @@ const PaymentScreen = ({ navigation, route }) => {
                     setTimeout(async () => {
                       setXenditResult(null);
                       setIsFinalizing(false);
-<<<<<<< HEAD
-                      setIsInvoicePaid(true); // TODO: properly evaluate partial state
-                      Alert.alert(
-                        t('paymentScreen.statusPaid', '🎉 Pembayaran Berhasil!'),
-                        'Pembayaran Anda telah sukses dan diverifikasi.',
-=======
                       // Cek status real dari DB, jangan langsung set paid
                       await checkStatusNow();
                       Alert.alert(
                         t('paymentScreen.paymentProcessed', '✅ Pembayaran Diproses!'),
                         t('paymentScreen.paymentProcessedDesc', 'Pembayaran Anda telah diterima. Status tagihan akan diperbarui secara otomatis.'),
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
                         [{ text: 'OK', onPress: () => navigation.popToTop() }]
                       );
                     }, 300);
@@ -705,13 +619,8 @@ const PaymentScreen = ({ navigation, route }) => {
                         // Cek status real dari DB, jangan langsung set paid
                         await checkStatusNow();
                         Alert.alert(
-<<<<<<< HEAD
-                          t('paymentScreen.statusPaid', '🎉 Pembayaran Berhasil!'),
-                          'Pembayaran Anda telah sukses dan diverifikasi.',
-=======
                           t('paymentScreen.paymentProcessed', '✅ Pembayaran Diproses!'),
                           t('paymentScreen.paymentProcessedDesc', 'Pembayaran Anda telah diterima. Status tagihan akan diperbarui secara otomatis.'),
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
                           [{ text: 'OK', onPress: () => navigation.popToTop() }]
                         );
                       } else {
@@ -790,44 +699,6 @@ const styles = StyleSheet.create({
 
   content: { padding: SPACING[4] },
   sectionTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginBottom: SPACING[3] },
-  
-  amountInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING[3],
-    marginBottom: SPACING[2],
-  },
-  currencyPrefix: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
-    marginRight: SPACING[2],
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textPrimary,
-    paddingVertical: SPACING[3],
-  },
-  amountInfoContainer: {
-    backgroundColor: `${COLORS.primary}10`,
-    padding: SPACING[3],
-    borderRadius: BORDER_RADIUS.md,
-  },
-  amountInfoText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  amountSubInfoText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
-  },
 
   methodContainer: {
     backgroundColor: COLORS.white,
