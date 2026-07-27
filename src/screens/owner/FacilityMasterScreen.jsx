@@ -89,13 +89,11 @@ const FacilityMasterScreen = ({ navigation }) => {
     if (editingFacility) {
       result = await updateFacilityMaster(editingFacility.id, {
         name: form.name.trim(),
-        icon_name: null,
         category: form.category || 'general',
       });
     } else {
       result = await createFacilityMaster({
         name: form.name.trim(),
-        icon_name: null,
         category: form.category || 'general',
       });
     }
