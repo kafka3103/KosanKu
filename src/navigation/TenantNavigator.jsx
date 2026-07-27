@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   drawerContainer: { flex: 1 },
   drawerHeader: {
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.primary,
     padding: SPACING[6],
     paddingTop: SPACING[12],
     alignItems: 'flex-start',
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   drawerAvatarText: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.secondary,
+    color: COLORS.primary,
   },
   drawerUserName: {
     fontSize: FONT_SIZE.lg,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   drawerUserRole: {
     fontSize: FONT_SIZE.sm,
-    color: 'rgba(255,255,255,0.8)',
+    color: COLORS.primaryLight,
     marginTop: 2,
   },
   drawerMenuContainer: {

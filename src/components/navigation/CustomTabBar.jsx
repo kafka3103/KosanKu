@@ -38,7 +38,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
     let isMounted = true;
     const fetchUnreadCount = async () => {
       if (!currentUser?.id) return;
-      
+
       // Pastikan data pembacaan virtual notif dari AsyncStorage dimuat
       await useNotificationStore.getState().initVirtualReads();
       const isVirtualRead = useNotificationStore.getState().isVirtualRead;
