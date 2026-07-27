@@ -159,10 +159,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
           zoomLevel: 15,
           animationDuration: 800,
         });
-        Alert.alert(
-          t('property.form.gpsDetectedTitle', '📍 Lokasi GPS Terdeteksi!'),
-          t('property.form.gpsDetectedMsg', 'Koordinat berhasil disimpan dari posisi Anda:\nLat: {{lat}}\nLong: {{lon}}', { lat: current.coords.latitude.toFixed(5), lon: current.coords.longitude.toFixed(5) })
-        );
+        // Remove alert as per user request
       } else {
         Alert.alert(t('property.form.gpsErrorTitle', 'Gagal'), t('property.form.gpsErrorMsg', 'Tidak dapat mengambil lokasi GPS saat ini.'));
       }
@@ -658,6 +655,13 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 {t('property.form.mapHint', '💡 Ketuk di atas peta untuk memindahkan pin ke lokasi kosan Anda')}
               </Text>
             </View>
+          </View>
+
+          {/* Coordinate Info Text */}
+          <View style={{ marginTop: SPACING[2], alignItems: 'center' }}>
+            <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textTertiary }}>
+              Latitude: {tempLatitude.toFixed(6)}, Longitude: {tempLongitude.toFixed(6)}
+            </Text>
           </View>
 
           {/* Batal dan Simpan Inline */}
