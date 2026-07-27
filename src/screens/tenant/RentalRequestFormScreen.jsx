@@ -24,6 +24,7 @@ import { format, addMonths } from 'date-fns';
 import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../../localization/i18n';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
