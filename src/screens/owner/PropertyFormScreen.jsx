@@ -40,6 +40,7 @@ import {
   uploadMultiplePropertyPhotos,
   getFacilityMaster,
 } from '../../services/propertyService';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 const GENDER_OPTIONS = (t) => [
   { value: 'male', label: t('property.form.genderMale', 'Putra'), icon: 'man-outline' },
@@ -184,16 +185,22 @@ const PropertyFormScreen = ({ navigation, route }) => {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setCoverPhotoUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setCoverPhotoUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickCoverFromGallery = async () => {
@@ -203,16 +210,22 @@ const PropertyFormScreen = ({ navigation, route }) => {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setCoverPhotoUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setCoverPhotoUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickCoverPhoto = () => {
@@ -234,13 +247,20 @@ const PropertyFormScreen = ({ navigation, route }) => {
       Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permCamDenied', 'Akses kamera diperlukan.'));
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setAdditionalPhotos(prev => [...prev, result.assets[0].uri]);
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setAdditionalPhotos(prev => [...prev, result.assets[0].uri]);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickAdditionalFromGallery = async () => {
@@ -249,15 +269,22 @@ const PropertyFormScreen = ({ navigation, route }) => {
       Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permGalleryDenied', 'Akses galeri diperlukan.'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.length > 0) {
-      const uris = result.assets.map(a => a.uri);
-      setAdditionalPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsMultipleSelection: true,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.length > 0) {
+          const uris = result.assets.map(a => a.uri);
+          setAdditionalPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickAdditionalPhotos = () => {
@@ -766,7 +793,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                         isSelected && styles.facilityLabelSelected,
                       ]}
                     >
-                      {fac.name}
+                      {getLocalizedField(fac, 'name')}
                     </Text>
                   </TouchableOpacity>
                 );

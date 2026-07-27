@@ -40,6 +40,7 @@ const SettingsScreen = ({ navigation }) => {
   // States for delete account
   const { currentUser, currentSession } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [modalKey, setModalKey] = useState(0);
@@ -49,21 +50,14 @@ const SettingsScreen = ({ navigation }) => {
   const currentLang = i18n.language;
 
   const handleChangeLanguage = () => {
-    Alert.alert(
-      t('settings.languageTitle', 'Bahasa / Language'),
-      t('settings.languageMsg', 'Pilih bahasa aplikasi:'),
-      [
-        {
-          text: '🇮🇩 Bahasa Indonesia',
-          onPress: () => saveLanguagePreference('id'),
-        },
-        {
-          text: '🇬🇧 English',
-          onPress: () => saveLanguagePreference('en'),
-        },
-        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
-      ]
-    );
+    setShowLanguageModal(true);
+  };
+
+  const handleSelectLanguage = (langCode) => {
+    setShowLanguageModal(false);
+    setTimeout(() => {
+      saveLanguagePreference(langCode);
+    }, 300);
   };
 
   const handleChangePassword = () => {
@@ -102,7 +96,7 @@ const SettingsScreen = ({ navigation }) => {
     if (!isGoogleOnly) {
       // Verifikasi password dengan mencoba login ulang
       const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
-      
+
       if (verifyError) {
         setIsDeleting(false);
         Alert.alert(t('common.fail', 'Gagal'), t('settings.deleteWrongPassword', 'Password salah atau terjadi kesalahan.'));
@@ -113,7 +107,7 @@ const SettingsScreen = ({ navigation }) => {
     // Jika password benar, lanjutkan hapus akun
     const { error: deleteError } = await deleteAccount();
     setIsDeleting(false);
-    
+
     if (deleteError) {
       Alert.alert(t('common.fail', 'Gagal'), t('settings.deleteFailMsg', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id'));
     } else {
@@ -129,6 +123,7 @@ const SettingsScreen = ({ navigation }) => {
       ]);
     }
   };
+
   const handleLogout = () => {
     Alert.alert(t('settings.logoutTitle', 'Keluar'), t('settings.logoutConfirm', 'Yakin ingin keluar dari akun?'), [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -187,20 +182,7 @@ const SettingsScreen = ({ navigation }) => {
             />
           }
         />
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => {
-            scheduleLocalNotification(
-              "Uji Coba Notifikasi",
-              "Ini adalah notifikasi lokal yang muncul setelah 5 detik.",
-              { type: 'test' },
-              5
-            );
-          }}
-        >
-          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.actionButtonText}>Uji Coba Notifikasi Lokal (5 detik)</Text>
-        </TouchableOpacity>
+
         <SettingRow
           icon="mail-outline"
           label={t('settings.notifications.email')}
@@ -215,64 +197,64 @@ const SettingsScreen = ({ navigation }) => {
         />
       </View>
 
-      {/* Preferensi */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.preferences.title')}</Text>
-        <SettingRow
-          icon="language-outline"
-          label={t('settings.preferences.language')}
-          value={currentLang === 'id' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English'}
-          onPress={handleChangeLanguage}
-        />
-      </View>
+        {/* Preferensi */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.preferences.title')}</Text>
+          <SettingRow
+            icon="language-outline"
+            label={t('settings.preferences.language')}
+            value={currentLang === 'id' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English'}
+            onPress={handleChangeLanguage}
+          />
+        </View>
 
-      {/* Akun */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.account.title')}</Text>
-        <SettingRow
-          icon="key-outline"
-          label={t('settings.account.changePassword')}
-          onPress={handleChangePassword}
-        />
-        <SettingRow
-          icon="shield-checkmark-outline"
-          label={t('settings.account.privacyPolicy')}
-          onPress={() => Linking.openURL('https://kosanku.id/privacy')}
-        />
-        <SettingRow
-          icon="document-text-outline"
-          label={t('settings.account.termsOfService')}
-          onPress={() => Linking.openURL('https://kosanku.id/terms')}
-        />
-        <SettingRow
-          icon="headset-outline"
-          label={t('settings.contactSupport', 'Hubungi Support')}
-          onPress={() => Linking.openURL('mailto:support@kosanku.id')}
-        />
-      </View>
+        {/* Akun */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.account.title')}</Text>
+          <SettingRow
+            icon="key-outline"
+            label={t('settings.account.changePassword')}
+            onPress={handleChangePassword}
+          />
+          <SettingRow
+            icon="shield-checkmark-outline"
+            label={t('settings.account.privacyPolicy')}
+            onPress={() => Linking.openURL('https://kosanku.id/privacy')}
+          />
+          <SettingRow
+            icon="document-text-outline"
+            label={t('settings.account.termsOfService')}
+            onPress={() => Linking.openURL('https://kosanku.id/terms')}
+          />
+          <SettingRow
+            icon="headset-outline"
+            label={t('settings.contactSupport', 'Hubungi Support')}
+            onPress={() => Linking.openURL('mailto:support@kosanku.id')}
+          />
+        </View>
 
-      {/* Zona Bahaya */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.accountSection', 'Akun')}</Text>
-        <TouchableOpacity style={styles.logoutRow} onPress={handleLogout} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={[styles.logoutText, { marginLeft: 8 }]}>{t('profile.logoutButton')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteRow}
-          onPress={handleDeleteAccount}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-          <Text style={[styles.deleteText, { marginLeft: 8 }]}>{t('settings.btnDeleteAccount', 'Hapus Akun')}</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Zona Bahaya */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.accountSection', 'Akun')}</Text>
+          <TouchableOpacity style={styles.logoutRow} onPress={handleLogout} activeOpacity={0.7}>
+            <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+            <Text style={[styles.logoutText, { marginLeft: 8 }]}>{t('profile.logoutButton')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteRow}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+            <Text style={[styles.deleteText, { marginLeft: 8 }]}>{t('settings.btnDeleteAccount', 'Hapus Akun')}</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Footer Version */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>KosanKu v1.0.0</Text>
-        <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
-      </View>
+        {/* Footer Version */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>KosanKu v1.0.0</Text>
+          <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
+        </View>
       </ScrollView>
       {/* Modal Hapus Akun */}
       <Modal
@@ -291,7 +273,7 @@ const SettingsScreen = ({ navigation }) => {
             </View>
 
             <Text style={styles.modalSubtitle}>
-              {isGoogleOnly 
+              {isGoogleOnly
                 ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
                 : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
             </Text>
@@ -311,8 +293,8 @@ const SettingsScreen = ({ navigation }) => {
               />
             </View>
 
-            <TouchableOpacity 
-              style={[styles.modalDeleteBtn, isDeleting && { opacity: 0.7 }]} 
+            <TouchableOpacity
+              style={[styles.modalDeleteBtn, isDeleting && { opacity: 0.7 }]}
               onPress={executeDeleteAccount}
               disabled={isDeleting}
             >
@@ -325,15 +307,52 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Bahasa */}
+      <Modal
+        visible={showLanguageModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('settings.languageTitle', 'Bahasa / Language')}</Text>
+              <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>
+              {t('settings.languageMsg', 'Pilih bahasa aplikasi:')}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.languageOptionBtn}
+              onPress={() => handleSelectLanguage('id')}
+            >
+              <Text style={styles.languageOptionText}>🇮🇩 Bahasa Indonesia</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.languageOptionBtn}
+              onPress={() => handleSelectLanguage('en')}
+            >
+              <Text style={styles.languageOptionText}>🇬🇧 English</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { 
+  header: {
     backgroundColor: COLORS.primary,
-    
+
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
@@ -484,6 +503,15 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: FONT_SIZE.base,
     fontWeight: FONT_WEIGHT.bold,
+  },
+  languageOptionBtn: {
+    paddingVertical: SPACING[4],
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  languageOptionText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
   },
 });
 

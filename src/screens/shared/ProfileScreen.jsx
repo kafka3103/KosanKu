@@ -159,16 +159,22 @@ const ProfileScreen = ({ navigation }) => {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      await processAvatarUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          await processAvatarUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickAvatarFromGallery = async () => {
@@ -178,16 +184,22 @@ const ProfileScreen = ({ navigation }) => {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      await processAvatarUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          await processAvatarUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickAvatar = () => {
@@ -302,6 +314,16 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <>
+      {/* Header (Fixed) */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -314,16 +336,6 @@ const ProfileScreen = ({ navigation }) => {
         />
       }
     >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <DrawerButton />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
-          </View>
-        </View>
-      </View>
-
 
       {/* Avatar Section */}
       <View style={styles.avatarSection}>

@@ -707,6 +707,7 @@
     "nameLabel": "Facility Name *",
     "namePlaceholder": "e.g., 100 Mbps WiFi, AC, etc.",
     "categoryLabel": "Category",
+    "filterAll": "All Categories",
     "catGeneral": "General",
     "catOptional": "Optional",
     "catRoom": "Room",
@@ -789,7 +790,7 @@
     "cleanliness": "Cleanliness",
     "comfort": "Comfort",
     "security": "Security",
-    "price": "Price (Value for Money)",
+    "price": "Price ",
     "roomFacilities": "Room Facilities",
     "publicFacilities": "Public Facilities",
     "commentLabel": "Comment (Optional)",
@@ -1221,6 +1222,7 @@
   },
   "ownerRentalRequest": {
     "headerTitle": "Rental Requests",
+    "nikGuarantee": "NIK Guarantee:",
     "pendingSubtitleRental": "{{count}} requests pending confirmation",
     "pendingSubtitleFacility": "{{count}} facilities need approval",
     "tabRental": "Room Rent",
@@ -1237,6 +1239,7 @@
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
     "statusExpired": "Expired",
+    "expiryWarning": "Automatically cancels at {{time}}",
     "statusCancelled": "Cancelled",
     "whatsappMsg": "Hello {{name}}, I am the owner of {{property}}. I saw you submitted a rental request on the KosanKu app.",
     "room": "Room",
@@ -1346,7 +1349,10 @@
     "Pembayaran Berhasil": "Payment Successful"
   },
   "rentalRequest": {
-    "identityGuarantee": "Identity Guarantee"
+    "identityGuarantee": "Identity Guarantee",
+    "nikLockedMsg": "Your NIK is automatically included as a guarantee for this rental request:",
+    "nikInputMsg": "Please enter your NIK as an identity guarantee for this rental request:",
+    "nikPlaceholder": "Example: 3201234567890123"
   },
   "roleRegistration": {
     "duplicateNik": "This NIK is already registered. Please use your own NIK.",

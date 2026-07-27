@@ -12,13 +12,14 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
-import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -242,7 +243,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
 
       {/* Bottom CTA */}
       {room?.status === 'available' && (
-        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : (Platform.OS === 'android' ? 48 : 24) }]}>
           <View style={styles.bottomPrice}>
             <Text style={styles.bottomPriceLabel}>{t('roomDetail.priceLabel', 'Harga/bulan')}</Text>
             <Text style={styles.bottomPriceValue}>{formatCurrency(room?.base_price)}</Text>

@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -116,7 +117,7 @@ const ContractCard = ({ contract, onTerminate, onAddFacility, onRemoveFacility }
               <View style={styles.facilityItemLeft}>
                 <Ionicons name="sparkles" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
                 <Text style={styles.facilityItemName}>
-                  {cf.custom_facility_name || cf.facility_master?.name || t('contractScreen.extraFacility', 'Fasilitas Tambahan')}
+                  {cf.custom_facility_name || (cf.facility_master ? getLocalizedField(cf.facility_master, 'name') : null) || t('contractScreen.extraFacility', 'Fasilitas Tambahan')}
                 </Text>
               </View>
               <View style={styles.facilityItemRight}>
@@ -259,7 +260,7 @@ const ContractScreen = ({ navigation }) => {
   };
 
   const handleRemoveFacility = (cf) => {
-    const name = cf.custom_facility_name || cf.facility_master?.name || t('contractScreen.thisFacility', 'Fasilitas ini');
+    const name = cf.custom_facility_name || (cf.facility_master ? getLocalizedField(cf.facility_master, 'name') : null) || t('contractScreen.thisFacility', 'Fasilitas ini');
     Alert.alert(
       t('contractScreen.stopFacilityTitle', 'Hentikan Fasilitas'),
       t('contractScreen.stopFacilityMsg', 'Yakin ingin menghentikan langganan {{name}} (Rp {{price}}/bln)?\n\nPenghuni tidak akan dikenakan biaya fasilitas ini pada periode tagihan berikutnya.', { name, price: cf.price_per_month.toLocaleString('id-ID') }),

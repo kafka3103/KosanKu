@@ -17,6 +17,8 @@ import {
   TextInput,
   ScrollView,
   Linking,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -149,7 +151,7 @@ const RequestCard = ({ request, onApprove, onReject, t, i18n }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, backgroundColor: COLORS.successLight, padding: 8, borderRadius: 6 }}>
               <Ionicons name="shield-checkmark" size={16} color={COLORS.success} style={{ marginRight: 6 }} />
               <Text style={[styles.infoRow, { color: COLORS.textPrimary }]}>
-                Jaminan NIK: <Text style={styles.infoBold}>{tenantNIK}</Text>
+                {t('ownerRentalRequest.nikGuarantee', 'Jaminan NIK:')} <Text style={styles.infoBold}>{tenantNIK}</Text>
               </Text>
             </View>
           );
@@ -415,43 +417,48 @@ const RentalRequestScreen = ({ navigation }) => {
         animationType="slide"
         onRequestClose={() => setRejectModal({ visible: false, request: null })}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{t('ownerRentalRequest.rejectTitle', 'Tolak Pengajuan')}</Text>
-            <Text style={styles.modalSubtitle}>
-              {t('ownerRentalRequest.rejectSubtitle', 'Berikan alasan penolakan untuk tenant:')}
-            </Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder={t('ownerRentalRequest.rejectReasonPlaceholder', 'Misal: Kamar sudah penuh, atau tidak sesuai kriteria...')}
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              placeholderTextColor={COLORS.textTertiary}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setRejectModal({ visible: false, request: null })}
-              >
-                <Text style={styles.modalCancelText}>{t('ownerRentalRequest.cancel', 'Batal')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalRejectBtn, isProcessing && { opacity: 0.7 }]}
-                onPress={confirmReject}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator color={COLORS.white} size="small" />
-                ) : (
-                  <Text style={styles.modalRejectText}>{t('ownerRentalRequest.rejectTitle', 'Tolak Pengajuan')}</Text>
-                )}
-              </TouchableOpacity>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>{t('ownerRentalRequest.rejectTitle', 'Tolak Pengajuan')}</Text>
+              <Text style={styles.modalSubtitle}>
+                {t('ownerRentalRequest.rejectSubtitle', 'Berikan alasan penolakan untuk tenant:')}
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder={t('ownerRentalRequest.rejectReasonPlaceholder', 'Misal: Kamar sudah penuh, atau tidak sesuai kriteria...')}
+                value={rejectReason}
+                onChangeText={setRejectReason}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                placeholderTextColor={COLORS.textTertiary}
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelBtn}
+                  onPress={() => setRejectModal({ visible: false, request: null })}
+                >
+                  <Text style={styles.modalCancelText}>{t('ownerRentalRequest.cancel', 'Batal')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalRejectBtn, isProcessing && { opacity: 0.7 }]}
+                  onPress={confirmReject}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator color={COLORS.white} size="small" />
+                  ) : (
+                    <Text style={styles.modalRejectText}>{t('ownerRentalRequest.rejectTitle', 'Tolak Pengajuan')}</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
     </View>

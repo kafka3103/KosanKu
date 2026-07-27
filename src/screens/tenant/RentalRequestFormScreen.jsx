@@ -20,6 +20,8 @@ import {
   Image,
 } from 'react-native';
 
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { format, addMonths } from 'date-fns';
 import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +55,8 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const room = route.params?.room;
   const property = route.params?.property;
 
-  const [startDate] = useState(new Date()); // Selalu mulai dari hari ini
+  const [startDate, setStartDate] = useState(new Date()); // Default hari ini
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [durationMonths, setDurationMonths] = useState(1);
   const [tenantMessage, setTenantMessage] = useState('');
   const [tenantNIK, setTenantNIK] = useState('');
@@ -76,6 +79,17 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
   const endDate = addMonths(startDate, durationMonths);
   const totalCost = (room?.base_price ?? 0) * durationMonths;
+  const maxStartDate = addMonths(new Date(), 2);
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(Platform.OS === 'ios'); // On iOS we might want it to stay, but usually we hide it. Better just hide it on both unless inline.
+    if (selectedDate) {
+      setStartDate(selectedDate);
+    }
+    if (Platform.OS === 'android') {
+        setShowDatePicker(false);
+    }
+  };
 
 
 
@@ -251,16 +265,31 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
             <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.rentalPeriod', 'Periode Sewa')}</Text>
           </View>
           <View style={styles.dateRow}>
-            <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(startDate, i18n)}</Text>
-            </View>
+            <TouchableOpacity 
+              style={[styles.dateItem, { backgroundColor: COLORS.surface, borderColor: COLORS.primary, borderWidth: 1 }]} 
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')} <Ionicons name="pencil" size={12} color={COLORS.primary} /></Text>
+              <Text style={[styles.dateValue, { color: COLORS.primary }]}>{formatDate(startDate, i18n)}</Text>
+            </TouchableOpacity>
             <Text style={styles.dateSep}>→</Text>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.endDateLabel', 'Selesai')}</Text>
               <Text style={styles.dateValue}>{formatDate(endDate, i18n)}</Text>
             </View>
           </View>
+          
+          {showDatePicker && (
+            <DateTimePicker
+              value={startDate}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              maximumDate={maxStartDate}
+              onChange={handleDateChange}
+            />
+          )}
         </View>
 
 
@@ -275,7 +304,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           {isNiksLocked ? (
             <View style={{ backgroundColor: COLORS.successLight, padding: SPACING[3], borderRadius: BORDER_RADIUS.md }}>
                <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
-                 NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:
+                 {t('rentalRequest.nikLockedMsg', 'NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:')}
                </Text>
                <Text style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
                  {tenantNIK}
@@ -284,11 +313,11 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           ) : (
             <View>
               <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 8 }}>
-                Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:
+                {t('rentalRequest.nikInputMsg', 'Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:')}
               </Text>
               <TextInput
                 style={[styles.messageInput, { minHeight: 48, textAlignVertical: 'center' }]}
-                placeholder="Contoh: 3201234567890123"
+                placeholder={t('rentalRequest.nikPlaceholder', 'Contoh: 3201234567890123')}
                 keyboardType="numeric"
                 maxLength={16}
                 value={tenantNIK}

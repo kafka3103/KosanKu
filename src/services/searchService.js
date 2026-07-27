@@ -66,7 +66,7 @@ export const searchProperties = async (filters = {}) => {
         description_en,
         photo_urls,
         room_facilities(
-          facility_master(name)
+          facility_master(*)
         )
       ),
       users(full_name, phone_number),
@@ -101,6 +101,7 @@ export const searchProperties = async (filters = {}) => {
     query = query.lte('rooms.base_price', maxPrice);
   }
 
+  // room_type column removed — not present in current database schema
 
   // Pagination
   const from = page * pageSize;
@@ -126,7 +127,7 @@ export const getPropertyDetailForTenant = async (propertyId) => {
         *,
         room_facilities(
           additional_cost,
-          facility_master(name, category)
+          facility_master(*)
         )
       ),
       users(full_name, phone_number, avatar_url)
@@ -239,7 +240,7 @@ export const submitRentalRequest = async (requestData) => {
   // - Sewa >6 bulan: batal otomatis dalam 30 menit
   const expiresAt = new Date();
   const duration = requestData.durationMonths || 1;
-  
+
   if (duration === 1) {
     expiresAt.setHours(expiresAt.getHours() + 3);
   } else if (duration >= 2 && duration <= 3) {
@@ -322,7 +323,7 @@ export const getTenantRentalRequests = async (tenantId) => {
         base_price,
         photo_urls,
         room_facilities(
-          facility_master(name)
+          facility_master(*)
         ),
         properties(
           name, 

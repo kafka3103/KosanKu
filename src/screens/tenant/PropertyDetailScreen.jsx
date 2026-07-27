@@ -15,17 +15,17 @@ import {
   FlatList,
   Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-
+import { getLocalizedField } from '../../utils/useLocalizedField';
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 
 import COLORS from '../../constants/colors';
-import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import DynamicText from '../../components/shared/DynamicText';
@@ -75,7 +75,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState('room');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  
+
   const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 });
   const [reviews, setReviews] = useState([]);
 
@@ -141,8 +141,9 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       ) : (
         availableRooms.map((room, index) => {
           const facilities = room.room_facilities
-            ?.map((rf) => rf.facility_master?.name)
-            .filter(Boolean)
+            ?.filter((rf) => rf.facility_master)
+            ?.map((rf) => getLocalizedField(rf.facility_master, 'name'))
+            ?.filter(Boolean)
             .slice(0, 5);
           return (
             <TouchableOpacity
@@ -263,16 +264,16 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.policyTitle', 'Kebijakan Penghuni')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons 
-            name={property?.gender_policy === 'male' ? 'man' : property?.gender_policy === 'female' ? 'woman' : 'male-female'} 
-            size={16} 
-            color={COLORS.textSecondary} 
-            style={{ marginRight: 6 }} 
+          <Ionicons
+            name={property?.gender_policy === 'male' ? 'man' : property?.gender_policy === 'female' ? 'woman' : 'male-female'}
+            size={16}
+            color={COLORS.textSecondary}
+            style={{ marginRight: 6 }}
           />
           <Text style={styles.infoText}>
             {property?.gender_policy === 'male' ? t('propertyDetail.policyMale', 'Khusus Putra')
               : property?.gender_policy === 'female' ? t('propertyDetail.policyFemale', 'Khusus Putri')
-              : t('propertyDetail.policyMixed', 'Campur (Putra & Putri)')}
+                : t('propertyDetail.policyMixed', 'Campur (Putra & Putri)')}
           </Text>
         </View>
       </View>
@@ -312,7 +313,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             <Text style={styles.ownerPhone}>{property?.users?.phone_number ?? '—'}</Text>
           </View>
           {!!property?.users?.phone_number && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{ backgroundColor: '#25D366', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
               onPress={() => {
                 let phone = property.users.phone_number.replace(/\D/g, '');
@@ -368,7 +369,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           </View>
         </View>
       </View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.addReviewBtn}
         onPress={() => navigation.navigate('AddReviewScreen', { propertyId: property.id })}
       >
@@ -723,7 +724,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING[2],
   },
   rulesText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, lineHeight: 22 },
-  
+
   // Reviews Tab
   ratingSummaryCard: {
     backgroundColor: COLORS.white,
