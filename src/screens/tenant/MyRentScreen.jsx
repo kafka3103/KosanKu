@@ -220,6 +220,11 @@ const MyRentScreen = ({ navigation }) => {
 
 
 
+  const filteredInvoices = recentInvoices.filter((invoice) => {
+    if (invoiceFilter === 'all') return true;
+    return invoice.status === invoiceFilter;
+  });
+
   return (
     <>
       <ScrollView
@@ -295,12 +300,12 @@ const MyRentScreen = ({ navigation }) => {
                   key={contract.id}
                   style={styles.roomCard}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('ContractDetailScreen', { 
-                    request: { 
-                      status: contract.status, 
-                      rooms: contract.rooms, 
-                      contracts: [contract] 
-                    } 
+                  onPress={() => navigation.navigate('ContractDetailScreen', {
+                    request: {
+                      status: contract.status,
+                      rooms: contract.rooms,
+                      contracts: [contract]
+                    }
                   })}
                 >
                   {room?.photo_urls?.[0] || property?.cover_photo_url ? (
@@ -322,7 +327,7 @@ const MyRentScreen = ({ navigation }) => {
                         {property?.address_line}, {property?.city}
                       </Text>
                     </View>
-                    <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)} {t('myRent.perMonth', '/ bulan')}</Text>
+                    <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)}{t('myRent.perMonth', '/month')}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -330,75 +335,74 @@ const MyRentScreen = ({ navigation }) => {
           </View>
         )}
 
-            {/* Recent Invoices */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
-              </View>
+        {/* Recent Invoices */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
+          </View>
 
-              {/* Invoice Filters */}
-              <View style={styles.filterContainer}>
-                {['all', 'unpaid', 'paid'].map((filterType) => (
+          {/* Invoice Filters */}
+          <View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+              {['all', 'unpaid', 'paid', 'partial', 'overdue'].map((filterType) => (
+                <TouchableOpacity
+                  key={filterType}
+                  style={[styles.filterChip, invoiceFilter === filterType && styles.filterChipActive]}
+                  onPress={() => setInvoiceFilter(filterType)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.filterText, invoiceFilter === filterType && styles.filterTextActive]}>
+                    {filterType === 'all' 
+                      ? t('myRent.filterAll', 'Semua') 
+                      : filterType === 'unpaid' 
+                        ? t('myRent.filterUnpaid', 'Belum Lunas') 
+                        : filterType === 'paid' 
+                          ? t('myRent.filterPaid', 'Lunas')
+                          : filterType === 'partial'
+                            ? t('myRent.filterPartial', 'Sebagian')
+                            : t('myRent.filterOverdue', 'Terlambat')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {filteredInvoices.length === 0 ? (
+            <View style={styles.emptyInvoice}>
+              <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
+            </View>
+          ) : (
+            filteredInvoices
+              .slice(0, 10)
+              .map((invoice) => {
+                const statusConfig = getInvoiceStatusConfig(t);
+                const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
+                return (
                   <TouchableOpacity
-                    key={filterType}
-                    style={[styles.filterChip, invoiceFilter === filterType && styles.filterChipActive]}
-                    onPress={() => setInvoiceFilter(filterType)}
+                    key={invoice.id}
+                    style={styles.invoiceCard}
+                    onPress={() =>
+                      navigation.navigate(TENANT_SCREENS.INVOICE_DETAIL, { invoice })
+                    }
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.filterText, invoiceFilter === filterType && styles.filterTextActive]}>
-                      {filterType === 'all' ? 'Semua' : filterType === 'unpaid' ? 'Belum Lunas' : 'Lunas'}
+                    <View style={styles.invoiceLeft}>
+                      <Ionicons name={status.icon} size={24} color={status.color} />
+                      <View>
+                        <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n.language)}</Text>
+                        <Text style={[styles.invoiceStatus, { color: status.color }]}>
+                          {status.label}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.invoiceAmount}>
+                      {formatCurrency(invoice.total_amount)}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-
-              {recentInvoices
-                .filter((invoice) => {
-                  if (invoiceFilter === 'all') return true;
-                  if (invoiceFilter === 'paid') return invoice.status === 'paid';
-                  return invoice.status !== 'paid'; // unpaid or partial
-                })
-                .length === 0 ? (
-                <View style={styles.emptyInvoice}>
-                  <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
-                </View>
-              ) : (
-                recentInvoices
-                  .filter((invoice) => {
-                    if (invoiceFilter === 'all') return true;
-                    if (invoiceFilter === 'paid') return invoice.status === 'paid';
-                    return invoice.status !== 'paid';
-                  })
-                  .slice(0, 10)
-                  .map((invoice) => {
-                  const statusConfig = getInvoiceStatusConfig(t);
-                  const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
-                  return (
-                    <TouchableOpacity
-                      key={invoice.id}
-                      style={styles.invoiceCard}
-                      onPress={() =>
-                        navigation.navigate(TENANT_SCREENS.INVOICE_DETAIL, { invoice })
-                      }
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.invoiceLeft}>
-                        <Ionicons name={status.icon} size={24} color={status.color} />
-                        <View>
-                          <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n.language)}</Text>
-                          <Text style={[styles.invoiceStatus, { color: status.color }]}>
-                            {status.label}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={styles.invoiceAmount}>
-                        {formatCurrency(invoice.total_amount)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })
-              )}
-            </View>
+                );
+              })
+          )}
+        </View>
       </ScrollView>
     </>
   );

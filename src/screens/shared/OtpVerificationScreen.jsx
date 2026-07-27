@@ -62,7 +62,13 @@ const OtpVerificationScreen = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <TouchableOpacity 
           style={styles.backButton} 
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('AuthRoot');
+            }
+          }}
         >
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>

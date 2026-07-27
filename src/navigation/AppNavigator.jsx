@@ -20,6 +20,10 @@ import AuthNavigator from './AuthNavigator';
 import OwnerNavigator from './OwnerNavigator';
 import TenantNavigator from './TenantNavigator';
 import USER_ROLE from '../constants/userRole';
+import { AUTH_SCREENS } from '../constants/screenNames';
+
+import OtpVerificationScreen from '../screens/shared/OtpVerificationScreen';
+import ResetPasswordScreen from '../screens/shared/ResetPasswordScreen';
 
 const RootStack = createStackNavigator();
 
@@ -149,30 +153,21 @@ const AppNavigator = () => {
     return <SplashScreen />;
   }
 
-  /**
-   * Tentukan navigator mana yang dirender:
-   * 1. Tidak authenticated → AuthNavigator
-   * 2. Authenticated tapi profil belum lengkap → AuthNavigator (ke ProfileSetup)
-   * 3. Authenticated, role owner → OwnerNavigator
-   * 4. Authenticated, role tenant → TenantNavigator
-   */
-  const renderNavigator = () => {
-    if (!isAuthenticated) {
-      return <AuthNavigator />;
-    }
-    if (userRole === USER_ROLE.OWNER) {
-      return <OwnerNavigator />;
-    }
-    if (userRole === USER_ROLE.TENANT) {
-      return <TenantNavigator />;
-    }
-    // Fallback — role tidak dikenal
-    return <AuthNavigator />;
-  };
-
   return (
     <NavigationContainer ref={navigationRef}>
-      {renderNavigator()}
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
+          <RootStack.Screen name="AuthRoot" component={AuthNavigator} />
+        ) : userRole === USER_ROLE.OWNER ? (
+          <RootStack.Screen name="OwnerMain" component={OwnerNavigator} />
+        ) : userRole === USER_ROLE.TENANT ? (
+          <RootStack.Screen name="TenantMain" component={TenantNavigator} />
+        ) : (
+          <RootStack.Screen name="AuthFallback" component={AuthNavigator} />
+        )}
+        <RootStack.Screen name={AUTH_SCREENS.OTP_VERIFICATION} component={OtpVerificationScreen} />
+        <RootStack.Screen name={AUTH_SCREENS.RESET_PASSWORD} component={ResetPasswordScreen} />
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 };

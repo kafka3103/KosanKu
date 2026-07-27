@@ -77,7 +77,8 @@ const SettingsScreen = ({ navigation }) => {
             if (error) {
               Alert.alert(t('common.error', 'Gagal'), error.message || t('settings.emailSendFailMsg', 'Gagal mengirim email reset password.'));
             } else {
-              Alert.alert(t('settings.emailSentTitle', 'Email Terkirim'), t('settings.emailSentMsg', 'Cek inbox email Anda untuk link reset password.'));
+              Alert.alert(t('settings.emailSentTitle', 'Email Terkirim'), t('settings.emailSentMsg', 'Cek inbox email Anda untuk kode OTP reset password.'));
+              navigation.navigate('OtpVerification', { email: currentUser.email });
             }
           },
         },
@@ -147,15 +148,18 @@ const SettingsScreen = ({ navigation }) => {
     ]);
   };
 
-  const SettingRow = ({ label, value, onPress, rightElement, showArrow = true }) => (
+  const SettingRow = ({ icon, label, value, onPress, rightElement, showArrow = true }) => (
     <TouchableOpacity
       style={styles.settingRow}
       onPress={onPress}
       activeOpacity={onPress ? 0.6 : 1}
     >
-      <View style={styles.settingLeft}>
-        <Text style={styles.settingLabel}>{label}</Text>
-        {!!value && <Text style={styles.settingValue}>{value}</Text>}
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        {icon && <Ionicons name={icon} size={24} color={COLORS.textSecondary} style={{ marginRight: SPACING[3] }} />}
+        <View style={styles.settingLeft}>
+          <Text style={styles.settingLabel}>{label}</Text>
+          {!!value && <Text style={styles.settingValue}>{value}</Text>}
+        </View>
       </View>
       {rightElement ?? (!!showArrow && !!onPress && <Text style={styles.settingArrow}>›</Text>)}
     </TouchableOpacity>
@@ -266,93 +270,97 @@ const SettingsScreen = ({ navigation }) => {
         </View>
       </ScrollView>
       {/* Modal Hapus Akun */}
-      <Modal
-        visible={showDeleteModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDeleteModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('settings.deleteAccountConfirm', 'Konfirmasi Hapus Akun')}</Text>
-              <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+      {showDeleteModal && (
+        <Modal
+          visible={true}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDeleteModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{t('settings.deleteAccountConfirm', 'Konfirmasi Hapus Akun')}</Text>
+                <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
+                  <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.modalSubtitle}>
+                {isGoogleOnly
+                  ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
+                  : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
+              </Text>
+
+              <View style={styles.inputContainer}>
+                {!isGoogleOnly && (
+                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+                )}
+                <TextInput
+                  key={modalKey}
+                  style={styles.input}
+                  placeholder={isGoogleOnly ? `Ketik "${currentUser?.email}"` : "Password"}
+                  secureTextEntry={!isGoogleOnly}
+                  onChangeText={setDeletePassword}
+                  editable={!isDeleting}
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.modalDeleteBtn, isDeleting && { opacity: 0.7 }]}
+                onPress={executeDeleteAccount}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <Text style={styles.modalDeleteBtnText}>{t('settings.deleteAccountPermanent', 'Hapus Akun Permanen')}</Text>
+                )}
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.modalSubtitle}>
-              {isGoogleOnly
-                ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
-                : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
-            </Text>
-
-            <View style={styles.inputContainer}>
-              {!isGoogleOnly && (
-                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
-              )}
-              <TextInput
-                key={modalKey}
-                style={styles.input}
-                placeholder={isGoogleOnly ? `Ketik "${currentUser?.email}"` : "Password"}
-                secureTextEntry={!isGoogleOnly}
-                onChangeText={setDeletePassword}
-                editable={!isDeleting}
-                autoCapitalize="none"
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.modalDeleteBtn, isDeleting && { opacity: 0.7 }]}
-              onPress={executeDeleteAccount}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <ActivityIndicator color={COLORS.white} />
-              ) : (
-                <Text style={styles.modalDeleteBtnText}>{t('settings.deleteAccountPermanent', 'Hapus Akun Permanen')}</Text>
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       {/* Modal Bahasa */}
-      <Modal
-        visible={showLanguageModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLanguageModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('settings.languageTitle', 'Bahasa / Language')}</Text>
-              <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+      {showLanguageModal && (
+        <Modal
+          visible={true}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowLanguageModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{t('settings.languageTitle', 'Bahasa / Language')}</Text>
+                <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.modalSubtitle}>
+                {t('settings.languageMsg', 'Pilih bahasa aplikasi:')}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.languageOptionBtn}
+                onPress={() => handleSelectLanguage('id')}
+              >
+                <Text style={styles.languageOptionText}>🇮🇩 Bahasa Indonesia</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.languageOptionBtn}
+                onPress={() => handleSelectLanguage('en')}
+              >
+                <Text style={styles.languageOptionText}>🇬🇧 English</Text>
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.modalSubtitle}>
-              {t('settings.languageMsg', 'Pilih bahasa aplikasi:')}
-            </Text>
-
-            <TouchableOpacity
-              style={styles.languageOptionBtn}
-              onPress={() => handleSelectLanguage('id')}
-            >
-              <Text style={styles.languageOptionText}>🇮🇩 Bahasa Indonesia</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.languageOptionBtn}
-              onPress={() => handleSelectLanguage('en')}
-            >
-              <Text style={styles.languageOptionText}>🇬🇧 English</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 };
