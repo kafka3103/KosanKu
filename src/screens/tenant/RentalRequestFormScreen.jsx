@@ -167,21 +167,22 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+            
+          </View>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('rental.request.title')}</Text>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('rental.request.title')}</Text>
-        </View>
 
         {/* Room Summary */}
         <View style={styles.roomSummary}>
@@ -359,11 +360,12 @@ const styles = StyleSheet.create({
   container: { paddingBottom: 100 },
   header: {
     backgroundColor: COLORS.primary,
-    
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3] },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],

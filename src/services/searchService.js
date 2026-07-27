@@ -27,13 +27,13 @@ export const searchProperties = async (filters = {}) => {
     minPrice,
     maxPrice,
     genderPolicy,
-    roomType,
     searchQuery,
     page = 0,
     pageSize = 20,
   } = filters;
 
   // Gunakan rooms!inner HANYA jika filter spesifik kamar (minPrice, maxPrice, atau roomType) sedang aktif digunakan
+  const hasRoomFilter = minPrice != null || maxPrice != null;
   const hasRoomFilter = minPrice != null || maxPrice != null;
   const roomsRelation = hasRoomFilter ? 'rooms!inner' : 'rooms';
 
@@ -241,7 +241,7 @@ export const submitRentalRequest = async (requestData) => {
   // - Sewa >6 bulan: batal otomatis dalam 30 menit
   const expiresAt = new Date();
   const duration = requestData.durationMonths || 1;
-  
+
   if (duration === 1) {
     expiresAt.setHours(expiresAt.getHours() + 3);
   } else if (duration >= 2 && duration <= 3) {

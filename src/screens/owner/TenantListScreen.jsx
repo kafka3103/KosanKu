@@ -82,7 +82,7 @@ const TenantCard = ({ contract, onCall, onWhatsApp, t, i18n }) => {
           <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
           <Text style={styles.tenantContact}>{tenant?.phone_number ?? tenant?.email ?? '—'}</Text>
         </View>
-        {tenant?.phone_number && (
+        {!!tenant?.phone_number && (
           <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
             <TouchableOpacity
               style={[styles.callBtn, { backgroundColor: '#25D366' + '20' }]}
@@ -154,6 +154,12 @@ const TenantListScreen = ({ navigation }) => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
     const { data, error } = await getOwnerActiveTenants(currentUser.id);
+    console.log('[DEBUG TenantListScreen] loadTenants for owner:', currentUser.id);
+    console.log('[DEBUG TenantListScreen] Contracts data:', data ? data.length : null, 'Error:', error);
+    if (data) {
+      console.log('[DEBUG TenantListScreen] Contracts detail:', JSON.stringify(data, null, 2));
+    }
+    
     if (!error && data) setContracts(data);
     setIsLoading(false);
     setIsRefreshing(false);
@@ -194,12 +200,13 @@ const TenantListScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-          
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('ownerTenantList.title', 'Daftar Penghuni')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('ownerTenantList.title', 'Daftar Penghuni')}</Text>
+        </View>
         <Text style={styles.headerSubtitle}>
           {t('ownerTenantList.activeTenants', '{{count}} penghuni aktif', { count: contracts.length })}
         </Text>
@@ -255,14 +262,14 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3], flexDirection: 'row', alignItems: 'center' },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
   },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2, marginLeft: 32 },
   listContent: { padding: SPACING[4], gap: SPACING[3], paddingBottom: SPACING[10] },
   card: {
     backgroundColor: COLORS.white,

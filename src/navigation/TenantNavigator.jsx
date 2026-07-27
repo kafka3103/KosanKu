@@ -7,13 +7,15 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+
 
 import COLORS from '../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../constants/typography';
@@ -149,9 +151,9 @@ const TenantDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: t('navigation.tenant.profile'), screen: TENANT_SCREENS.PROFILE, icon: '👤' },
-    { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: '⚙️' },
+    { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: 'settings-outline' },
   ];
+
   const [hasOwnerProfile, setHasOwnerProfile] = React.useState(false);
 
   React.useEffect(() => {
@@ -197,9 +199,13 @@ const TenantDrawerContent = ({ navigation }) => {
     <View style={[styles.drawerContainer, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>
-          <Text style={styles.drawerAvatarText}>
-            {currentUser?.full_name?.[0]?.toUpperCase() ?? 'T'}
-          </Text>
+          {currentUser?.avatar_url ? (
+            <Image source={{ uri: currentUser.avatar_url }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+          ) : (
+            <Text style={styles.drawerAvatarText}>
+              {currentUser?.full_name?.[0]?.toUpperCase() ?? 'T'}
+            </Text>
+          )}
         </View>
         <Text style={styles.drawerUserName}>{currentUser?.full_name ?? 'Tenant'}</Text>
         <Text style={styles.drawerUserRole}>{t('auth.register.roleTenant')}</Text>
@@ -212,7 +218,7 @@ const TenantDrawerContent = ({ navigation }) => {
             style={styles.drawerMenuItem}
             onPress={() => navigation.navigate(item.screen)}
           >
-            <Text style={styles.drawerMenuIcon}>{item.icon}</Text>
+            <Ionicons name={item.icon} size={24} color={COLORS.textSecondary} style={styles.drawerMenuIcon} />
             <Text style={styles.drawerMenuLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -251,11 +257,7 @@ const TenantNavigator = () => {
         component={TenantBottomTabNavigator}
         options={{ drawerItemStyle: { display: 'none' } }}
       />
-      <TenantDrawer.Screen
-        name={TENANT_SCREENS.PROFILE}
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
+
       <TenantDrawer.Screen
         name={TENANT_SCREENS.SETTINGS}
         component={SettingsScreen}
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
   },
   drawerContainer: { flex: 1 },
   drawerHeader: {
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.primary,
     padding: SPACING[6],
     paddingTop: SPACING[12],
     alignItems: 'flex-start',
@@ -294,7 +296,7 @@ const styles = StyleSheet.create({
   drawerAvatarText: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.secondary,
+    color: COLORS.primary,
   },
   drawerUserName: {
     fontSize: FONT_SIZE.lg,
@@ -303,7 +305,7 @@ const styles = StyleSheet.create({
   },
   drawerUserRole: {
     fontSize: FONT_SIZE.sm,
-    color: 'rgba(255,255,255,0.8)',
+    color: COLORS.primaryLight,
     marginTop: 2,
   },
   drawerMenuContainer: {

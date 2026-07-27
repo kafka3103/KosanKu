@@ -187,8 +187,9 @@ const DashboardScreen = ({ navigation }) => {
   return (
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: Math.max(insets.bottom + 140, 140) }]}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -330,14 +331,7 @@ const DashboardScreen = ({ navigation }) => {
               <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaReports', 'Laporan')}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.quickAction}
-              onPress={() => navigation.navigate(OWNER_SCREENS.INVOICE_LIST)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="card-outline" size={28} color={COLORS.primary} style={styles.quickActionIcon} />
-              <Text style={styles.quickActionLabel}>{t('ownerDashboard.qaInvoices', 'Tagihan')}</Text>
-            </TouchableOpacity>
+
 
             <TouchableOpacity
               style={styles.quickAction}

@@ -68,7 +68,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));
       return;
     }
-    
+
     setIsLoading(true);
 
     // Cek keunikan NIK
@@ -84,7 +84,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       ktp_number: ktpNumber,
       is_verified: true
     });
-    
+
     if (ownerError) {
       setIsLoading(false);
       Alert.alert(t('common.fail', 'Gagal'), t('roleRegistration.saveFail', 'Gagal menyimpan profil pemilik.'));
@@ -113,7 +113,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     }
 
     const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.BOTH });
-    
+
     setIsLoading(false);
     if (userError) {
       Alert.alert(t('common.fail', 'Gagal'), t('roleRegistration.updateRoleFail', 'Gagal mengubah mode akun.'));
@@ -139,7 +139,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Harap lengkapi semua data.');
       return;
     }
-    
+
     setIsLoading(true);
 
     // Cek keunikan NIK
@@ -156,7 +156,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       emergency_contact_name: emergencyName,
       emergency_contact_phone: emergencyPhone
     });
-    
+
     if (tenantError) {
       setIsLoading(false);
       Alert.alert('Gagal', 'Gagal menyimpan profil pencari kos.');
@@ -184,7 +184,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     }
 
     const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.BOTH });
-    
+
     setIsLoading(false);
     if (userError) {
       Alert.alert('Gagal', 'Gagal mengubah mode akun.');
@@ -211,13 +211,14 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
+          <TouchableOpacity
+            style={styles.backBtn}
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.navigate(targetRole === USER_ROLE.OWNER ? 'TenantMain' : 'OwnerMain');
+                const currentRole = useAuthStore.getState().userRole;
+                navigation.navigate(currentRole === USER_ROLE.OWNER ? 'OwnerMain' : 'TenantMain');
               }
             }}
           >
@@ -276,7 +277,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
                   onChangeText={setOccupation}
                 />
               </View>
-              
+
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>{t('auth.roleRegistration.emergencyContactName', 'Nama Kontak Darurat')}</Text>
                 <TextInput

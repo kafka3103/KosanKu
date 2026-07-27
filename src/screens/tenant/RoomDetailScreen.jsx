@@ -22,29 +22,11 @@ import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { getTenantActiveContract } from '../../services/invoiceService';
 import { checkTenantProfileExists } from '../../services/userService';
 import { getRoomDetails } from '../../services/propertyService';
 import DynamicText from '../../components/shared/DynamicText';
 import { TENANT_SCREENS } from '../../constants/screenNames';
 import USER_ROLE from '../../constants/userRole';
-
-const FACILITY_ICON_MAP = {
-  'air-conditioner': 'snow',
-  wifi: 'wifi',
-  shower: 'water',
-  'water-heater': 'flame',
-  bed: 'bed',
-  wardrobe: 'file-tray',
-  desk: 'desktop',
-  chair: 'cube',
-  refrigerator: 'snow-outline',
-  television: 'tv',
-  'washing-machine': 'shirt',
-  kitchen: 'restaurant',
-  balcony: 'partly-sunny',
-  window: 'scan-outline',
-};
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -179,7 +161,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             <View>
               <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
               <Text style={styles.roomType}>
-                {room?.room_type} · {t('roomDetail.floorNumber', 'Lantai {{number}}', { number: room?.floor_number ?? '-' })}
+                {t('roomDetail.floorNumber', 'Lantai {{number}}', { number: room?.floor_number ?? '-' })}
               </Text>
             </View>
             <View>
@@ -188,7 +170,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {room?.size_sqm && (
+          {!!room?.size_sqm && (
             <View style={styles.metaRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
@@ -201,7 +183,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </View>
           )}
 
-          {(getLocalizedField(room, 'description') || room?.description) && (
+          {!!(getLocalizedField(room, 'description') || room?.description) && (
             <View style={styles.descriptionCard}>
               <Text style={styles.descriptionText}>{getLocalizedField(room, 'description')}</Text>
             </View>
@@ -223,15 +205,9 @@ const RoomDetailScreen = ({ navigation, route }) => {
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
                     <View key={fac.id || fac.name} style={styles.facilityItem}>
-                      <Ionicons
-                        name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
-                        size={20}
-                        color={COLORS.primary}
-                        style={{ marginRight: 4 }}
-                      />
                       <View>
                         <DynamicText style={styles.facilityName}>{getLocalizedField(fac, 'name')}</DynamicText>
-                        {fac.additional_cost && (
+                        {!!fac.additional_cost && (
                           <Text style={styles.additionalCost}>
                             +{formatCurrency(fac.additional_cost)}
                           </Text>
@@ -246,7 +222,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Property Rules */}
-        {property?.rules && (
+        {!!property?.rules && (
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
               <Ionicons name="document-text" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
@@ -410,7 +386,7 @@ const styles = StyleSheet.create({
   rulesText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, lineHeight: 22 },
   bottomBar: {
     position: 'absolute',
-    bottom: 96,
+    bottom: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',

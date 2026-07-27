@@ -19,6 +19,7 @@ import {
   Platform,
   Linking,
   Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -100,7 +101,7 @@ const PropertyCard = ({ property, onPress }) => {
   const isOwnProperty = property.owner_id === currentUser?.id;
 
   return (
-    <TouchableOpacity style={[styles.propertyCard, isOwnProperty && { borderColor: 'red', borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.propertyCard, isOwnProperty && { borderColor: COLORS.primary, borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.cardPhoto}>
         {property.cover_photo_url ? (
           <Image source={{ uri: property.cover_photo_url }} style={styles.cardImage} />
@@ -113,8 +114,9 @@ const PropertyCard = ({ property, onPress }) => {
           <Text style={styles.availableTagText}>{t('searchScreen.availableCount', '{{count}} tersedia', { count: availableCount })}</Text>
         </View>
         {isOwnProperty && (
-          <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: 'red', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
-            <Text style={[styles.availableTagText, { color: 'white', fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Sendiri')}</Text>
+          <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
+            <Text style={[styles.availableTagText, { color: COLORS.white, fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
           </View>
         )}
         <View style={styles.genderTag}>
@@ -610,6 +612,12 @@ const SearchScreen = ({ navigation }) => {
                         );
                       })()}
                     </View>
+                    {selectedMapProperty.owner_id === currentUser?.id && (
+                      <View style={{ alignSelf: 'flex-start', backgroundColor: COLORS.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', marginBottom: 4, marginTop: 2 }}>
+                        <Ionicons name="key" size={10} color={COLORS.white} style={{ marginRight: 2 }} />
+                        <Text style={{ fontSize: 9, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+                      </View>
+                    )}
                     <Text style={styles.mapPreviewAddress} numberOfLines={1}>{selectedMapProperty.address_line}, {selectedMapProperty.city}</Text>
                     {selectedMapProperty.distanceKm != null && (
                       <Text style={styles.mapPreviewDistance}>
@@ -699,7 +707,7 @@ const SearchScreen = ({ navigation }) => {
         transparent
         onRequestClose={() => setShowFilter(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding">
           <View style={[styles.filterModal, { paddingBottom: (insets?.bottom || 0) + SPACING[5] }]}>
             <View style={styles.filterModalHeader}>
               <Text style={styles.filterModalTitle}>{t('searchScreen.filterTitle', 'Filter Pencarian')}</Text>
@@ -708,7 +716,7 @@ const SearchScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING[6] }}>
               {/* Kota */}
               <Text style={styles.filterLabel}>{t('searchScreen.city', 'Kota')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -751,21 +759,7 @@ const SearchScreen = ({ navigation }) => {
                 ))}
               </View>
 
-              {/* Room Type */}
-              <Text style={styles.filterLabel}>{t('searchScreen.roomType', 'Tipe Kamar')}</Text>
-              <View style={styles.chipRow}>
-                {getRoomTypeOptions(t).map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[styles.chip, tempFilterRoomType === opt.value && styles.chipActive]}
-                    onPress={() => setTempFilterRoomType(opt.value)}
-                  >
-                    <Text style={[styles.chipText, tempFilterRoomType === opt.value && styles.chipTextActive]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+
 
               {/* Harga */}
               <Text style={styles.filterLabel}>{t('searchScreen.priceRange', 'Kisaran Harga (Rp/bulan)')}</Text>
@@ -800,7 +794,7 @@ const SearchScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

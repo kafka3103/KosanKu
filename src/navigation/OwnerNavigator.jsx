@@ -17,8 +17,9 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
@@ -165,11 +166,9 @@ const OwnerDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: '📋' },
-    { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: '👥' },
-    { label: t('navigation.owner.reports'), screen: OWNER_SCREENS.REPORT, icon: '📈' },
-    { label: t('navigation.owner.profile'), screen: OWNER_SCREENS.PROFILE, icon: '👤' },
-    { label: t('navigation.owner.settings'), screen: OWNER_SCREENS.SETTINGS, icon: '⚙️' },
+    { label: t('navigation.owner.rentalRequest', 'Pengajuan Masuk'), screen: OWNER_SCREENS.RENTAL_REQUEST, icon: 'clipboard-outline' },
+    { label: t('navigation.owner.tenants'), screen: OWNER_SCREENS.TENANT_LIST, icon: 'people-outline' },
+    { label: t('navigation.owner.settings'), screen: OWNER_SCREENS.SETTINGS, icon: 'settings-outline' },
   ];
 
 
@@ -219,9 +218,13 @@ const OwnerDrawerContent = ({ navigation }) => {
       {/* Header Drawer */}
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>
-          <Text style={styles.drawerAvatarText}>
-            {currentUser?.full_name?.[0]?.toUpperCase() ?? 'O'}
-          </Text>
+          {currentUser?.avatar_url ? (
+            <Image source={{ uri: currentUser.avatar_url }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+          ) : (
+            <Text style={styles.drawerAvatarText}>
+              {currentUser?.full_name?.[0]?.toUpperCase() ?? 'O'}
+            </Text>
+          )}
         </View>
         <Text style={styles.drawerUserName}>{currentUser?.full_name ?? 'Owner'}</Text>
         <Text style={styles.drawerUserRole}>{t('auth.register.roleOwner')}</Text>
@@ -235,7 +238,7 @@ const OwnerDrawerContent = ({ navigation }) => {
             style={styles.drawerMenuItem}
             onPress={() => navigation.navigate(item.screen)}
           >
-            <Text style={styles.drawerMenuIcon}>{item.icon}</Text>
+            <Ionicons name={item.icon} size={24} color={COLORS.textSecondary} style={styles.drawerMenuIcon} />
             <Text style={styles.drawerMenuLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -309,11 +312,6 @@ const OwnerNavigator = () => {
       <OwnerDrawer.Screen
         name="RoleRegistrationScreen"
         component={RoleRegistrationScreen}
-        options={{ headerShown: false }}
-      />
-      <OwnerDrawer.Screen
-        name={OWNER_SCREENS.PROFILE}
-        component={ProfileScreen}
         options={{ headerShown: false }}
       />
       <OwnerDrawer.Screen

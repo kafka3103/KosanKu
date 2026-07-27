@@ -347,14 +347,15 @@ const RentalRequestScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-            
-          </View>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('ownerRentalRequest.headerTitle', 'Pengajuan Sewa')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('ownerRentalRequest.headerTitle', 'Pengajuan Sewa')}</Text>
+        </View>
         {pendingCount > 0 && (
           <Text style={styles.headerSubtitle}>{t('ownerRentalRequest.pendingSubtitleRental', '{{count}} pengajuan menunggu konfirmasi', { count: pendingCount })}</Text>
         )}
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3] },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.primaryLight,
     marginTop: 2,
-    marginLeft: 28,
+    marginLeft: 32,
   },
   // Main Tabs
   mainTabsContainer: {

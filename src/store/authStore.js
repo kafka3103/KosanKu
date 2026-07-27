@@ -29,9 +29,10 @@ const useAuthStore = create((set, get) => ({
    * @param {string} [lastUsedRole] - Role terakhir sebelum logout
    */
   setAuthenticatedUser: (session, userProfile, lastUsedRole = null) => {
+    const currentState = get();
     let initialActiveRole = userProfile?.role ?? null;
     if (initialActiveRole === USER_ROLE.BOTH) {
-      initialActiveRole = lastUsedRole || USER_ROLE.TENANT; 
+      initialActiveRole = lastUsedRole || currentState.userRole || USER_ROLE.TENANT; 
     }
 
     // Simpan role yang dipilih ke AsyncStorage dengan key yang spesifik untuk user ini

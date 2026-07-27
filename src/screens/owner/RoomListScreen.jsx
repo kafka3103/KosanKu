@@ -53,7 +53,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
       <View style={styles.roomCardHeader}>
         <View>
           <Text style={styles.roomNumber}>{t('ownerRoomList.roomNumber', 'Kamar {{number}}', { number: room.room_number })}</Text>
-          <Text style={styles.roomType}>{room.room_type} · {t('ownerRoomList.floorNumber', 'Lantai {{number}}', { number: room.floor_number ?? '-' })}</Text>
+          <Text style={styles.roomType}>{t('ownerRoomList.floorNumber', 'Lantai {{number}}', { number: room.floor_number ?? '-' })}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
           <Ionicons name={statusCfg.icon} size={14} color={statusCfg.color} />
@@ -64,7 +64,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
       {/* Price & Size */}
       <View style={styles.roomMeta}>
         <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
-        {room.size_sqm && (
+        {!!room.size_sqm && (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
             <Text style={styles.roomSize}>{room.size_sqm} m²</Text>

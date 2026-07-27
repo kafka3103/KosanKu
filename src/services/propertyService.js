@@ -607,7 +607,20 @@ export const approveRentalRequest = async (requestId) => {
       .eq('rental_request_id', request.id)
       .maybeSingle();
 
-    if (!newContract) {
+    if (newContract) {
+      // FIX: Terkadang trigger database memasukkan status default 'ended' secara tidak sengaja.
+      // Jika statusnya bukan 'active', kita paksa ubah menjadi 'active'.
+      if (newContract.status !== 'active') {
+        const { error: fixError } = await supabaseClient
+          .from('contracts')
+          .update({ status: 'active' })
+          .eq('id', newContract.id);
+        
+        if (!fixError) {
+          newContract.status = 'active';
+        }
+      }
+    } else {
       const startDate = new Date(request.requested_start_date);
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + (request.duration_months || 1));
@@ -838,8 +851,10 @@ export const updateFacilityMaster = async (facilityId, updates) => {
 export const deleteFacilityMaster = async (facilityId) => {
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .delete()
-    .eq('id', facilityId);
+    .update({ is_active: false })
+    .eq('id', facilityId)
+    .select()
+    .single();
 
   return { data, error };
 };
