@@ -1297,10 +1297,10 @@
     "Tidak boleh mabuk dan merokok": "No drunkenness or smoking"
   },
   "dbNotification": {
-    "invoice_paid_tenant_title": "Invoice Paid & Payment Receipt 🧾",
-    "invoice_paid_tenant_body": "Invoice {{invoiceNumber}} (Room {{room}} at {{property}}) of {{amount}} has been automatically settled via Xendit ({{channel}}). Tap to view your payment receipt.",
-    "invoice_paid_owner_title": "Funds Received & Invoice Settled 💰",
-    "invoice_paid_owner_body": "Tenant in Room {{room}} ({{property}}) has paid invoice {{invoiceNumber}} of {{amount}} via Xendit. The invoice has been recorded in your financial report.",
+    "invoice_paid_tenant_title": "Invoice Payment Successful 🧾",
+    "invoice_paid_tenant_body": "Payment for invoice {{invoiceNumber}} (Room {{room}} at {{property}}) of {{amount}} was successful via Xendit ({{channel}}). Tap to view details.",
+    "invoice_paid_owner_title": "Invoice Payment Received 💰",
+    "invoice_paid_owner_body": "Tenant in Room {{room}} ({{property}}) has paid invoice {{invoiceNumber}} of {{amount}} via Xendit. The payment has been recorded in your financial report.",
     "rental_expired_title": "Rental Request Expired",
     "rental_expired_body": "Your rental request has expired because there was no response within 3 business days.",
     "invoice_generated_title": "New Invoice Available",

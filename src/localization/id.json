@@ -1275,10 +1275,10 @@
     "Dilarang berisik di atas jam 22:00": "Dilarang berisik di atas jam 22:00"
   },
   "dbNotification": {
-    "invoice_paid_tenant_title": "Invoice Lunas & Bukti Pembayaran 🧾",
-    "invoice_paid_tenant_body": "Tagihan {{invoiceNumber}} (Kamar {{room}} di {{property}}) sebesar {{amount}} telah Lunas otomatis via Xendit ({{channel}}). Klik untuk melihat bukti invoice.",
-    "invoice_paid_owner_title": "Dana Masuk & Invoice Lunas 💰",
-    "invoice_paid_owner_body": "Penghuni kamar {{room}} ({{property}}) telah melunasi tagihan {{invoiceNumber}} sebesar {{amount}} via Xendit. Invoice telah dicatat di laporan keuangan Anda.",
+    "invoice_paid_tenant_title": "Pembayaran Tagihan Berhasil 🧾",
+    "invoice_paid_tenant_body": "Pembayaran tagihan {{invoiceNumber}} (Kamar {{room}} di {{property}}) sebesar {{amount}} berhasil via Xendit ({{channel}}). Klik untuk melihat detail.",
+    "invoice_paid_owner_title": "Dana Masuk Pembayaran Tagihan 💰",
+    "invoice_paid_owner_body": "Penghuni kamar {{room}} ({{property}}) telah membayar tagihan {{invoiceNumber}} sebesar {{amount}} via Xendit. Pembayaran dicatat di laporan keuangan Anda.",
     "rental_expired_title": "Pengajuan Sewa Kedaluwarsa",
     "rental_expired_body": "Pengajuan sewa Anda telah kedaluwarsa karena tidak ada respons dalam 3 hari kerja.",
     "invoice_generated_title": "Tagihan Baru Tersedia",
