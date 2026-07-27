@@ -109,8 +109,8 @@ serve(async (req) => {
       } 
       // Validasi 3: Cegah Underpayment cicilan (Min 10% sisa atau 100rb)
       else {
-        let minPayment = Math.max(100000, remainingAmount * 0.1);
-        if (remainingAmount <= 100000) {
+        let minPayment = Math.max(50000, remainingAmount * 0.1);
+        if (remainingAmount <= 50000) {
           minPayment = remainingAmount; // Wajib lunas jika sisa dikit
         }
         
@@ -127,6 +127,14 @@ serve(async (req) => {
     
     // Pastikan amountToPay dibulatkan ke integer
     amountToPay = Math.round(amountToPay);
+
+    // Validasi: nominal tidak boleh <= 0 (tagihan sudah lunas atau input invalid)
+    if (amountToPay <= 0) {
+      return new Response(JSON.stringify({ success: false, error: "Tagihan ini sudah lunas" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Ambil data penyewa (tenant) terpisah
     const { data: tenant } = await supabaseAdmin

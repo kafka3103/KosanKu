@@ -18,10 +18,13 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { checkTenantProfileExists } from '../../services/userService';
+import { getRoomDetails } from '../../services/propertyService';
+import DynamicText from '../../components/shared/DynamicText';
 import { TENANT_SCREENS } from '../../constants/screenNames';
 import USER_ROLE from '../../constants/userRole';
 
@@ -80,8 +83,13 @@ const RoomDetailScreen = ({ navigation, route }) => {
     other: { text: t('roomDetail.categories.other', 'Lainnya'), icon: 'cube-outline' },
   });
   const categoryLabels = getCategoryLabels(t);
+  const isOwnProperty = property?.owner_id === currentUser?.id;
 
   const handleRequestRent = async () => {
+    if (isOwnProperty) {
+      Alert.alert(t('common.notAllowed', 'Tidak Diizinkan'), t('roomDetail.cannotRentOwn', 'Anda tidak dapat menyewa properti milik sendiri.'));
+      return;
+    }
     // Cek kelengkapan profil tenant
     const hasProfile = await checkTenantProfileExists(currentUser?.id);
     if (!hasProfile) {
@@ -187,14 +195,14 @@ const RoomDetailScreen = ({ navigation, route }) => {
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="business" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-                <Text style={styles.metaItem}>{property?.name}</Text>
+                <Text style={styles.metaItem}>{getLocalizedField(property, 'name')}</Text>
               </View>
             </View>
           )}
 
-          {room?.description && (
+          {(getLocalizedField(room, 'description') || room?.description) && (
             <View style={styles.descriptionCard}>
-              <Text style={styles.descriptionText}>{room.description}</Text>
+              <Text style={styles.descriptionText}>{getLocalizedField(room, 'description')}</Text>
             </View>
           )}
         </View>
@@ -213,7 +221,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                 </View>
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
-                    <View key={t('facilities.' + fac.name, fac.name)} style={styles.facilityItem}>
+                    <View key={fac.id || fac.name} style={styles.facilityItem}>
                       <Ionicons
                         name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
                         size={20}
@@ -221,7 +229,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                         style={{ marginRight: 4 }}
                       />
                       <View>
-                        <Text style={styles.facilityName}>{t('facilities.' + fac.name, fac.name)}</Text>
+                        <DynamicText style={styles.facilityName}>{getLocalizedField(fac, 'name')}</DynamicText>
                         {fac.additional_cost && (
                           <Text style={styles.additionalCost}>
                             +{formatCurrency(fac.additional_cost)}
@@ -245,7 +253,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.rulesCard}>
               {property.rules.split('\n').map((rule, idx) => (
-                <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+                <DynamicText key={idx} style={styles.rulesText}>{rule}</DynamicText>
               ))}
             </View>
           </View>
@@ -263,9 +271,10 @@ const RoomDetailScreen = ({ navigation, route }) => {
             <Text style={styles.bottomPriceValue}>{formatCurrency(room?.base_price)}</Text>
           </View>
           <TouchableOpacity
-            style={styles.rentBtn}
-            onPress={handleRequestRent}
+            style={[styles.rentBtn, isOwnProperty && { backgroundColor: COLORS.grey400 }]}
+            onPress={isOwnProperty ? () => Alert.alert(t('common.notAllowed', 'Tidak Diizinkan'), t('roomDetail.cannotRentOwn', 'Anda tidak dapat menyewa properti milik sendiri.')) : handleRequestRent}
             activeOpacity={0.8}
+            disabled={isOwnProperty}
           >
             <Text style={styles.rentBtnText}>{t('roomDetail.btnRent', 'Ajukan Sewa')}</Text>
           </TouchableOpacity>

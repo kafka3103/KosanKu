@@ -158,7 +158,7 @@ const LoginScreen = ({ navigation }) => {
               source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
               style={styles.socialIcon} 
             />
-            <Text style={styles.socialButtonText}>Sign in with Google</Text>
+            <Text style={styles.socialButtonText}>{t('auth.signInGoogle', 'Sign in with Google')}</Text>
           </TouchableOpacity>
         </View>
 

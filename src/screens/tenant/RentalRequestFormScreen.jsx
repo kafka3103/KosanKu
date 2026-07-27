@@ -19,19 +19,21 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+
 import { format, addMonths } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../../localization/i18n';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { submitRentalRequest } from '../../services/searchService';
+import { getTenantProfile, upsertTenantProfile, checkNikUnique } from '../../services/userService';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
-import { uploadKtpPhoto } from '../../services/userService';
+
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -40,7 +42,7 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (date) => format(date, 'd MMMM yyyy', { locale: idLocale });
+const formatDate = (date, i18n) => format(date, 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
 
 const DURATION_OPTIONS = [1, 3, 6, 12];
 
@@ -54,62 +56,37 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const [startDate] = useState(new Date()); // Selalu mulai dari hari ini
   const [durationMonths, setDurationMonths] = useState(1);
   const [tenantMessage, setTenantMessage] = useState('');
-  const [ktpUri, setKtpUri] = useState(null);
+  const [tenantNIK, setTenantNIK] = useState('');
+  const [isNiksLocked, setIsNiksLocked] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      const { data } = await getTenantProfile(currentUser.id);
+      if (data && data.ktp_number) {
+        setTenantNIK(data.ktp_number);
+        setIsNiksLocked(true);
+      }
+    };
+    if (currentUser?.id) {
+      loadProfile();
+    }
+  }, [currentUser]);
 
   const endDate = addMonths(startDate, durationMonths);
   const totalCost = (room?.base_price ?? 0) * durationMonths;
 
-  const pickFromCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('rental.request.permCamera', 'Izin Diperlukan'), t('rental.request.permCameraMsg', 'Akses kamera diperlukan untuk mengambil foto KTP.'));
-      return;
-    }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 0.9,
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setKtpUri(result.assets[0].uri);
-    }
-  };
-
-  const pickFromGallery = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('rental.request.permCamera', 'Izin Diperlukan'), t('rental.request.permGalleryMsg', 'Akses galeri foto diperlukan untuk upload KTP.'));
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 0.9,
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setKtpUri(result.assets[0].uri);
-    }
-  };
-
-  const handlePickKtp = () => {
-    Alert.alert(
-      t('rental.request.uploadKtp', 'Upload Foto KTP'),
-      t('rental.request.chooseSource', 'Pilih sumber foto KTP Anda'),
-      [
-        { text: t('rental.request.camera', 'Kamera'), onPress: pickFromCamera },
-        { text: t('rental.request.gallery', 'Galeri'), onPress: pickFromGallery },
-        { text: t('rental.request.cancel', 'Batal'), style: 'cancel' },
-      ],
-      { cancelable: true }
-    );
-  };
 
   const handleSubmit = async () => {
+    if (!isNiksLocked) {
+      if (!tenantNIK || tenantNIK.length !== 16 || !/^\d+$/.test(tenantNIK)) {
+        Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));
+        return;
+      }
+    }
+
     Alert.alert(
       t('rental.request.confirmTitle', 'Konfirmasi Pengajuan'),
       t('rental.request.confirmMsg', `Ajukan sewa kamar ${room?.room_number} di ${property?.name} selama ${durationMonths} bulan?`, { room: room?.room_number, property: property?.name, months: durationMonths }),
@@ -120,13 +97,12 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           onPress: async () => {
             setIsLoading(true);
             try {
-              let ktpPhotoUrl = null;
-
-              // Upload KTP jika ada
-              if (ktpUri) {
-                const { path, error: ktpError } = await uploadKtpPhoto(currentUser.id, ktpUri);
-                if (!ktpError && path) {
-                  ktpPhotoUrl = path;
+              if (!isNiksLocked) {
+                const isUnique = await checkNikUnique(tenantNIK, currentUser.id);
+                if (!isUnique) {
+                   Alert.alert(t('common.fail', 'Gagal'), t('common.duplicateNik', 'NIK sudah terdaftar pada akun lain.'));
+                   setIsLoading(false);
+                   return;
                 }
               }
 
@@ -137,8 +113,8 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 requestedStartDate: startDate.toISOString().split('T')[0],
                 durationMonths,
                 monthlyRate: parseFloat(room.base_price ?? 0),
-                ktpPhotoUrl,
                 tenantMessage: tenantMessage.trim() || null,
+                tenantNik: isNiksLocked ? null : tenantNIK, // Only pass if it's new
               });
 
               if (error) {
@@ -156,8 +132,8 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
               // Panggil Local Notification sebagai pemberitahuan lokal di HP penyewa
               scheduleLocalNotification(
-                "Pengajuan Berhasil Dikirim!",
-                `Pemilik kos ${property?.name} akan meninjau pengajuan Anda dalam waktu 3 hari.`,
+                t('rental.request.localNotifTitle', 'Pengajuan Berhasil Dikirim!'),
+                t('rental.request.localNotifBody', 'Pemilik kos {{property}} akan meninjau pengajuan Anda dalam waktu 3 hari.', { property: property?.name }),
                 { type: 'rental_request', status: 'pending' },
                 2
               );
@@ -277,41 +253,49 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           <View style={styles.dateRow}>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
+              <Text style={styles.dateValue}>{formatDate(startDate, i18n)}</Text>
             </View>
             <Text style={styles.dateSep}>→</Text>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.endDateLabel', 'Selesai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+              <Text style={styles.dateValue}>{formatDate(endDate, i18n)}</Text>
             </View>
           </View>
         </View>
 
-        {/* KTP Upload */}
+
+
+        {/* Jaminan Identitas */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
-            <Ionicons name="id-card-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.ktpPhotoLabel')}</Text>
+            <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.success} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rentalRequest.identityGuarantee', 'Jaminan Identitas')}</Text>
           </View>
-          <Text style={styles.sectionSubtitle}>{t('rental.request.ktpPhotoHint')}</Text>
-
-          <TouchableOpacity style={styles.ktpUpload} onPress={handlePickKtp} activeOpacity={0.7}>
-            {ktpUri ? (
-              <Image source={{ uri: ktpUri }} style={styles.ktpPreview} />
-            ) : (
-              <View style={styles.ktpPlaceholder}>
-                <Ionicons name="camera-outline" size={40} color={COLORS.textTertiary} />
-                <Text style={styles.ktpPlaceholderText}>{t('rental.request.tapToUpload', 'Ketuk untuk ambil / pilih foto KTP')}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          {ktpUri && (
-            <TouchableOpacity onPress={() => setKtpUri(null)} style={styles.removeKtp}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
-                <Text style={styles.removeKtpText}>{t('rental.request.removePhoto', 'Hapus Foto')}</Text>
-              </View>
-            </TouchableOpacity>
+          
+          {isNiksLocked ? (
+            <View style={{ backgroundColor: COLORS.successLight, padding: SPACING[3], borderRadius: BORDER_RADIUS.md }}>
+               <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
+                 NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:
+               </Text>
+               <Text style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
+                 {tenantNIK}
+               </Text>
+            </View>
+          ) : (
+            <View>
+              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 8 }}>
+                Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:
+              </Text>
+              <TextInput
+                style={[styles.messageInput, { minHeight: 48, textAlignVertical: 'center' }]}
+                placeholder="Contoh: 3201234567890123"
+                keyboardType="numeric"
+                maxLength={16}
+                value={tenantNIK}
+                onChangeText={setTenantNIK}
+                placeholderTextColor={COLORS.textTertiary}
+              />
+            </View>
           )}
         </View>
 

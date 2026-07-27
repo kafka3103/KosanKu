@@ -6,6 +6,7 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
+import { translateMultipleFields } from './translationService';
 
 /**
  * Cari properti & kamar yang tersedia berdasarkan filter
@@ -41,8 +42,11 @@ export const searchProperties = async (filters = {}) => {
     .select(`
       id,
       name,
+      name_en,
       description,
+      description_en,
       address_line,
+      address_line_en,
       city,
       district,
       latitude,
@@ -52,6 +56,8 @@ export const searchProperties = async (filters = {}) => {
       cover_photo_url,
       photo_urls,
       rules,
+      rules_en,
+      owner_id,
       ${roomsRelation}(
         id,
         room_number,
@@ -59,6 +65,7 @@ export const searchProperties = async (filters = {}) => {
         base_price,
         status,
         size_sqm,
+        description_en,
         photo_urls,
         room_facilities(
           facility_master(name, icon_name)
@@ -248,6 +255,12 @@ export const submitRentalRequest = async (requestData) => {
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
   }
 
+  let translated = {};
+  if (requestData.tenantMessage) {
+    const fieldsToTranslate = { tenant_message: requestData.tenantMessage };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .insert({
@@ -257,8 +270,10 @@ export const submitRentalRequest = async (requestData) => {
       requested_start_date: requestData.requestedStartDate,
       duration_months: requestData.durationMonths,
       monthly_rate: requestData.monthlyRate,
+      tenant_nik: requestData.tenantNik ?? null,
       ktp_photo_url: requestData.ktpPhotoUrl ?? null,
       tenant_message: requestData.tenantMessage ?? null,
+      tenant_message_en: translated.tenant_message_en ?? null,
       expires_at: expiresAt.toISOString(),
     })
     .select()
@@ -288,11 +303,40 @@ export const getTenantRentalRequests = async (tenantId) => {
     .from('rental_requests')
     .select(`
       *,
+      contracts (
+        id,
+        start_date,
+        end_date,
+        status,
+        monthly_rate,
+        contract_facilities (
+          *,
+          facility_master(name, icon_name)
+        ),
+        invoices (
+          id,
+          status,
+          total_amount,
+          paid_amount,
+          due_date,
+          billing_period
+        )
+      ),
       rooms(
         room_number,
         base_price,
         photo_urls,
-        properties(name, address_line, city, cover_photo_url)
+        room_facilities(
+          facility_master(name, icon_name)
+        ),
+        properties(
+          name, 
+          address_line, 
+          city, 
+          cover_photo_url,
+          general_facilities,
+          users(full_name, phone_number)
+        )
       )
     `)
     .eq('tenant_id', tenantId)

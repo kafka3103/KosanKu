@@ -11,6 +11,7 @@ import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { translateMultipleFields } from './translationService';
 
 const PROPERTY_PHOTOS_BUCKET = 'property-photos';
 const ROOM_PHOTOS_BUCKET = 'room-photos';
@@ -79,9 +80,23 @@ export const getPropertyById = async (propertyId) => {
  * @param {Object} propertyData
  */
 export const createProperty = async (ownerId, propertyData) => {
+  // Translate fields
+  const fieldsToTranslate = {
+    name: propertyData.name,
+    description: propertyData.description,
+    address_line: propertyData.address_line,
+    rules: propertyData.rules,
+  };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...propertyData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .insert({ owner_id: ownerId, is_active: true, ...propertyData })
+    .insert({ owner_id: ownerId, is_active: true, ...finalData })
     .select()
     .single();
 
@@ -95,9 +110,24 @@ export const createProperty = async (ownerId, propertyData) => {
  * @param {Object} propertyData
  */
 export const updateProperty = async (propertyId, propertyData) => {
+  // Translate fields
+  const fieldsToTranslate = {
+    name: propertyData.name,
+    description: propertyData.description,
+    address_line: propertyData.address_line,
+    rules: propertyData.rules,
+  };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...propertyData,
+    ...translated,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .update({ ...propertyData, updated_at: new Date().toISOString() })
+    .update(finalData)
     .eq('id', propertyId)
     .select()
     .single();
@@ -228,9 +258,17 @@ export const getRoomById = async (roomId) => {
  * @param {Object} roomData
  */
 export const createRoom = async (propertyId, roomData) => {
+  const fieldsToTranslate = { description: roomData.description };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+  
+  const finalData = {
+    ...roomData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('rooms')
-    .insert({ property_id: propertyId, ...roomData })
+    .insert({ property_id: propertyId, ...finalData })
     .select()
     .single();
 
@@ -244,9 +282,18 @@ export const createRoom = async (propertyId, roomData) => {
  * @param {Object} roomData
  */
 export const updateRoom = async (roomId, roomData) => {
+  const fieldsToTranslate = { description: roomData.description };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...roomData,
+    ...translated,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabaseClient
     .from('rooms')
-    .update({ ...roomData, updated_at: new Date().toISOString() })
+    .update(finalData)
     .eq('id', roomId)
     .select()
     .single();
@@ -330,9 +377,17 @@ export const uploadMultipleRoomPhotos = async (roomId, localUris) => {
  * @param {Object[]} roomDataArray
  */
 export const createBulkRooms = async (propertyId, roomDataArray) => {
+  // Translate template description (assuming all rooms have the same template description)
+  let translated = {};
+  if (roomDataArray.length > 0 && roomDataArray[0].description) {
+     const fieldsToTranslate = { description: roomDataArray[0].description };
+     translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const inserts = roomDataArray.map(roomData => ({
     property_id: propertyId,
-    ...roomData
+    ...roomData,
+    ...translated
   }));
 
   const { data, error } = await supabaseClient
@@ -496,7 +551,10 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
     .select(`
       *,
       rooms(room_number, base_price, properties(name, address_line, city)),
-      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, email, avatar_url)
+      users!rental_requests_tenant_id_fkey(
+        id, full_name, phone_number, email, avatar_url,
+        tenant_profiles(ktp_number, is_verified)
+      )
     `)
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
@@ -583,6 +641,19 @@ export const approveRentalRequest = async (requestId) => {
       .update({ status: 'pending', updated_at: new Date().toISOString() })
       .eq('id', request.room_id);
 
+    // 4.b Update tenant_profiles (termasuk sinkronisasi NIK jika ada) dan set is_verified menjadi true
+    // Kita gunakan RPC (Remote Procedure Call) karena operasi ini dijalankan oleh Owner,
+    // sedangkan RLS tabel tenant_profiles mencegah Owner mengubah profil Tenant.
+    const tenantNikToSave = request.tenant_nik;
+    const { error: rpcError } = await supabaseClient.rpc('verify_tenant_profile_nik', {
+      p_tenant_id: request.tenant_id,
+      p_tenant_nik: tenantNikToSave
+    });
+
+    if (rpcError) {
+      console.warn('Gagal memverifikasi profil tenant:', rpcError.message);
+    }
+
     // 5. Buat invoice pertama agar tenant bisa langsung melakukan pembayaran ("dilanjutkan kedalam tahap pembayaran")
     if (newContract) {
       const now = new Date();
@@ -608,14 +679,33 @@ export const approveRentalRequest = async (requestId) => {
         .single();
 
       // 6. Kirim notifikasi ke penghuni (Tenant)
+      // a. Notifikasi persetujuan pengajuan sewa
       await sendNotification({
         userId: request.tenant_id,
         title: 'rental_approved_title',
         body: JSON.stringify({ key: 'rental_approved_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
         type: 'rental_request_approved',
-        referenceId: newInvoice?.id ?? request.id,
-        referenceType: newInvoice ? 'invoice' : 'rental_request',
+        referenceId: request.id,
+        referenceType: 'rental_request',
       });
+
+      // b. Notifikasi tagihan pertama (jika berhasil dibuat)
+      if (newInvoice) {
+        await sendNotification({
+          userId: request.tenant_id,
+          title: 'invoice_generated_title',
+          body: JSON.stringify({ 
+            key: 'invoice_generated_body', 
+            params: { 
+              amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(newInvoice.total_amount || 0), 
+              dueDate: newInvoice.due_date 
+            } 
+          }),
+          type: 'invoice_generated',
+          referenceId: newInvoice.id,
+          referenceType: 'invoice',
+        });
+      }
     }
   } catch (err) {
     console.warn('Error saat membuat kontrak/invoice otomatis:', err.message);
@@ -642,11 +732,18 @@ export const rejectRentalRequest = async (requestId, reason) => {
     .eq('id', requestId)
     .single();
 
+  let translated = {};
+  if (reason) {
+    const fieldsToTranslate = { owner_rejection_reason: reason };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .update({
       status: 'rejected',
       owner_rejection_reason: reason,
+      owner_rejection_reason_en: translated.owner_rejection_reason_en ?? null,
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', requestId)

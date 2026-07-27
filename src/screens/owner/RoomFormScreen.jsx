@@ -73,6 +73,7 @@ const RoomFormScreen = ({ navigation, route }) => {
   const [sizeSqm, setSizeSqm] = useState(String(existingRoom?.size_sqm ?? ''));
   const [basePrice, setBasePrice] = useState(String(existingRoom?.base_price ?? ''));
   const [description, setDescription] = useState(existingRoom?.description ?? '');
+  const [descriptionEn, setDescriptionEn] = useState(existingRoom?.description_en ?? '');
 
   const [allFacilities, setAllFacilities] = useState([]);
   const [selectedFacilities, setSelectedFacilities] = useState([]); // [{facility_id, additional_cost}]
@@ -209,6 +210,7 @@ const RoomFormScreen = ({ navigation, route }) => {
         size_sqm: sizeSqm ? parseFloat(sizeSqm) : null,
         base_price: parseFloat(basePrice),
         description: description.trim() || null,
+        description_en: descriptionEn.trim() || null,
         photo_urls: finalPhotoUrls,
       };
 
@@ -449,6 +451,17 @@ const RoomFormScreen = ({ navigation, route }) => {
             placeholder={t('room.form.descriptionPlaceholder', 'Deskripsi singkat kamar...')}
             value={description}
             onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            placeholderTextColor={COLORS.textTertiary}
+          />
+          <Text style={[styles.label, { marginTop: 12 }]}>{t('room.form.descriptionEnLabel', 'Deskripsi (Bahasa Inggris)')}</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder={t('room.form.descriptionEnPlaceholder', 'Ketik deskripsi dalam bahasa Inggris...')}
+            value={descriptionEn}
+            onChangeText={setDescriptionEn}
             multiline
             numberOfLines={3}
             textAlignVertical="top"

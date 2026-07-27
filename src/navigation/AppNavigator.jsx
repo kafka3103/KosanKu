@@ -8,9 +8,11 @@ import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAuthStore from '../store/authStore';
-import { subscribeToAuthChanges, getUserProfile, updateFcmToken } from '../services/authService';
+import { subscribeToAuthChanges, getUserProfile, updateFcmToken, getCurrentSession } from '../services/authService';
+import { syncLanguagePreferenceToBackend } from '../localization/i18n';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '../utils/notificationUtils';
 import COLORS from '../constants/colors';
 
@@ -46,6 +48,7 @@ const AppNavigator = () => {
     setAuthenticatedUser,
     clearAuthState,
     setIsLoading,
+    isAuthValidating,
   } = useAuthStore();
 
   useEffect(() => {
@@ -80,6 +83,7 @@ const AppNavigator = () => {
           if (fcmToken) {
             await updateFcmToken(session.user.id, fcmToken);
           }
+          await syncLanguagePreferenceToBackend();
           
           // Mencegah race condition: jika authStore sudah keburu di-update oleh authService
           // dengan role yang benar, jangan timpa dengan data usang (role null) dari fetch ini.
@@ -89,8 +93,25 @@ const AppNavigator = () => {
             return;
           }
 
+          // Fix Race Condition 2: Karena event ini berjalan asynchronous (await), ada kemungkinan
+          // fungsi signInWithGoogle sudah memanggil signOut() jika user tidak terdaftar.
+          // Kita harus mengecek ulang apakah sesi masih benar-benar ada di Supabase.
+          const { data: currentSessionData } = await getCurrentSession();
+          if (!currentSessionData?.session) {
+            console.log('AppNavigator: Sesi dibatalkan secara internal (SIGNED_OUT). Menghentikan auto-login.');
+            return;
+          }
+
           if (userProfile) {
-            setAuthenticatedUser(session, userProfile);
+            let lastUsedRole = null;
+            if (userProfile.role === USER_ROLE.BOTH) {
+              try {
+                lastUsedRole = await AsyncStorage.getItem(`@last_used_role_${userProfile.id}`);
+              } catch (e) {
+                console.error('Failed to get last used role:', e);
+              }
+            }
+            setAuthenticatedUser(session, userProfile, lastUsedRole);
           } else {
             // User baru — belum ada di public.users (sebelum lengkap profilnya)
             setAuthenticatedUser(session, {
@@ -124,7 +145,7 @@ const AppNavigator = () => {
     };
   }, []);
 
-  if (isLoading) {
+  if (isLoading || isAuthValidating) {
     return <SplashScreen />;
   }
 

@@ -25,23 +25,10 @@ import i18n from '../localization/i18n';
  */
 const triggerPushNotification = async (userId, title, body, data = {}) => {
   try {
-    let pushTitle = title;
-    let pushBody = body;
-
-    // Coba translate title
-    if (i18n.exists(`dbNotification.${title}`)) {
-      pushTitle = i18n.t(`dbNotification.${title}`);
-    }
-
-    // Coba translate body (karena formatnya JSON { key, params })
-    try {
-      const parsed = JSON.parse(body);
-      if (parsed && parsed.key && i18n.exists(`dbNotification.${parsed.key}`)) {
-        pushBody = i18n.t(`dbNotification.${parsed.key}`, parsed.params || {});
-      }
-    } catch (e) {
-      // Abaikan jika bukan JSON
-    }
+    // Jangan terjemahkan title & body di sini!
+    // Biarkan Edge Function 'send-notification' yang menerjemahkan sesuai preferred_language user tujuan
+    const pushTitle = title;
+    const pushBody = body;
 
     const res = await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
       method: 'POST',
@@ -100,9 +87,7 @@ export const sendNotification = async ({
         reference_id: referenceId,
         reference_type: referenceType,
         is_read: false,
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       console.warn('Gagal menyimpan notifikasi ke database:', error.message);

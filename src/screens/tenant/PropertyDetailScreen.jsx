@@ -3,7 +3,7 @@
  * Detail properti untuk tenant: foto galeri, info, kamar available, fasilitas
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,12 +20,15 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
+import DynamicText from '../../components/shared/DynamicText';
 import useAuthStore from '../../store/authStore';
 import {
   getPropertyDetailForTenant,
@@ -85,14 +88,16 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
   const availableRooms = (property?.rooms ?? []).filter((r) => r.status === 'available');
 
-  useEffect(() => {
-    if (propertyParam?.id) {
-      // Load full detail
-      loadDetail();
-      checkFavorite();
-      loadReviews();
-    }
-  }, [propertyParam?.id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (propertyParam?.id) {
+        // Load full detail
+        loadDetail();
+        checkFavorite();
+        loadReviews();
+      }
+    }, [propertyParam?.id])
+  );
 
   const loadReviews = async () => {
     const summary = await getPropertyRatingSummary(propertyParam.id);
@@ -134,7 +139,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <Text style={styles.noRoomsText}>{t('propertyDetail.noRooms', 'Tidak ada kamar tersedia saat ini')}</Text>
         </View>
       ) : (
-        availableRooms.map((room) => {
+        availableRooms.map((room, index) => {
           const facilities = room.room_facilities
             ?.map((rf) => rf.facility_master?.name)
             .filter(Boolean)
@@ -163,7 +168,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <View style={styles.roomFacilities}>
                   {facilities.map((f, i) => (
                     <View key={i} style={styles.facilityTag}>
-                      <Text style={styles.facilityTagText}>{f}</Text>
+                      <DynamicText style={styles.facilityTagText}>{f}</DynamicText>
                     </View>
                   ))}
                 </View>
@@ -271,13 +276,24 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           </Text>
         </View>
       </View>
+      {(getLocalizedField(property, 'rules') || property?.rules) && (
+        <View style={styles.rulesCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
+          </View>
+          {(getLocalizedField(property, 'rules') || property.rules).split('\n').map((rule, idx) => (
+            <Text key={idx} style={styles.rulesText}>{rule.replace(/^\d+\.\s*/, '').trim()}</Text>
+          ))}
+        </View>
+      )}
       {property?.description && (
         <View style={styles.infoCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="information-circle" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.aboutTitle', 'Tentang Kosan')}</Text>
           </View>
-          <Text style={styles.infoText}>{property.description}</Text>
+          <Text style={styles.infoText}>{getLocalizedField(property, 'description')}</Text>
         </View>
       )}
       <View style={styles.infoCard}>
@@ -301,7 +317,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               onPress={() => {
                 let phone = property.users.phone_number.replace(/\D/g, '');
                 if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-                Linking.openURL(`whatsapp://send?phone=${phone}&text=Halo, saya tertarik dengan kosan ${property.name} yang ada di aplikasi KosanKu.`);
+                Linking.openURL(`whatsapp://send?phone=${phone}&text=Halo, saya tertarik dengan kosan ${getLocalizedField(property, 'name')} yang ada di aplikasi KosanKu.`);
               }}
               activeOpacity={0.8}
             >
@@ -322,19 +338,19 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <View style={styles.facilitiesGrid}>
           {(property?.general_facilities ?? []).map((fac, i) => (
             <View key={i} style={styles.facilityGridItem}>
-              <Text style={styles.facilityGridText}>{t('facilities.' + fac.replace(/_/g, ' '), fac.replace(/_/g, ' '))}</Text>
+              <DynamicText style={styles.facilityGridText}>{t(`property.form.fac${fac.charAt(0).toUpperCase() + fac.slice(1).replace(/_([a-z])/g, (g) => g[1].toUpperCase())}`, fac.replace(/_/g, ' '))}</DynamicText>
             </View>
           ))}
         </View>
       )}
-      {property?.rules && (
+      {(getLocalizedField(property, 'rules') || property?.rules) && (
         <View style={styles.rulesCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
           </View>
-          {property.rules.split('\n').map((rule, idx) => (
-            <Text key={idx} style={styles.rulesText}>{t('rules.' + rule.replace(/^\d+\.\s*/, '').trim(), rule)}</Text>
+          {(getLocalizedField(property, 'rules') || property.rules).split('\n').map((rule, idx) => (
+            <Text key={idx} style={styles.rulesText}>{rule.replace(/^\d+\.\s*/, '').trim()}</Text>
           ))}
         </View>
       )}
@@ -377,7 +393,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.reviewStarText}>{Number(rev.average_rating).toFixed(1)}</Text>
               </View>
             </View>
-            {rev.comment && <Text style={styles.reviewComment}>{rev.comment}</Text>}
+            {(getLocalizedField(rev, 'comment') || rev.comment) && <Text style={styles.reviewComment}>{getLocalizedField(rev, 'comment')}</Text>}
           </View>
         ))
       )}
@@ -439,10 +455,10 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
         {/* Property Name & Address */}
         <View style={styles.propertyHeader}>
-          <Text style={styles.propertyName}>{property?.name}</Text>
+          <Text style={styles.propertyName}>{getLocalizedField(property, 'name')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="location" size={16} color={COLORS.accent} style={{ marginRight: 4 }} />
-            <Text style={styles.propertyAddress}>{property?.address_line}, {property?.city}</Text>
+            <Text style={styles.propertyAddress}>{getLocalizedField(property, 'address_line')}, {property?.city}</Text>
           </View>
         </View>
 

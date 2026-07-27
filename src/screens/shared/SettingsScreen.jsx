@@ -25,7 +25,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { logout, updatePassword, loginWithEmail, deleteAccount } from '../../services/authService';
+import { logout, updatePassword, deleteAccount } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
@@ -38,21 +38,29 @@ const SettingsScreen = ({ navigation }) => {
   const [emailNotif, setEmailNotif] = useState(true);
 
   // States for delete account
+  const { currentUser, currentSession } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [modalKey, setModalKey] = useState(0);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const { currentUser } = useAuthStore();
+  const [modalKey, setModalKey] = useState(0);
 
+  const providers = currentSession?.user?.app_metadata?.providers || [];
+  const isGoogleOnly = providers.includes('google') && !providers.includes('email');
   const currentLang = i18n.language;
 
   const handleChangeLanguage = () => {
     Alert.alert(
-      t('settings.languageTitle', 'Pilih Bahasa'),
-      t('settings.languageMsg', 'Silakan pilih bahasa aplikasi Anda.'),
+      t('settings.languageTitle', 'Bahasa / Language'),
+      t('settings.languageMsg', 'Pilih bahasa aplikasi:'),
       [
-        { text: 'Bahasa Indonesia', onPress: () => { i18n.changeLanguage('id'); saveLanguagePreference('id'); } },
-        { text: 'English', onPress: () => { i18n.changeLanguage('en'); saveLanguagePreference('en'); } },
+        {
+          text: '🇮🇩 Bahasa Indonesia',
+          onPress: () => saveLanguagePreference('id'),
+        },
+        {
+          text: '🇬🇧 English',
+          onPress: () => saveLanguagePreference('en'),
+        },
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       ]
     );
@@ -60,14 +68,14 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleChangePassword = () => {
     Alert.alert(
-      t('settings.changePassword', 'Ubah Password'),
+      t('settings.changePasswordTitle', 'Ubah Password'),
       t('settings.changePasswordMsg', 'Fitur ubah password akan membuka halaman reset via email.'),
       [
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
           text: t('settings.btnSendResetEmail', 'Kirim Email Reset'),
           onPress: () => {
-            Alert.alert('Email Terkirim', 'Cek inbox email Anda untuk link reset password.');
+            Alert.alert(t('settings.emailSentTitle', 'Email Terkirim'), t('settings.emailSentMsg', 'Cek inbox email Anda untuk link reset password.'));
           },
         },
       ]
@@ -75,37 +83,31 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      t('settings.deleteAccountTitle', '⚠️ Hapus Akun'),
-      t('settings.deleteAccountMsg', 'Akun yang dihapus tidak dapat dipulihkan. Seluruh data Anda akan hilang.'),
-      [
-        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
-        {
-          text: t('settings.btnDeleteAccount', 'Hapus Akun'),
-          style: 'destructive',
-          onPress: () => {
-            setDeletePassword('');
-            setModalKey((prev) => prev + 1);
-            setShowDeleteModal(true);
-          }
-        },
-      ]
-    );
+    setShowDeleteModal(true);
   };
 
   const executeDeleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert('Error', 'Harap masukkan password Anda.');
+      Alert.alert(t('common.error', 'Error'), isGoogleOnly ? t('settings.deleteConfirmEmail', 'Harap ketik {{email}} untuk konfirmasi.', { email: currentUser?.email }) : t('settings.deleteEmptyPassword', 'Harap masukkan password Anda.'));
       return;
     }
-    setIsDeleting(true);
-    // Verifikasi password dengan mencoba login ulang
-    const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
-    
-    if (verifyError) {
-      setIsDeleting(false);
-      Alert.alert('Gagal', 'Password salah atau terjadi kesalahan.');
+
+    if (isGoogleOnly && deletePassword.trim().toLowerCase() !== currentUser?.email?.toLowerCase()) {
+      Alert.alert(t('common.error', 'Error'), t('settings.deleteWrongEmail', 'Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.'));
       return;
+    }
+
+    setIsDeleting(true);
+
+    if (!isGoogleOnly) {
+      // Verifikasi password dengan mencoba login ulang
+      const { error: verifyError } = await loginWithEmail({ email: currentUser.email, password: deletePassword });
+      
+      if (verifyError) {
+        setIsDeleting(false);
+        Alert.alert(t('common.fail', 'Gagal'), t('settings.deleteWrongPassword', 'Password salah atau terjadi kesalahan.'));
+        return;
+      }
     }
 
     // Jika password benar, lanjutkan hapus akun
@@ -113,10 +115,10 @@ const SettingsScreen = ({ navigation }) => {
     setIsDeleting(false);
     
     if (deleteError) {
-      Alert.alert('Gagal', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id');
+      Alert.alert(t('common.fail', 'Gagal'), t('settings.deleteFailMsg', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id'));
     } else {
       setShowDeleteModal(false);
-      Alert.alert('Sukses', 'Akun berhasil dihapus.', [
+      Alert.alert(t('common.success', 'Sukses'), t('settings.deleteSuccessMsg', 'Akun berhasil dihapus.'), [
         {
           text: 'OK',
           onPress: async () => {
@@ -127,12 +129,11 @@ const SettingsScreen = ({ navigation }) => {
       ]);
     }
   };
-
   const handleLogout = () => {
-    Alert.alert('Keluar', 'Yakin ingin keluar dari akun?', [
+    Alert.alert(t('settings.logoutTitle', 'Keluar'), t('settings.logoutConfirm', 'Yakin ingin keluar dari akun?'), [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       {
-        text: 'Keluar',
+        text: t('settings.logoutTitle', 'Keluar'),
         style: 'destructive',
         onPress: async () => {
           await logout();
@@ -186,6 +187,20 @@ const SettingsScreen = ({ navigation }) => {
             />
           }
         />
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => {
+            scheduleLocalNotification(
+              t('settings.testNotifTitle', 'Uji Coba Notifikasi'),
+              t('settings.testNotifBody', 'Ini adalah notifikasi lokal yang muncul setelah 5 detik.'),
+              { type: 'test' },
+              5
+            );
+          }}
+        >
+          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.actionButtonText}>Uji Coba Notifikasi Lokal (5 detik)</Text>
+        </TouchableOpacity>
         <SettingRow
           icon="mail-outline"
           label={t('settings.notifications.email')}
@@ -259,7 +274,6 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
       </View>
       </ScrollView>
-
       {/* Modal Hapus Akun */}
       <Modal
         visible={showDeleteModal}
@@ -270,25 +284,30 @@ const SettingsScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Konfirmasi Hapus Akun</Text>
+              <Text style={styles.modalTitle}>{t('settings.deleteAccountConfirm', 'Konfirmasi Hapus Akun')}</Text>
               <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
                 <Ionicons name="close" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <Text style={styles.modalSubtitle}>
-              Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.
+              {isGoogleOnly 
+                ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
+                : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
             </Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+              {!isGoogleOnly && (
+                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textTertiary} style={styles.inputIcon} />
+              )}
               <TextInput
                 key={modalKey}
                 style={styles.input}
-                placeholder="Password"
-                secureTextEntry
+                placeholder={isGoogleOnly ? `Ketik "${currentUser?.email}"` : "Password"}
+                secureTextEntry={!isGoogleOnly}
                 onChangeText={setDeletePassword}
                 editable={!isDeleting}
+                autoCapitalize="none"
               />
             </View>
 
@@ -300,7 +319,7 @@ const SettingsScreen = ({ navigation }) => {
               {isDeleting ? (
                 <ActivityIndicator color={COLORS.white} />
               ) : (
-                <Text style={styles.modalDeleteBtnText}>Hapus Akun Permanen</Text>
+                <Text style={styles.modalDeleteBtnText}>{t('settings.deleteAccountPermanent', 'Hapus Akun Permanen')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -408,22 +427,23 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: SPACING[4],
   },
   modalContent: {
+    width: '100%',
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.lg,
     padding: SPACING[5],
-    width: '85%',
-    maxWidth: 400,
+    ...SHADOW.md,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING[2],
+    marginBottom: SPACING[3],
   },
   modalTitle: {
     fontSize: FONT_SIZE.lg,
@@ -434,6 +454,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
     marginBottom: SPACING[4],
+    lineHeight: 20,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -442,9 +463,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING[3],
-    marginBottom: SPACING[4],
+    marginBottom: SPACING[5],
   },
-  inputIcon: { marginRight: SPACING[2] },
+  inputIcon: {
+    marginRight: SPACING[2],
+  },
   input: {
     flex: 1,
     paddingVertical: SPACING[3],
@@ -459,8 +482,8 @@ const styles = StyleSheet.create({
   },
   modalDeleteBtnText: {
     color: COLORS.white,
-    fontWeight: FONT_WEIGHT.bold,
     fontSize: FONT_SIZE.base,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });
 

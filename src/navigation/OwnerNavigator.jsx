@@ -185,10 +185,17 @@ const OwnerDrawerContent = ({ navigation }) => {
     }
   }, [currentUser]);
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (!hasTenantProfile) {
       navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.TENANT });
       return;
+    }
+
+    const { checkTenantVerification } = require('../services/userService');
+    const isVerified = await checkTenantVerification(currentUser.id);
+    if (!isVerified) {
+       Alert.alert('Belum Diverifikasi', 'Identitas Pencari Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+       return;
     }
 
     Alert.alert(
@@ -233,7 +240,6 @@ const OwnerDrawerContent = ({ navigation }) => {
         ))}
       </View>
 
-      {/* Switch Role Button */}
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
         <Text style={[styles.logoutText, { color: COLORS.white }]}>
           {hasTenantProfile ? t('navigation.switchRole.switchToTenantBtn', 'Beralih ke Mode Pencari') : t('navigation.switchRole.registerTenantBtn', 'Daftar sebagai Pencari Kos')}

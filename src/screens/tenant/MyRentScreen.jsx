@@ -22,9 +22,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import DrawerButton from '../../components/navigation/DrawerButton';
+import DynamicText from '../../components/shared/DynamicText';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -44,28 +46,48 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const FACILITY_ICON_MAP = {
+  'air-conditioner': 'snow',
+  wifi: 'wifi',
+  shower: 'water',
+  'water-heater': 'flame',
+  bed: 'bed',
+  wardrobe: 'file-tray',
+  desk: 'desktop',
+  chair: 'cube',
+  refrigerator: 'snow-outline',
+  television: 'tv',
+  'washing-machine': 'shirt',
+  kitchen: 'restaurant',
+  balcony: 'partly-sunny',
+  window: 'scan-outline',
+};
+
+const formatDate = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy', { locale: idLocale });
+    const locale = lang === 'en' ? enLocale : idLocale;
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale });
   } catch {
     return dateStr;
   }
 };
 
-const formatDateTime = (dateStr) => {
+const formatDateTime = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm', { locale: idLocale });
+    const locale = lang === 'en' ? enLocale : idLocale;
+    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm', { locale });
   } catch {
     return dateStr;
   }
 };
 
-const formatPeriod = (dateStr) => {
+const formatPeriod = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'MMMM yyyy', { locale: idLocale });
+    const locale = lang === 'en' ? enLocale : idLocale;
+    return format(new Date(dateStr), 'MMMM yyyy', { locale });
   } catch {
     return dateStr;
   }
@@ -87,12 +109,13 @@ const getRequestStatusConfig = (t) => ({
 });
 
 const MyRentScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
   const [contracts, setContracts] = useState([]);
   const [recentInvoices, setRecentInvoices] = useState([]);
+  const [invoiceFilter, setInvoiceFilter] = useState('all'); // Filter tagihan
   const [rentalRequests, setRentalRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -139,6 +162,25 @@ const MyRentScreen = ({ navigation }) => {
     setIsLoading(false);
     setIsRefreshing(false);
   }, [currentUser?.id]);
+
+  const handleCallOwner = (phoneNumber) => {
+    if (!phoneNumber) return;
+    const url = `tel:${phoneNumber}`;
+    Linking.openURL(url).catch(() => Alert.alert(t('myRent.callFail', 'Gagal'), 'Tidak dapat membuka aplikasi telepon'));
+  };
+
+  const handleRequestFacility = async (facilityId) => {
+    setIsRequesting(true);
+    try {
+      // Stub implementation for now
+      Alert.alert(t('myRent.success', 'Sukses'), t('myRent.facilityRequested', 'Fasilitas tambahan berhasil diajukan.'));
+      setShowFacilityModal(false);
+    } catch (error) {
+      Alert.alert(t('myRent.error', 'Error'), error.message);
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -210,6 +252,11 @@ const MyRentScreen = ({ navigation }) => {
 
 
 
+  // Provide facility scope for the modal (assuming single active contract for modal context)
+  const modalContract = contracts[0];
+  const activeContractFacilities = modalContract?.contract_facilities?.filter(cf => cf.status === 'active') || [];
+  const requestedContractFacilities = modalContract?.contract_facilities?.filter(cf => cf.status === 'pending') || [];
+
   return (
     <>
       <ScrollView
@@ -257,7 +304,16 @@ const MyRentScreen = ({ navigation }) => {
             const room = req.rooms;
             const property = room?.properties;
             return (
-              <View key={req.id} style={[styles.requestCard, { borderLeftColor: status.color }]}>
+              <TouchableOpacity 
+                key={req.id} 
+                style={[styles.requestCard, { borderLeftColor: status.color }]}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (req.status === 'approved') {
+                    Alert.alert('Info', 'Pengajuan disetujui. Silakan cek bagian Tagihan Terbaru untuk melakukan pembayaran.');
+                  }
+                }}
+              >
                 <View style={[styles.requestStatusBadge, { backgroundColor: status.bg }]}>
                   <Ionicons name={status.icon} size={14} color={status.color} />
                   <Text style={[styles.requestStatusText, { color: status.color }]}>
@@ -267,88 +323,207 @@ const MyRentScreen = ({ navigation }) => {
                 <Text style={styles.requestProperty}>{property?.name}</Text>
                 <Text style={styles.requestRoom}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
                 <Text style={styles.requestDate}>
-                  {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at) })}
+                  {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at, i18n.language) })}
                 </Text>
                 {req.status === 'pending' && req.expires_at ? (
                   <View style={styles.expiryWarning}>
                     <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
                     <Text style={styles.expiryText}>
-                      {t('myRent.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(req.expires_at) })}
+                      {t('myRent.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(req.expires_at, i18n.language) })}
                     </Text>
                   </View>
                 ) : null}
                 {req.status === 'rejected' && req.owner_rejection_reason ? (
                   <View style={styles.rejectionBox}>
                     <Text style={styles.rejectionText}>
-                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: req.owner_rejection_reason })}
+                      {t('myRent.reason', 'Alasan: {{reason}}', { reason: getLocalizedField(req, 'owner_rejection_reason') })}
                     </Text>
                   </View>
                 ) : null}
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
       )}
 
       {/* Kontrak Aktif */}
-      {contracts.map((contract, index) => {
-        const room = contract?.rooms;
-        const property = room?.properties;
-        const contractInvoices = recentInvoices.filter(inv => inv.contract_id === contract.id);
-        
-        return (
-          <View key={contract.id} style={{ marginBottom: 32 }}>
-            {/* Room Card */}
-            <View style={styles.section}>
-              {index === 0 && <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>}
-              
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() =>
-                  navigation.navigate(TENANT_SCREENS.CONTRACT_DETAIL, {
-                    contract,
-                    invoices: contractInvoices,
-                  })
-                }
-              >
-                <View style={styles.roomCard}>
-                  {room?.photo_urls?.[0] || property?.cover_photo_url ? (
-                    <Image
-                      source={{ uri: room?.photo_urls?.[0] ?? property?.cover_photo_url }}
-                      style={styles.roomPhoto}
-                    />
-                  ) : (
-                    <View style={styles.roomPhotoPlaceholder}>
-                      <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
-                    </View>
-                  )}
-                  <View style={styles.roomInfo}>
-                    <Text style={styles.roomPropertyName}>{property?.name}</Text>
-                    <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
-                      <Text style={[styles.roomAddress, { marginTop: 0 }]} numberOfLines={1}>
-                        {property?.address_line}, {property?.city}
-                      </Text>
-                    </View>
-                    <Text style={styles.roomPrice}>
-                      {formatCurrency(contract.monthly_rate)}{t('roomDetail.perMonth', '/bulan')}
+      {contracts.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { marginBottom: SPACING[3] }]}>{t('myRent.myRoom', 'Kamar Saya')}</Text>
+          {contracts.map((contract) => {
+            const room = contract.rooms;
+            const property = room?.properties;
+            const facilities = property?.facilities || [];
+            
+            // Ambil owner
+            const owner = property?.users;
+            
+            // Filter fasilitas tambahan
+            const activeContractFacilities = contract.contract_facilities?.filter(cf => cf.status === 'active') || [];
+            const requestedContractFacilities = contract.contract_facilities?.filter(cf => cf.status === 'pending') || [];
+
+            return (
+              <View key={contract.id} style={{ marginBottom: SPACING[3] }}>
+            <TouchableOpacity 
+              activeOpacity={0.7} 
+              onPress={() => {
+                const mockRequest = {
+                  rooms: contract.rooms,
+                  contracts: [contract],
+                  status: 'approved',
+                  monthly_rate: contract.monthly_rate
+                };
+                navigation.navigate('ContractDetailScreen', { request: mockRequest });
+              }}
+            >
+              <View style={styles.roomCard}>
+                {room?.photo_urls?.[0] || property?.cover_photo_url ? (
+                  <Image
+                    source={{ uri: room?.photo_urls?.[0] ?? property?.cover_photo_url }}
+                    style={styles.roomPhoto}
+                  />
+                ) : (
+                  <View style={styles.roomPhotoPlaceholder}>
+                    <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
+                  </View>
+                )}
+                <View style={styles.roomInfo}>
+                  <Text style={styles.roomPropertyName}>{property?.name}</Text>
+                  <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
+                    <Text style={[styles.roomAddress, { marginTop: 0 }]}>
+                      {property?.address_line}, {property?.city}
                     </Text>
                   </View>
-                  
-                  {/* Chevron to indicate navigation */}
-                  <View style={{ position: 'absolute', right: 16, top: '50%', marginTop: -12 }}>
-                    <Ionicons name="chevron-forward" size={24} color={COLORS.textTertiary} />
-                  </View>
+                  <Text style={styles.roomPrice}>
+                    {formatCurrency(contract.monthly_rate)}{t('roomDetail.perMonth', '/bulan')}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Recent Invoices - Dipindahkan ke luar agar penyewa tanpa kontrak aktif tetap bisa membayar */}
+      
+      {(recentInvoices.length > 0 || contracts.length > 0) && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
           </View>
-        );
-      })}
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], marginBottom: SPACING[4], marginTop: SPACING[2] }} contentContainerStyle={{ paddingHorizontal: SPACING[5], gap: SPACING[2] }}>
+            {['all', 'unpaid', 'paid', 'partial', 'overdue'].map((status) => {
+              const label = status === 'all' ? t('common.all', 'Semua') : getInvoiceStatusConfig(t)[status]?.label;
+              return (
+                <TouchableOpacity
+                  key={status}
+                  style={[
+                    { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.grey200 },
+                    invoiceFilter === status && { backgroundColor: COLORS.primary }
+                  ]}
+                  onPress={() => setInvoiceFilter(status)}
+                >
+                  <Text style={[
+                    { fontSize: FONT_SIZE.sm, fontFamily: FONT_WEIGHT.medium, color: COLORS.text },
+                    invoiceFilter === status && { color: COLORS.white }
+                  ]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {recentInvoices.filter(inv => invoiceFilter === 'all' || inv.status === invoiceFilter).length === 0 ? (
+            <View style={styles.emptyInvoice}>
+              <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
+            </View>
+          ) : (
+            recentInvoices.filter(inv => invoiceFilter === 'all' || inv.status === invoiceFilter).map((invoice) => {
+              const statusConfig = getInvoiceStatusConfig(t);
+              const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
+              return (
+                <TouchableOpacity
+                  key={invoice.id}
+                  style={styles.invoiceCard}
+                  onPress={() =>
+                    navigation.navigate(TENANT_SCREENS.INVOICE_DETAIL, { invoice })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.invoiceLeft}>
+                    <Ionicons name={status.icon} size={24} color={status.color} />
+                    <View>
+                      <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n.language)}</Text>
+                      <Text style={[styles.invoiceStatus, { color: status.color }]}>
+                        {status.label}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.invoiceAmount}>
+                    {formatCurrency(invoice.total_amount)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </View>
+      )}
     </ScrollView>
 
+      {/* Facility Request Modal */}
+      <Modal
+        visible={showFacilityModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFacilityModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('myRent.requestFacility', 'Ajukan Fasilitas')}</Text>
+              <TouchableOpacity onPress={() => setShowFacilityModal(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
+            <Text style={styles.modalSubtitle}>{t('myRent.chooseFacility', 'Pilih fasilitas tambahan yang ingin Anda pasang di kamar ini.')}</Text>
+
+            <ScrollView style={styles.facilityList}>
+              {masterFacilities.map((facility) => {
+                const isAlreadyActive = activeContractFacilities.some(cf => cf.facility_id === facility.id);
+                const isAlreadyRequested = requestedContractFacilities.some(cf => cf.facility_id === facility.id);
+                const disabled = isAlreadyActive || isAlreadyRequested || isRequesting;
+
+                return (
+                  <TouchableOpacity
+                    key={facility.id}
+                    style={[styles.facilityOption, disabled && styles.facilityOptionDisabled]}
+                    disabled={disabled}
+                    onPress={() => handleRequestFacility(facility.id)}
+                  >
+                    <View style={styles.facilityOptionLeft}>
+                      <Ionicons name={facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
+                      <View style={{ marginLeft: 12 }}>
+                        <Text style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</Text>
+                        {isAlreadyActive ? (
+                          <Text style={styles.facilityOptionStatus}>{t('myRent.installed', 'Sudah terpasang')}</Text>
+                        ) : isAlreadyRequested ? (
+                          <Text style={styles.facilityOptionStatus}>{t('myRent.waitingApproval', 'Menunggu persetujuan')}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={disabled ? COLORS.grey200 : COLORS.grey400} />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -393,7 +568,8 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textPrimary,
-    marginBottom: SPACING[3],
+    marginBottom: SPACING[1],
+    marginTop: SPACING[3]
   },
   // Empty State
   emptyContainer: {

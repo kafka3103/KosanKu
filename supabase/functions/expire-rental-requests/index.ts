@@ -15,6 +15,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const triggerPushNotification = async (userId: string, title: string, body: string, data: Record<string, string> = {}) => {
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ userId, title, body, data }),
+    });
+  } catch (err) {
+    console.warn('⚠️ Gagal trigger push notification:', err);
+  }
+};
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -64,6 +81,14 @@ serve(async (req: Request) => {
 
     if (notifications.length > 0) {
       await supabaseAdmin.from('notifications').insert(notifications);
+      for (const request of requestsToExpire) {
+        await triggerPushNotification(
+          request.tenant_id,
+          'rental_expired_title',
+          JSON.stringify({ key: 'rental_expired_body', params: {} }),
+          { type: 'rental_request_expired', referenceId: request.id, referenceType: 'rental_request' }
+        );
+      }
     }
 
     console.log(`[expire-rental-requests] ${expiredCount} pengajuan di-expire`);

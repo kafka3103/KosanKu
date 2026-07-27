@@ -186,8 +186,101 @@ serve(async (req: Request) => {
     // Inisialisasi Supabase Admin client (bypass RLS)
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Ambil FCM token dan preferred_language user dari tabel users / fcm_tokens
+    const { data: userRecord } = await supabaseAdmin
+      .from("users")
+      .select("fcm_token, preferred_language")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const isEn = userRecord?.preferred_language === "en";
+
+    // ── Translasi i18n key → teks manusia bilingual (ID / EN) sesuai preferensi bahasa user ──
+    const titleDictId: Record<string, string> = {
+      "invoice_paid_tenant_title": "Pembayaran Tagihan Berhasil 🧾",
+      "invoice_paid_owner_title": "Dana Masuk Pembayaran Tagihan 💰",
+      "rental_expired_title": "Pengajuan Kedaluwarsa ⏳",
+      "invoice_generated_title": "Tagihan Baru Tersedia 📋",
+      "rental_approved_title": "Sewa Disetujui! 🎉",
+      "rental_rejected_title": "Sewa Ditolak ❌",
+      "rental_new_title": "Pengajuan Sewa Baru 📋",
+      "facility_invoice_title": "Tagihan Fasilitas ❄️",
+    };
+
+    const titleDictEn: Record<string, string> = {
+      "invoice_paid_tenant_title": "Invoice Payment Successful 🧾",
+      "invoice_paid_owner_title": "Payment Received 💰",
+      "rental_expired_title": "Request Expired ⏳",
+      "invoice_generated_title": "New Invoice Available 📋",
+      "rental_approved_title": "Rental Approved! 🎉",
+      "rental_rejected_title": "Rental Rejected ❌",
+      "rental_new_title": "New Rental Request 📋",
+      "facility_invoice_title": "Facility Invoice ❄️",
+    };
+
+    const bodyDictId: Record<string, string> = {
+      "invoice_paid_tenant_body": "Pembayaran tagihan {{invoiceNumber}} (Kamar {{room}}, {{property}}) sebesar {{amount}} berhasil via {{channel}}.",
+      "invoice_paid_owner_body": "Penghuni kamar {{room}} ({{property}}) membayar tagihan {{invoiceNumber}} sebesar {{amount}}.",
+      "rental_expired_body": "Pengajuan sewa Anda kedaluwarsa karena tidak ada respons dalam 3 hari kerja.",
+      "invoice_generated_body": "Tagihan sebesar {{amount}} telah tersedia. Jatuh tempo: {{dueDate}}.",
+      "rental_approved_body": "Pengajuan kamar {{room}} di {{property}} disetujui! Silakan bayar tagihan pertama.",
+      "rental_rejected_body": "Pengajuan kamar {{room}} di {{property}} ditolak. {{reason}}",
+      "rental_rejected_body_no_reason": "Pengajuan kamar {{room}} di {{property}} belum dapat disetujui.",
+      "rental_new_body": "Penghuni baru mengajukan sewa {{months}} bulan. Segera tinjau di menu Pengajuan Sewa.",
+      "facility_invoice_body": "Tagihan {{amount}} untuk {{facilityName}} telah tersedia.",
+    };
+
+    const bodyDictEn: Record<string, string> = {
+      "invoice_paid_tenant_body": "Payment for invoice {{invoiceNumber}} (Room {{room}}, {{property}}) of {{amount}} was successful via {{channel}}.",
+      "invoice_paid_owner_body": "Tenant in Room {{room}} ({{property}}) paid invoice {{invoiceNumber}} of {{amount}}.",
+      "rental_expired_body": "Your rental request expired due to no response within 3 business days.",
+      "invoice_generated_body": "Your monthly invoice of {{amount}} is now available. Due date: {{dueDate}}.",
+      "rental_approved_body": "Your rental request for Room {{room}} at {{property}} has been approved! Please pay your first invoice.",
+      "rental_rejected_body": "Your rental request for Room {{room}} at {{property}} was rejected. {{reason}}",
+      "rental_rejected_body_no_reason": "Your rental request for Room {{room}} at {{property}} could not be approved.",
+      "rental_new_body": "A new tenant applied for {{months}} month(s). Review in Rental Requests menu.",
+      "facility_invoice_body": "Invoice of {{amount}} for {{facilityName}} is now available.",
+    };
+
+    const titleDict = isEn ? titleDictEn : titleDictId;
+    const bodyDict = isEn ? bodyDictEn : bodyDictId;
+
+    // Fungsi helper: ganti placeholder {{key}} dengan value dari params
+    const interpolate = (template: string, params: Record<string, string>): string => {
+      let result = template;
+      for (const [key, value] of Object.entries(params)) {
+        result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
+      }
+      return result;
+    };
+
+    // Translate title: jika title adalah i18n key, ganti dengan teks sesuai preferensi bahasa
+    let pushTitle = titleDict[title] || title;
+    // Fallback: jika masih berformat underscore-separated key, rapikan
+    if (pushTitle === title && typeof title === "string" && /^[a-z_]+$/.test(title)) {
+      pushTitle = title.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+    }
+
+    // Translate body: jika body adalah JSON string berisi { key, params }, decode dan interpolasi
+    let pushBody = body;
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && parsed.key) {
+        const template = bodyDict[parsed.key];
+        if (template) {
+          pushBody = interpolate(template, parsed.params || {});
+        } else {
+          // Fallback: susun dari params agar tidak mengirim JSON mentah
+          const paramValues = Object.values(parsed.params || {}).join(" - ");
+          pushBody = paramValues || (isEn ? "You have a new notification" : "Anda memiliki pemberitahuan baru");
+        }
+      }
+    } catch (_) {
+      // body bukan JSON — gunakan as-is (sudah string normal)
+    }
+
     // Ambil FCM token user dari tabel fcm_tokens
-    const { data: tokenRecords, error: tokensError } = await supabaseAdmin
+    const { data: tokenRecords } = await supabaseAdmin
       .from("fcm_tokens")
       .select("token")
       .eq("user_id", userId);
@@ -198,13 +291,6 @@ serve(async (req: Request) => {
     }
 
     if (tokensToUse.length === 0) {
-      // Coba fallback ke tabel users
-      const { data: userRecord } = await supabaseAdmin
-        .from("users")
-        .select("fcm_token")
-        .eq("id", userId)
-        .single();
-        
       if (!userRecord || !userRecord.fcm_token) {
         console.warn(`⚠️ User ${userId} tidak memiliki FCM token. Notifikasi in-app tetap tersimpan.`);
         return new Response(
@@ -212,8 +298,6 @@ serve(async (req: Request) => {
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
-      // Gunakan token dari users jika fcm_tokens kosong tapi users ada
       tokensToUse.push({ token: userRecord.fcm_token });
     }
 
@@ -223,7 +307,7 @@ serve(async (req: Request) => {
     // Kirim push notification ke semua token
     const results = await Promise.all(
       tokensToUse.map(async (record) => {
-        return await sendFcmMessage(accessToken, projectId, record.token, title, body, data);
+        return await sendFcmMessage(accessToken, projectId, record.token, pushTitle, pushBody, data);
       })
     );
 

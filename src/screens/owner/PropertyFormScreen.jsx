@@ -67,12 +67,14 @@ const PropertyFormScreen = ({ navigation, route }) => {
   // Form state
   const [name, setName] = useState(existingProperty?.name ?? '');
   const [description, setDescription] = useState(existingProperty?.description ?? '');
+  const [descriptionEn, setDescriptionEn] = useState(existingProperty?.description_en ?? '');
   const [addressLine, setAddressLine] = useState(existingProperty?.address_line ?? '');
   const [city, setCity] = useState(existingProperty?.city ?? '');
   const [district, setDistrict] = useState(existingProperty?.district ?? '');
   const [postalCode, setPostalCode] = useState(existingProperty?.postal_code ?? '');
   const [genderPolicy, setGenderPolicy] = useState(existingProperty?.gender_policy ?? 'mixed');
   const [rules, setRules] = useState(existingProperty?.rules ?? '');
+  const [rulesEn, setRulesEn] = useState(existingProperty?.rules_en ?? '');
   const [billingGenerateDay, setBillingGenerateDay] = useState(
     String(existingProperty?.billing_generate_day ?? '1')
   );
@@ -326,12 +328,14 @@ const PropertyFormScreen = ({ navigation, route }) => {
       const propertyData = {
         name: name.trim(),
         description: description.trim() || null,
+        description_en: descriptionEn.trim() || null,
         address_line: addressLine.trim(),
         city: city.trim(),
         district: district.trim() || null,
         postal_code: postalCode.trim() || null,
         gender_policy: genderPolicy,
         rules: rules.trim() || null,
+        rules_en: rulesEn.trim() || null,
         billing_generate_day: parseInt(billingGenerateDay, 10) || 1,
         billing_due_days: parseInt(billingDueDays, 10) || 10,
         general_facilities: selectedFacilities,
@@ -454,6 +458,17 @@ const PropertyFormScreen = ({ navigation, route }) => {
             placeholder={t('property.form.descriptionPlaceholder')}
             value={description}
             onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            placeholderTextColor={COLORS.textTertiary}
+          />
+          <Text style={[styles.label, { marginTop: 12 }]}>{t('property.form.descriptionEnLabel', 'Deskripsi (Bahasa Inggris)')}</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder={t('property.form.descriptionEnPlaceholder', 'Ketik deskripsi dalam bahasa Inggris')}
+            value={descriptionEn}
+            onChangeText={setDescriptionEn}
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -642,6 +657,17 @@ const PropertyFormScreen = ({ navigation, route }) => {
             placeholder={t('property.form.rulesPlaceholder')}
             value={rules}
             onChangeText={setRules}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            placeholderTextColor={COLORS.textTertiary}
+          />
+          <Text style={[styles.label, { marginTop: 12 }]}>{t('property.form.rulesEnLabel', 'Peraturan Kosan (Bahasa Inggris)')}</Text>
+          <TextInput
+            style={[styles.input, styles.textArea, { minHeight: 100 }]}
+            placeholder={t('property.form.rulesEnPlaceholder', 'Tuliskan peraturan kos dalam bahasa Inggris')}
+            value={rulesEn}
+            onChangeText={setRulesEn}
             multiline
             numberOfLines={4}
             textAlignVertical="top"

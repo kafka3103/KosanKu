@@ -22,10 +22,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -53,25 +54,25 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
 };
 
-const formatDateTime = (dateStr) => {
+const formatDateTime = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy, HH:mm', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMM yyyy, HH:mm', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
 };
 
-const RequestCard = ({ request, onApprove, onReject, t }) => {
+const RequestCard = ({ request, onApprove, onReject, t, i18n }) => {
   const statusConfig = STATUS_CONFIG(t);
   const status = statusConfig[request.status] ?? statusConfig.pending;
   const tenant = request.users;
@@ -123,7 +124,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
           <Ionicons name="calendar" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
           <Text style={styles.infoRow}>
-            {t('ownerRentalRequest.start', 'Mulai')}: <Text style={styles.infoBold}>{formatDate(request.requested_start_date)}</Text>
+            {t('ownerRentalRequest.start', 'Mulai')}: <Text style={styles.infoBold}>{formatDate(request.requested_start_date, i18n)}</Text>
           </Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
@@ -138,10 +139,26 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
             <Text style={styles.infoBold}>{formatCurrency(request.monthly_rate)}/{t('ownerRentalRequest.monthAbbr', 'bln')}</Text>
           </Text>
         </View>
+        {(() => {
+          const tenantNIK = request.tenant_nik || (Array.isArray(tenant?.tenant_profiles) 
+            ? tenant.tenant_profiles[0]?.ktp_number 
+            : tenant?.tenant_profiles?.ktp_number);
+          
+          if (!tenantNIK) return null;
+          return (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, backgroundColor: COLORS.successLight, padding: 8, borderRadius: 6 }}>
+              <Ionicons name="shield-checkmark" size={16} color={COLORS.success} style={{ marginRight: 6 }} />
+              <Text style={[styles.infoRow, { color: COLORS.textPrimary }]}>
+                Jaminan NIK: <Text style={styles.infoBold}>{tenantNIK}</Text>
+              </Text>
+            </View>
+          );
+        })()}
+
         {request.tenant_message ? (
           <View style={styles.messageBox}>
             <Text style={styles.messageLabel}>{t('ownerRentalRequest.tenantMsg', 'Pesan Tenant:')}</Text>
-            <Text style={styles.messageText}>{request.tenant_message}</Text>
+            <Text style={styles.messageText}>{getLocalizedField(request, 'tenant_message')}</Text>
           </View>
         ) : null}
       </View>
@@ -151,7 +168,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
         <View style={styles.expiryWarning}>
           <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
           <Text style={styles.expiryText}>
-            {t('ownerRentalRequest.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(request.expires_at) })}
+            {t('ownerRentalRequest.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(request.expires_at, i18n) })}
           </Text>
         </View>
       ) : null}
@@ -186,7 +203,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
       {request.status === 'rejected' && request.owner_rejection_reason ? (
         <View style={styles.rejectionBox}>
           <Text style={styles.rejectionLabel}>{t('ownerRentalRequest.rejectReasonLabel', 'Alasan Penolakan:')}</Text>
-          <Text style={styles.rejectionText}>{request.owner_rejection_reason}</Text>
+          <Text style={styles.rejectionText}>{getLocalizedField(request, 'owner_rejection_reason')}</Text>
         </View>
       ) : null}
     </View>
@@ -211,7 +228,7 @@ const FilterTab = ({ label, isActive, onPress, count }) => (
 );
 
 const RentalRequestScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useAuthStore();
 
   const [requests, setRequests] = useState([]);
@@ -362,7 +379,7 @@ const RentalRequestScreen = ({ navigation }) => {
             )}
           />
         </View>
-      
+
 
       {/* Requests List */}
       <FlatList
@@ -387,12 +404,7 @@ const RentalRequestScreen = ({ navigation }) => {
         )}
         renderItem={({ item }) => {
           return (
-            <RequestCard
-              request={item}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              t={t}
-            />
+            <RequestCard request={item} onApprove={handleApprove} onReject={handleReject} t={t} i18n={i18n} />
           );
         }}
       />

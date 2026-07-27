@@ -31,6 +31,7 @@ import REGIONS_DATA from '../../constants/cities.json';
 const ALL_CITIES = REGIONS_DATA.reduce((acc, region) => [...acc, ...region.kota], []).sort();
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -79,7 +80,7 @@ const SelectableInfoRow = ({ label, value, onPress, icon, placeholder }) => (
 );
 
 const ProfileScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { currentUser, currentSession, clearAuthState, setAuthenticatedUser, userRole, switchRole } = useAuthStore();
 
@@ -120,7 +121,7 @@ const ProfileScreen = ({ navigation }) => {
     if (!isOwner) {
       const { data: tenantData } = await getTenantProfile(currentUser.id);
       if (tenantData) {
-        setOccupation(tenantData.occupation || '');
+        setOccupation(getLocalizedField(tenantData, 'occupation', i18n.language) || '');
         setEmergencyName(tenantData.emergency_contact_name || '');
         setEmergencyPhone(tenantData.emergency_contact_phone || '');
       }
@@ -247,7 +248,7 @@ const ProfileScreen = ({ navigation }) => {
     setIsSaving(false);
 
     if (error || tenantError) {
-      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || t('profile.updateFail', 'Gagal menyimpan profil'));
+      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || t('profile.saveFailed', 'Gagal menyimpan profil'));
     } else if (data) {
       Alert.alert(t('common.buttons.success', 'Berhasil'), t('profile.updateSuccess', 'Profil berhasil diperbarui'));
       setProfile(data);
@@ -255,11 +256,28 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (currentUser.role !== USER_ROLE.BOTH) {
       const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
       navigation.navigate('RoleRegistrationScreen', { targetRole });
       return;
+    }
+
+    const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
+    if (targetRole === USER_ROLE.OWNER) {
+      const { checkOwnerVerification } = require('../../services/userService');
+      const isVerified = await checkOwnerVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
+    } else {
+      const { checkTenantVerification } = require('../../services/userService');
+      const isVerified = await checkTenantVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pencari Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
     }
 
     const targetRoleText = isOwner ? t('profile.tenant', 'Pencari Kosan') : t('profile.owner', 'Pemilik Kosan');
@@ -279,7 +297,19 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <>
+      <ScrollView
+        style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
+          colors={[COLORS.primary]}
+          tintColor={COLORS.primary}
+        />
+      }
+    >
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -290,17 +320,6 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={() => { setIsRefreshing(true); loadProfile(); }}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
-          />
-        }
-      >
 
       {/* Avatar Section */}
       <View style={styles.avatarSection}>
@@ -362,7 +381,7 @@ const ProfileScreen = ({ navigation }) => {
         />
         <SelectableInfoRow
           label={t('profile.genderLabel', 'Jenis Kelamin')}
-          value={gender}
+          value={gender === 'Laki-laki' ? t('profile.genderMale', 'Laki-laki') : gender === 'Perempuan' ? t('profile.genderFemale', 'Perempuan') : gender}
           onPress={() => setIsGenderModalVisible(true)}
           icon="male-female-outline"
           placeholder={t('profile.genderPlaceholder', 'Pilih Jenis Kelamin')}
@@ -383,28 +402,28 @@ const ProfileScreen = ({ navigation }) => {
         {!isOwner && (
           <>
             <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
-              <Text style={styles.sectionTitle}>Data Tambahan Pencari Kos</Text>
+              <Text style={styles.sectionTitle}>{t('profile.tenantExtraData', 'Data Tambahan Pencari Kos')}</Text>
             </View>
             <EditableInfoRow
-              label="Pekerjaan / Status"
+              label={t('profile.occupation', 'Pekerjaan / Status')}
               value={occupation}
               onChangeText={setOccupation}
               icon="briefcase-outline"
-              placeholder="Cth: Mahasiswa, Karyawan"
+              placeholder={t('profile.occupationPlaceholder', 'Cth: Mahasiswa, Karyawan')}
             />
             <EditableInfoRow
-              label="Nama Kontak Darurat"
+              label={t('profile.emergencyName', 'Nama Kontak Darurat')}
               value={emergencyName}
               onChangeText={setEmergencyName}
               icon="shield-checkmark-outline"
-              placeholder="Nama kerabat/keluarga"
+              placeholder={t('profile.emergencyNamePlaceholder', 'Nama kerabat/keluarga')}
             />
             <EditableInfoRow
-              label="No. Telp Darurat"
+              label={t('profile.emergencyPhone', 'No. Telp Darurat')}
               value={emergencyPhone}
               onChangeText={setEmergencyPhone}
               icon="call-outline"
-              placeholder="Contoh: +628123456789"
+              placeholder={t('profile.emergencyPhonePlaceholder', 'Contoh: +628123456789')}
               keyboardType="phone-pad"
             />
           </>
@@ -458,7 +477,7 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.aboutValue}>1.0.0</Text>
         </View>
         <View style={styles.aboutRow}>
-          <Text style={styles.aboutLabel}>App</Text>
+          <Text style={styles.aboutLabel}>{t('profile.app', 'App')}</Text>
           <Text style={styles.aboutValue}>KosanKu</Text>
         </View>
       </View>
@@ -477,12 +496,12 @@ const ProfileScreen = ({ navigation }) => {
     <Modal visible={isGenderModalVisible} transparent animationType="fade">
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsGenderModalVisible(false)}>
         <View style={styles.actionSheet}>
-          <Text style={styles.actionSheetTitle}>Pilih Jenis Kelamin</Text>
+          <Text style={styles.actionSheetTitle}>{t('profile.selectGenderTitle', 'Pilih Jenis Kelamin')}</Text>
           <TouchableOpacity style={styles.actionSheetOption} onPress={() => { setGender('Laki-laki'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>Laki-laki</Text>
+            <Text style={styles.actionSheetOptionText}>{t('profile.genderMale', 'Laki-laki')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionSheetOption, { borderBottomWidth: 0 }]} onPress={() => { setGender('Perempuan'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>Perempuan</Text>
+            <Text style={styles.actionSheetOptionText}>{t('profile.genderFemale', 'Perempuan')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -495,23 +514,18 @@ const ProfileScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => setIsCityModalVisible(false)}>
             <Ionicons name="close" size={24} color={COLORS.text} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Pilih Kota Asal</Text>
+          <Text style={styles.modalTitle}>{t('profile.selectCityTitle', 'Pilih Kota Asal')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari kota atau kabupaten..."
+            placeholder={t('profile.citySearchPlaceholder', 'Cari kota atau kabupaten...')}
             value={citySearchText}
             onChangeText={setCitySearchText}
             autoFocus
           />
-          {citySearchText ? (
-            <TouchableOpacity onPress={() => setCitySearchText('')}>
-              <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
-            </TouchableOpacity>
-          ) : null}
         </View>
         <FlatList
           data={filteredCities}
@@ -532,7 +546,7 @@ const ProfileScreen = ({ navigation }) => {
         />
       </View>
     </Modal>
-    </View>
+    </>
   );
 };
 
@@ -540,7 +554,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     backgroundColor: COLORS.primary,
-    
+
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },

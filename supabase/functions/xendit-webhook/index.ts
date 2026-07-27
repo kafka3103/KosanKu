@@ -147,7 +147,7 @@ serve(async (req) => {
       }
 
       // 5. Kirim Notifikasi Real-Time & Buat Bukti Invoice ke Owner & Tenant
-      const formattedAmt = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(newPaidAmount);
+      const formattedAmt = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(incomingAmount);
 
       const notifications = [
         // Notifikasi / Bukti Invoice untuk Tenant (Penghuni)
@@ -176,17 +176,42 @@ serve(async (req) => {
       console.log(`🔔 Notifikasi & invoice lunas telah dikirim ke Tenant (${invoice.tenant_id}) dan Owner (${invoice.owner_id})`);
 
       // 6. Kirim Push Notification (FCM) ke device Tenant & Owner
+      // Kirim i18n key + JSON params agar diterjemahkan secara otomatis
+      // oleh send-notification berdasarkan preferensi bahasa (preferred_language) pengguna di database.
+      const pushTitleTenant = "invoice_paid_tenant_title";
+      const pushBodyTenant = JSON.stringify({
+        key: "invoice_paid_tenant_body",
+        params: {
+          invoiceNumber: invoice.invoice_number || "Kos",
+          room: roomNum,
+          property: propName,
+          amount: formattedAmt,
+          channel: payment_channel || "Checkout",
+        },
+      });
+      
+      const pushTitleOwner = "invoice_paid_owner_title";
+      const pushBodyOwner = JSON.stringify({
+        key: "invoice_paid_owner_body",
+        params: {
+          invoiceNumber: invoice.invoice_number || "Kos",
+          room: roomNum,
+          property: propName,
+          amount: formattedAmt,
+        },
+      });
+
       await Promise.all([
         triggerPushNotification(
           invoice.tenant_id,
-          notifications[0].title,
-          notifications[0].body,
+          pushTitleTenant,
+          pushBodyTenant,
           { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
         ),
         triggerPushNotification(
           invoice.owner_id,
-          notifications[1].title,
-          notifications[1].body,
+          pushTitleOwner,
+          pushBodyOwner,
           { type: "invoice_paid", referenceId: invoice.id, referenceType: "invoice" }
         ),
       ]);

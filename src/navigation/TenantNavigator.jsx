@@ -71,6 +71,8 @@ const SearchStackNavigator = () => (
   </SearchStack.Navigator>
 );
 
+
+
 /**
  * Stack Navigator untuk alur hunian aktif:
  * MyRent → ContractDetail → InvoiceDetail → Payment
@@ -78,7 +80,7 @@ const SearchStackNavigator = () => (
 const MyRentStackNavigator = () => (
   <MyRentStack.Navigator screenOptions={{ headerShown: false }}>
     <MyRentStack.Screen name={TENANT_SCREENS.MY_RENT} component={MyRentScreen} />
-    <MyRentStack.Screen name={TENANT_SCREENS.CONTRACT_DETAIL} component={ContractDetailScreen} />
+    <MyRentStack.Screen name="ContractDetailScreen" component={ContractDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.INVOICE_DETAIL} component={InvoiceDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.PAYMENT} component={PaymentScreen} />
   </MyRentStack.Navigator>
@@ -165,9 +167,16 @@ const TenantDrawerContent = ({ navigation }) => {
     }
   }, [currentUser]);
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (!hasOwnerProfile) {
       navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.OWNER });
+      return;
+    }
+
+    const { checkOwnerVerification } = require('../services/userService');
+    const isVerified = await checkOwnerVerification(currentUser.id);
+    if (!isVerified) {
+      Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
       return;
     }
 

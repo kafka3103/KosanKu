@@ -30,6 +30,7 @@ import { DrawerActions } from '@react-navigation/native';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -96,9 +97,11 @@ const PropertyCard = ({ property, onPress }) => {
     : null;
   const availableCount = availableRooms.length;
   const facilities = property.general_facilities ?? [];
+  const { currentUser } = useAuthStore();
+  const isOwnProperty = property.owner_id === currentUser?.id;
 
   return (
-    <TouchableOpacity style={styles.propertyCard} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.propertyCard, isOwnProperty && { borderColor: 'red', borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.cardPhoto}>
         {property.cover_photo_url ? (
           <Image source={{ uri: property.cover_photo_url }} style={styles.cardImage} />
@@ -110,6 +113,11 @@ const PropertyCard = ({ property, onPress }) => {
         <View style={styles.availableTag}>
           <Text style={styles.availableTagText}>{t('searchScreen.availableCount', '{{count}} tersedia', { count: availableCount })}</Text>
         </View>
+        {isOwnProperty && (
+          <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: 'red', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
+            <Text style={[styles.availableTagText, { color: 'white', fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Sendiri')}</Text>
+          </View>
+        )}
         <View style={styles.genderTag}>
           <Ionicons
             name={
@@ -131,7 +139,7 @@ const PropertyCard = ({ property, onPress }) => {
 
       <View style={styles.cardBody}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{property.name}</Text>
+          <Text style={[styles.propertyName, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{getLocalizedField(property, 'name')}</Text>
           {(() => {
             const avgRating = (!property.reviews || property.reviews.length === 0) 
               ? null 
@@ -157,7 +165,7 @@ const PropertyCard = ({ property, onPress }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: property.distanceKm != null ? SPACING[1] : SPACING[3], marginTop: 2 }}>
           <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
           <Text style={styles.propertyAddress} numberOfLines={1}>
-            {property.address_line}, {property.city}
+            {getLocalizedField(property, 'address_line')}, {property.city}
           </Text>
         </View>
 
@@ -218,13 +226,21 @@ const SearchScreen = ({ navigation }) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatusKey, setLocationStatusKey] = useState('locDetecting');
 
-  // Filters
+  // Active Filters
   const [showFilter, setShowFilter] = useState(false);
   const [filterGender, setFilterGender] = useState('all');
   const [filterRoomType, setFilterRoomType] = useState('');
   const [filterMinPrice, setFilterMinPrice] = useState('');
   const [filterMaxPrice, setFilterMaxPrice] = useState('');
   const [filterCity, setFilterCity] = useState('');
+
+  // Temp Filters (Draft state for Modal)
+  const [tempFilterGender, setTempFilterGender] = useState('all');
+  const [tempFilterRoomType, setTempFilterRoomType] = useState('');
+  const [tempFilterMinPrice, setTempFilterMinPrice] = useState('');
+  const [tempFilterMaxPrice, setTempFilterMaxPrice] = useState('');
+  const [tempFilterCity, setTempFilterCity] = useState('');
+  
   const [availableCities, setAvailableCities] = useState([]);
 
   const handleGetLocation = useCallback(async () => {
@@ -333,17 +349,53 @@ const SearchScreen = ({ navigation }) => {
   const hasActiveFilter =
     filterGender !== 'all' || filterRoomType || filterMinPrice || filterMaxPrice || filterCity;
 
+  const handleOpenFilter = () => {
+    // Copy active filters to temp before opening
+    setTempFilterGender(filterGender);
+    setTempFilterRoomType(filterRoomType);
+    setTempFilterMinPrice(filterMinPrice);
+    setTempFilterMaxPrice(filterMaxPrice);
+    setTempFilterCity(filterCity);
+    setShowFilter(true);
+  };
+
   const resetFilters = () => {
+    // Reset temp
+    setTempFilterGender('all');
+    setTempFilterRoomType('');
+    setTempFilterMinPrice('');
+    setTempFilterMaxPrice('');
+    setTempFilterCity('');
+    
+    // Reset active
     setFilterGender('all');
     setFilterRoomType('');
     setFilterMinPrice('');
     setFilterMaxPrice('');
     setFilterCity('');
+    
+    setShowFilter(false);
+    // Note: Since loadProperties relies on active filters in its dependency array, 
+    // changing them will automatically trigger the useEffect to reload properties.
   };
 
   const applyFilters = () => {
+    // Validate Price
+    if (tempFilterMinPrice && tempFilterMaxPrice) {
+      if (Number(tempFilterMinPrice) > Number(tempFilterMaxPrice)) {
+        Alert.alert(t('common.error', 'Error'), t('searchScreen.invalidPriceRange', 'Harga minimum tidak boleh lebih besar dari harga maksimum.'));
+        return;
+      }
+    }
+
+    // Apply temp to active
+    setFilterGender(tempFilterGender);
+    setFilterRoomType(tempFilterRoomType);
+    setFilterMinPrice(tempFilterMinPrice);
+    setFilterMaxPrice(tempFilterMaxPrice);
+    setFilterCity(tempFilterCity);
+    
     setShowFilter(false);
-    loadProperties();
   };
 
   // Titik tengah default Jakarta
@@ -388,7 +440,7 @@ const SearchScreen = ({ navigation }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING[3] }}>
           <TouchableOpacity
             style={[styles.filterBtn, hasActiveFilter && styles.filterBtnActive]}
-            onPress={() => setShowFilter(true)}
+            onPress={handleOpenFilter}
             activeOpacity={0.7}
           >
             <Text style={styles.filterBtnText}>{t('searchScreen.filterBtn', 'Filter')} {hasActiveFilter && t('searchScreen.filterActive', 'Aktif')}</Text>
@@ -662,20 +714,20 @@ const SearchScreen = ({ navigation }) => {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.chipRow}>
                   <TouchableOpacity
-                    style={[styles.chip, !filterCity && styles.chipActive]}
-                    onPress={() => setFilterCity('')}
+                    style={[styles.chip, !tempFilterCity && styles.chipActive]}
+                    onPress={() => setTempFilterCity('')}
                   >
-                    <Text style={[styles.chipText, !filterCity && styles.chipTextActive]}>
+                    <Text style={[styles.chipText, !tempFilterCity && styles.chipTextActive]}>
                       {t('searchScreen.allCities', 'Semua Kota')}
                     </Text>
                   </TouchableOpacity>
                   {availableCities.map((city) => (
                     <TouchableOpacity
-                      key={city}    
-                      style={[styles.chip, filterCity === city && styles.chipActive]}
-                      onPress={() => setFilterCity(city)}
+                      key={city}
+                      style={[styles.chip, tempFilterCity === city && styles.chipActive]}
+                      onPress={() => setTempFilterCity(city)}
                     >
-                      <Text style={[styles.chipText, filterCity === city && styles.chipTextActive]}>
+                      <Text style={[styles.chipText, tempFilterCity === city && styles.chipTextActive]}>
                         {city}
                       </Text>
                     </TouchableOpacity>
@@ -689,10 +741,10 @@ const SearchScreen = ({ navigation }) => {
                 {getGenderOptions(t).map((opt) => (
                   <TouchableOpacity
                     key={opt.value}
-                    style={[styles.chip, filterGender === opt.value && styles.chipActive]}
-                    onPress={() => setFilterGender(opt.value)}
+                    style={[styles.chip, tempFilterGender === opt.value && styles.chipActive]}
+                    onPress={() => setTempFilterGender(opt.value)}
                   >
-                    <Text style={[styles.chipText, filterGender === opt.value && styles.chipTextActive]}>
+                    <Text style={[styles.chipText, tempFilterGender === opt.value && styles.chipTextActive]}>
                       {opt.label}
                     </Text>
                   </TouchableOpacity>
@@ -705,10 +757,10 @@ const SearchScreen = ({ navigation }) => {
                 {getRoomTypeOptions(t).map((opt) => (
                   <TouchableOpacity
                     key={opt.value}
-                    style={[styles.chip, filterRoomType === opt.value && styles.chipActive]}
-                    onPress={() => setFilterRoomType(opt.value)}
+                    style={[styles.chip, tempFilterRoomType === opt.value && styles.chipActive]}
+                    onPress={() => setTempFilterRoomType(opt.value)}
                   >
-                    <Text style={[styles.chipText, filterRoomType === opt.value && styles.chipTextActive]}>
+                    <Text style={[styles.chipText, tempFilterRoomType === opt.value && styles.chipTextActive]}>
                       {opt.label}
                     </Text>
                   </TouchableOpacity>
@@ -721,8 +773,8 @@ const SearchScreen = ({ navigation }) => {
                 <TextInput
                   style={[styles.priceInput, { flex: 1 }]}
                   placeholder="Min"
-                  value={filterMinPrice}
-                  onChangeText={setFilterMinPrice}
+                  value={tempFilterMinPrice}
+                  onChangeText={(val) => setTempFilterMinPrice(val.replace(/[^0-9]/g, ''))}
                   keyboardType="numeric"
                   placeholderTextColor={COLORS.textTertiary}
                 />
@@ -730,8 +782,8 @@ const SearchScreen = ({ navigation }) => {
                 <TextInput
                   style={[styles.priceInput, { flex: 1 }]}
                   placeholder="Max"
-                  value={filterMaxPrice}
-                  onChangeText={setFilterMaxPrice}
+                  value={tempFilterMaxPrice}
+                  onChangeText={(val) => setTempFilterMaxPrice(val.replace(/[^0-9]/g, ''))}
                   keyboardType="numeric"
                   placeholderTextColor={COLORS.textTertiary}
                 />

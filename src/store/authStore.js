@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { USER_ROLE } from '../constants/userRole';
 
 const useAuthStore = create((set, get) => ({
@@ -25,11 +26,17 @@ const useAuthStore = create((set, get) => ({
    * Set sesi dan user setelah login/register berhasil
    * @param {Object} session - Supabase session
    * @param {Object} userProfile - Data dari public.users
+   * @param {string} [lastUsedRole] - Role terakhir sebelum logout
    */
-  setAuthenticatedUser: (session, userProfile) => {
+  setAuthenticatedUser: (session, userProfile, lastUsedRole = null) => {
     let initialActiveRole = userProfile?.role ?? null;
     if (initialActiveRole === USER_ROLE.BOTH) {
-      initialActiveRole = USER_ROLE.TENANT; // Default login sebagai tenant
+      initialActiveRole = lastUsedRole || USER_ROLE.TENANT; 
+    }
+
+    // Simpan role yang dipilih ke AsyncStorage dengan key yang spesifik untuk user ini
+    if (userProfile?.role === USER_ROLE.BOTH && initialActiveRole && userProfile?.id) {
+      AsyncStorage.setItem(`@last_used_role_${userProfile.id}`, initialActiveRole).catch(console.error);
     }
 
     set({
@@ -62,9 +69,14 @@ const useAuthStore = create((set, get) => ({
   switchRole: () => {
     const state = get();
     if (state.currentUser?.role === USER_ROLE.BOTH) {
+      const newRole = state.userRole === USER_ROLE.OWNER ? USER_ROLE.TENANT : USER_ROLE.OWNER;
       set({ 
-        userRole: state.userRole === USER_ROLE.OWNER ? USER_ROLE.TENANT : USER_ROLE.OWNER 
+        userRole: newRole 
       });
+      
+      if (state.currentUser?.id) {
+        AsyncStorage.setItem(`@last_used_role_${state.currentUser.id}`, newRole).catch(console.error);
+      }
     }
   },
 

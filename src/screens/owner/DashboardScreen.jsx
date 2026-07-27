@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
@@ -84,7 +85,7 @@ const RequestCard = ({ request, onPress, t }) => {
   
   const details = [];
   if (request.rooms?.room_number) details.push(`${t('ownerDashboard.room', 'Kamar')} ${request.rooms.room_number}`);
-  if (request.rooms?.properties?.name) details.push(request.rooms.properties.name);
+  if (request.rooms?.properties?.name) details.push(getLocalizedField(request.rooms.properties, 'name'));
 
   return (
     <TouchableOpacity style={styles.requestCard} onPress={onPress} activeOpacity={0.7}>
