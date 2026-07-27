@@ -299,44 +299,46 @@ const PaymentScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: insets.top + SPACING[4] }]}>
+      {/* Header (Fixed) */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} style={{ marginRight: 12 }} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('paymentScreen.headerTitle', 'Pembayaran Tagihan')}</Text>
         </View>
+      </View>
 
-        {/* Amount Banner */}
-        <View style={[styles.amountBanner, isInvoicePaid && { backgroundColor: COLORS.success }]}>
-          <Text style={styles.amountLabel}>
-            {isInvoicePaid ? t('paymentScreen.statusPaid', '🎉 Status Tagihan') : t('paymentScreen.totalToPay', 'Total yang Harus Dibayar')}
-          </Text>
-          <Text style={styles.amountValue}>
-            {isInvoicePaid ? t('paymentScreen.fullyPaid', 'TELAH LUNAS') : formatCurrency(unpaidAmount)}
-          </Text>
-          <Text style={styles.amountNote}>Invoice #{invoice?.invoice_number || invoice?.id?.slice(0, 8)}</Text>
+      {/* Amount Banner (Fixed) */}
+      <View style={[styles.amountBanner, isInvoicePaid && { backgroundColor: COLORS.success }]}>
+        <Text style={styles.amountLabel}>
+          {isInvoicePaid ? t('paymentScreen.statusPaid', '🎉 Status Tagihan') : t('paymentScreen.totalToPay', 'Total yang Harus Dibayar')}
+        </Text>
+        <Text style={styles.amountValue}>
+          {isInvoicePaid ? t('paymentScreen.fullyPaid', 'TELAH LUNAS') : formatCurrency(unpaidAmount)}
+        </Text>
+        <Text style={styles.amountNote}>Invoice #{invoice?.invoice_number || invoice?.id?.slice(0, 8)}</Text>
 
-          {/* Progress Bar */}
-          {!isInvoicePaid && totalAmount > 0 && (
-            <View style={{ width: '100%', marginTop: 12 }}>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${Math.min(paymentProgress * 100, 100)}%` }]} />
-              </View>
-              <Text style={styles.progressText}>
-                {t('paymentScreen.progressInfo', 'Terbayar {{paid}} dari {{total}} (Sisa {{remaining}})', {
-                  paid: formatCurrency(paidAmount),
-                  total: formatCurrency(totalAmount),
-                  remaining: formatCurrency(remainingDebt),
-                })}
-              </Text>
+        {/* Progress Bar */}
+        {!isInvoicePaid && totalAmount > 0 && (
+          <View style={{ width: '100%', marginTop: 12 }}>
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, { width: `${Math.min(paymentProgress * 100, 100)}%` }]} />
             </View>
-          )}
-        </View>
+            <Text style={styles.progressText}>
+              {t('paymentScreen.progressInfo', 'Terbayar {{paid}} dari {{total}} (Sisa {{remaining}})', {
+                paid: formatCurrency(paidAmount),
+                total: formatCurrency(totalAmount),
+                remaining: formatCurrency(remainingDebt),
+              })}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        {/* (Amount Banner moved up) */}
 
         {/* Jika Sudah Lunas */}
         {isInvoicePaid ? (
@@ -463,14 +465,14 @@ const PaymentScreen = ({ navigation, route }) => {
               </View>
             )}
 
-            <View style={{ height: 180 }} />
+            <View style={{ height: 250 }} />
           </View>
         )}
       </ScrollView>
 
       {/* Pay Button jika belum lunas */}
       {!isInvoicePaid && (
-        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + SPACING[2], SPACING[6]) }]}>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : (Platform.OS === 'android' ? 48 : SPACING[6]) }]}>
           {isFirstPayment && (
             <View style={{ marginBottom: SPACING[3] }}>
               <Text style={{ textAlign: 'center', color: COLORS.textSecondary, marginBottom: SPACING[2], fontSize: FONT_SIZE.sm }}>
@@ -689,7 +691,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[4],
     paddingHorizontal: SPACING[4],
   },
-  backBtn: { marginBottom: SPACING[2] },
+  backBtn: { },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.sm },
   headerTitle: { color: COLORS.white, fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold },
 

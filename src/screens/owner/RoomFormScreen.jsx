@@ -104,13 +104,20 @@ const RoomFormScreen = ({ navigation, route }) => {
       Alert.alert(t('room.form.permissionRequired', 'Izin Diperlukan'), t('room.form.cameraDenied', 'Akses kamera diperlukan.'));
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setRoomPhotos(prev => [...prev, result.assets[0].uri]);
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setRoomPhotos(prev => [...prev, result.assets[0].uri].slice(0, 5));
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickPhotosFromGallery = async () => {
@@ -119,15 +126,22 @@ const RoomFormScreen = ({ navigation, route }) => {
       Alert.alert(t('room.form.permissionRequired', 'Izin Diperlukan'), t('room.form.galleryDenied', 'Akses galeri diperlukan.'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.length > 0) {
-      const uris = result.assets.map(a => a.uri);
-      setRoomPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsMultipleSelection: true,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.length > 0) {
+          const uris = result.assets.map(a => a.uri);
+          setRoomPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickPhotos = () => {

@@ -129,6 +129,7 @@ const SettingsScreen = ({ navigation }) => {
       ]);
     }
   };
+
   const handleLogout = () => {
     Alert.alert(t('settings.logoutTitle', 'Keluar'), t('settings.logoutConfirm', 'Yakin ingin keluar dari akun?'), [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -187,20 +188,7 @@ const SettingsScreen = ({ navigation }) => {
             />
           }
         />
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => {
-            scheduleLocalNotification(
-              "Uji Coba Notifikasi",
-              "Ini adalah notifikasi lokal yang muncul setelah 5 detik.",
-              { type: 'test' },
-              5
-            );
-          }}
-        >
-          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.actionButtonText}>Uji Coba Notifikasi Lokal (5 detik)</Text>
-        </TouchableOpacity>
+
         <SettingRow
           icon="mail-outline"
           label={t('settings.notifications.email')}
