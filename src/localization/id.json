@@ -1201,7 +1201,7 @@
     "statusUnavailable": "Tidak Tersedia",
     "roomNumber": "Kamar {{number}}",
     "floorNumber": "Lantai {{number}}",
-    "perMonth": "per bulan",
+    "perMonth": "/bulan",
     "facilitiesTitle": "Fasilitas Kamar",
     "rulesTitle": "Peraturan Kosan",
     "priceLabel": "Harga/bulan",
