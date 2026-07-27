@@ -104,7 +104,7 @@ const NotifCard = ({ notif, onRead, i18n, t }) => {
         <Text style={[styles.notifTitle, !notif.is_read && styles.notifTitleUnread]}>
           {t('dbNotification.' + notif.title, notif.title)}
         </Text>
-        <Text style={styles.notifBody} numberOfLines={2}>{displayBody}</Text>
+        <Text style={styles.notifBody}>{displayBody}</Text>
         <Text style={styles.notifTime}>{formatRelativeTime(notif.created_at, i18n)}</Text>
       </View>
       {!notif.is_read && <View style={[styles.unreadDot, { backgroundColor: config.color }]} />}
