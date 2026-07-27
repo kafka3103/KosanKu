@@ -219,7 +219,7 @@ export const getPropertyRooms = async (propertyId) => {
       *,
       room_facilities(
         *,
-        facility_master(name, category)
+        facility_master(*)
       )
     `)
     .eq('property_id', propertyId)

@@ -93,7 +93,7 @@ const AddReviewScreen = ({ route, navigation }) => {
           <RatingRow label={t('review.cleanliness', 'Kebersihan')} value={ratings.cleanliness} onChange={(v) => updateRating('cleanliness', v)} />
           <RatingRow label={t('review.comfort', 'Kenyamanan')} value={ratings.comfort} onChange={(v) => updateRating('comfort', v)} />
           <RatingRow label={t('review.security', 'Keamanan')} value={ratings.security} onChange={(v) => updateRating('security', v)} />
-          <RatingRow label={t('review.price', 'Harga (Value for Money)')} value={ratings.price} onChange={(v) => updateRating('price', v)} />
+          <RatingRow label={t('review.price', 'Harga')} value={ratings.price} onChange={(v) => updateRating('price', v)} />
           <RatingRow label={t('review.roomFacilities', 'Fasilitas Kamar')} value={ratings.roomFacilities} onChange={(v) => updateRating('roomFacilities', v)} />
           <RatingRow label={t('review.publicFacilities', 'Fasilitas Umum')} value={ratings.publicFacilities} onChange={(v) => updateRating('publicFacilities', v)} />
         </View>
@@ -120,9 +120,9 @@ const AddReviewScreen = ({ route, navigation }) => {
           disabled={isLoading}
         >
           {isLoading ? (
-             <ActivityIndicator color={COLORS.white} />
+            <ActivityIndicator color={COLORS.white} />
           ) : (
-             <Text style={styles.submitBtnText}>{t('review.submitButton', 'Kirim Ulasan')}</Text>
+            <Text style={styles.submitBtnText}>{t('review.submitButton', 'Kirim Ulasan')}</Text>
           )}
         </TouchableOpacity>
       </View>

@@ -1211,6 +1211,7 @@
   },
   "ownerRentalRequest": {
     "headerTitle": "Pengajuan Sewa",
+    "nikGuarantee": "Jaminan NIK:",
     "pendingSubtitleRental": "{{count}} pengajuan menunggu konfirmasi",
     "pendingSubtitleFacility": "{{count}} fasilitas perlu persetujuan",
     "tabRental": "Sewa Kos",
@@ -1227,6 +1228,7 @@
     "statusApproved": "Disetujui",
     "statusRejected": "Ditolak",
     "statusExpired": "Kedaluwarsa",
+    "expiryWarning": "Batal otomatis pada {{time}}",
     "statusCancelled": "Dibatalkan",
     "whatsappMsg": "Halo {{name}}, saya pemilik kosan {{property}}. Saya melihat Anda mengajukan sewa di aplikasi KosanKu.",
     "room": "Kamar",
@@ -1325,7 +1327,10 @@
     "Pembayaran Berhasil": "Pembayaran Berhasil"
   },
   "rentalRequest": {
-    "identityGuarantee": "Jaminan Identitas"
+    "identityGuarantee": "Jaminan Identitas",
+    "nikLockedMsg": "NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:",
+    "nikInputMsg": "Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:",
+    "nikPlaceholder": "Contoh: 3201234567890123"
   },
   "roleRegistration": {
     "duplicateNik": "NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.",

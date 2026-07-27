@@ -149,7 +149,7 @@ const RequestCard = ({ request, onApprove, onReject, t, i18n }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, backgroundColor: COLORS.successLight, padding: 8, borderRadius: 6 }}>
               <Ionicons name="shield-checkmark" size={16} color={COLORS.success} style={{ marginRight: 6 }} />
               <Text style={[styles.infoRow, { color: COLORS.textPrimary }]}>
-                Jaminan NIK: <Text style={styles.infoBold}>{tenantNIK}</Text>
+                {t('ownerRentalRequest.nikGuarantee', 'Jaminan NIK:')} <Text style={styles.infoBold}>{tenantNIK}</Text>
               </Text>
             </View>
           );

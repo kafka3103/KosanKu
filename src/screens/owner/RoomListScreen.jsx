@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
@@ -43,7 +44,8 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
   const STATUS_CONFIG = getStatusConfig(t);
   const statusCfg = STATUS_CONFIG[room.status] ?? STATUS_CONFIG.available;
   const facilities = room.room_facilities
-    ?.map((rf) => rf.facility_master?.name)
+    ?.filter((rf) => rf.facility_master)
+    ?.map((rf) => getLocalizedField(rf.facility_master, 'name'))
     .filter(Boolean)
     .slice(0, 4);
 

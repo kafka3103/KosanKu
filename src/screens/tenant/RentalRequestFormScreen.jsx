@@ -275,7 +275,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           {isNiksLocked ? (
             <View style={{ backgroundColor: COLORS.successLight, padding: SPACING[3], borderRadius: BORDER_RADIUS.md }}>
                <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
-                 NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:
+                 {t('rentalRequest.nikLockedMsg', 'NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:')}
                </Text>
                <Text style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
                  {tenantNIK}
@@ -284,11 +284,11 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           ) : (
             <View>
               <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 8 }}>
-                Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:
+                {t('rentalRequest.nikInputMsg', 'Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:')}
               </Text>
               <TextInput
                 style={[styles.messageInput, { minHeight: 48, textAlignVertical: 'center' }]}
-                placeholder="Contoh: 3201234567890123"
+                placeholder={t('rentalRequest.nikPlaceholder', 'Contoh: 3201234567890123')}
                 keyboardType="numeric"
                 maxLength={16}
                 value={tenantNIK}

@@ -66,7 +66,7 @@ export const searchProperties = async (filters = {}) => {
         description_en,
         photo_urls,
         room_facilities(
-          facility_master(name)
+          facility_master(*)
         )
       ),
       users(full_name, phone_number),
@@ -127,7 +127,7 @@ export const getPropertyDetailForTenant = async (propertyId) => {
         *,
         room_facilities(
           additional_cost,
-          facility_master(name, category)
+          facility_master(*)
         )
       ),
       users(full_name, phone_number, avatar_url)
@@ -323,7 +323,7 @@ export const getTenantRentalRequests = async (tenantId) => {
         base_price,
         photo_urls,
         room_facilities(
-          facility_master(name)
+          facility_master(*)
         ),
         properties(
           name, 
