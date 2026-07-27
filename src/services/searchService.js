@@ -27,14 +27,13 @@ export const searchProperties = async (filters = {}) => {
     minPrice,
     maxPrice,
     genderPolicy,
-    roomType,
     searchQuery,
     page = 0,
     pageSize = 20,
   } = filters;
 
   // Gunakan rooms!inner HANYA jika filter spesifik kamar (minPrice, maxPrice, atau roomType) sedang aktif digunakan
-  const hasRoomFilter = minPrice != null || maxPrice != null || Boolean(roomType);
+  const hasRoomFilter = minPrice != null || maxPrice != null;
   const roomsRelation = hasRoomFilter ? 'rooms!inner' : 'rooms';
 
   let query = supabaseClient
@@ -61,7 +60,6 @@ export const searchProperties = async (filters = {}) => {
       ${roomsRelation}(
         id,
         room_number,
-        room_type,
         base_price,
         status,
         size_sqm,
@@ -103,9 +101,6 @@ export const searchProperties = async (filters = {}) => {
     query = query.lte('rooms.base_price', maxPrice);
   }
 
-  if (roomType) {
-    query = query.eq('rooms.room_type', roomType);
-  }
 
   // Pagination
   const from = page * pageSize;

@@ -114,7 +114,7 @@ const PropertyCard = ({ property, onPress }) => {
           <Text style={styles.availableTagText}>{t('searchScreen.availableCount', '{{count}} tersedia', { count: availableCount })}</Text>
         </View>
         {isOwnProperty && (
-          <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }]}>
+          <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
             <Text style={[styles.availableTagText, { color: COLORS.white, fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
           </View>
@@ -758,21 +758,7 @@ const SearchScreen = ({ navigation }) => {
                 ))}
               </View>
 
-              {/* Room Type */}
-              <Text style={styles.filterLabel}>{t('searchScreen.roomType', 'Tipe Kamar')}</Text>
-              <View style={styles.chipRow}>
-                {getRoomTypeOptions(t).map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[styles.chip, tempFilterRoomType === opt.value && styles.chipActive]}
-                    onPress={() => setTempFilterRoomType(opt.value)}
-                  >
-                    <Text style={[styles.chipText, tempFilterRoomType === opt.value && styles.chipTextActive]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+
 
               {/* Harga */}
               <Text style={styles.filterLabel}>{t('searchScreen.priceRange', 'Kisaran Harga (Rp/bulan)')}</Text>

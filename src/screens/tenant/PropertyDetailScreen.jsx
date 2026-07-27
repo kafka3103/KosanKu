@@ -156,7 +156,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               <View style={styles.roomCardHeader}>
                 <View>
                   <Text style={styles.roomNumber}>{t('propertyDetail.roomNumber', 'Kamar {{number}}', { number: room.room_number })}</Text>
-                  <Text style={styles.roomType}>{room.room_type} · {room.size_sqm ? `${room.size_sqm} m²` : ''}</Text>
+                  <Text style={styles.roomType}>{room.size_sqm ? `${room.size_sqm} m²` : ''}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusConfig(t)[room.status]?.bg }]}>
                   <Text style={[styles.statusText, { color: getStatusConfig(t)[room.status]?.color }]}>

@@ -28,23 +28,6 @@ import DynamicText from '../../components/shared/DynamicText';
 import { TENANT_SCREENS } from '../../constants/screenNames';
 import USER_ROLE from '../../constants/userRole';
 
-const FACILITY_ICON_MAP = {
-  'air-conditioner': 'snow',
-  wifi: 'wifi',
-  shower: 'water',
-  'water-heater': 'flame',
-  bed: 'bed',
-  wardrobe: 'file-tray',
-  desk: 'desktop',
-  chair: 'cube',
-  refrigerator: 'snow-outline',
-  television: 'tv',
-  'washing-machine': 'shirt',
-  kitchen: 'restaurant',
-  balcony: 'partly-sunny',
-  window: 'scan-outline',
-};
-
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -178,7 +161,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             <View>
               <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
               <Text style={styles.roomType}>
-                {room?.room_type} · {t('roomDetail.floorNumber', 'Lantai {{number}}', { number: room?.floor_number ?? '-' })}
+                {t('roomDetail.floorNumber', 'Lantai {{number}}', { number: room?.floor_number ?? '-' })}
               </Text>
             </View>
             <View>
@@ -222,12 +205,6 @@ const RoomDetailScreen = ({ navigation, route }) => {
                 <View style={styles.facilitiesGrid}>
                   {facs.map((fac) => (
                     <View key={fac.id || fac.name} style={styles.facilityItem}>
-                      <Ionicons
-                        name={FACILITY_ICON_MAP[fac.icon_name] ?? 'cube'}
-                        size={20}
-                        color={COLORS.primary}
-                        style={{ marginRight: 4 }}
-                      />
                       <View>
                         <DynamicText style={styles.facilityName}>{getLocalizedField(fac, 'name')}</DynamicText>
                         {!!fac.additional_cost && (

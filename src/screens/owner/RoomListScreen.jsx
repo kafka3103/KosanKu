@@ -53,7 +53,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
       <View style={styles.roomCardHeader}>
         <View>
           <Text style={styles.roomNumber}>{t('ownerRoomList.roomNumber', 'Kamar {{number}}', { number: room.room_number })}</Text>
-          <Text style={styles.roomType}>{room.room_type} · {t('ownerRoomList.floorNumber', 'Lantai {{number}}', { number: room.floor_number ?? '-' })}</Text>
+          <Text style={styles.roomType}>{t('ownerRoomList.floorNumber', 'Lantai {{number}}', { number: room.floor_number ?? '-' })}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
           <Ionicons name={statusCfg.icon} size={14} color={statusCfg.color} />

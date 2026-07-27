@@ -851,8 +851,10 @@ export const updateFacilityMaster = async (facilityId, updates) => {
 export const deleteFacilityMaster = async (facilityId) => {
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .delete()
-    .eq('id', facilityId);
+    .update({ is_active: false })
+    .eq('id', facilityId)
+    .select()
+    .single();
 
   return { data, error };
 };

@@ -37,30 +37,6 @@ import {
   uploadMultipleRoomPhotos,
 } from '../../services/propertyService';
 
-const ROOM_TYPES = (t) => [
-  { value: 'standard', label: t('room.form.typeStandard', 'Standard'), icon: 'bed-outline' },
-  { value: 'deluxe', label: t('room.form.typeDeluxe', 'Deluxe'), icon: 'sparkles-outline' },
-  { value: 'suite', label: t('room.form.typeSuite', 'Suite'), icon: 'diamond-outline' },
-  { value: 'studio', label: t('room.form.typeStudio', 'Studio'), icon: 'home-outline' },
-];
-
-const FACILITY_ICON_MAP = {
-  'air-conditioner': '❄️',
-  wifi: '📶',
-  shower: '🚿',
-  'water-heater': '🔥',
-  bed: '🛏️',
-  wardrobe: '🚪',
-  desk: '📚',
-  chair: '🪑',
-  refrigerator: '🧊',
-  television: '📺',
-  'washing-machine': '👕',
-  kitchen: '🍳',
-  balcony: '🌅',
-  window: '🪟',
-};
-
 const RoomFormScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
   const existingRoom = route.params?.room ?? null;
@@ -68,7 +44,7 @@ const RoomFormScreen = ({ navigation, route }) => {
   const isEdit = !!existingRoom;
 
   const [roomNumber, setRoomNumber] = useState(existingRoom?.room_number ?? '');
-  const [roomType, setRoomType] = useState(existingRoom?.room_type ?? 'standard');
+
   const [floorNumber, setFloorNumber] = useState(String(existingRoom?.floor_number ?? ''));
   const [sizeSqm, setSizeSqm] = useState(String(existingRoom?.size_sqm ?? ''));
   const [basePrice, setBasePrice] = useState(String(existingRoom?.base_price ?? ''));
@@ -95,7 +71,7 @@ const RoomFormScreen = ({ navigation, route }) => {
   const loadFacilities = async () => {
     const { data, error } = await getFacilityMaster();
     if (!error && data) {
-      setAllFacilities(data);
+      setAllFacilities(data.filter(f => f.category === 'room'));
 
       // Pre-select fasilitas yang sudah ada (mode edit)
       if (existingRoom?.room_facilities) {
@@ -205,7 +181,7 @@ const RoomFormScreen = ({ navigation, route }) => {
       const finalPhotoUrls = [...existingPhotos, ...uploadedPhotos];
 
       const roomDataTemplate = {
-        room_type: roomType,
+
         floor_number: floorNumber ? parseInt(floorNumber, 10) : null,
         size_sqm: sizeSqm ? parseFloat(sizeSqm) : null,
         base_price: parseFloat(basePrice),
@@ -373,36 +349,6 @@ const RoomFormScreen = ({ navigation, route }) => {
             </>
           )}
 
-          {/* Room Type */}
-          <Text style={styles.label}>{t('room.form.roomTypeLabel')}</Text>
-          <View style={styles.typeGrid}>
-            {ROOM_TYPES(t).map((type) => {
-              const isSelected = roomType === type.value;
-              return (
-                <TouchableOpacity
-                  key={type.value}
-                  style={[styles.typeCard, isSelected && styles.typeCardSelected]}
-                  onPress={() => setRoomType(type.value)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons 
-                    name={type.icon} 
-                    size={24} 
-                    color={isSelected ? COLORS.primary : COLORS.textTertiary} 
-                    style={styles.typeIcon} 
-                  />
-                  <Text
-                    style={[
-                      styles.typeLabel,
-                      isSelected && styles.typeLabelSelected,
-                    ]}
-                  >
-                    {type.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
 
           {/* Floor & Size */}
           <View style={styles.row}>
@@ -513,7 +459,6 @@ const RoomFormScreen = ({ navigation, route }) => {
                 <View style={styles.facilityGrid}>
                   {facilities.map((fac) => {
                     const isSelected = isFacilitySelected(fac.id);
-                    const icon = FACILITY_ICON_MAP[fac.icon_name] ?? '🔷';
                     return (
                       <TouchableOpacity
                         key={fac.id}
@@ -524,7 +469,6 @@ const RoomFormScreen = ({ navigation, route }) => {
                         onPress={() => toggleFacility(fac.id)}
                         activeOpacity={0.7}
                       >
-                        <Text style={styles.facilityIcon}>{icon}</Text>
                         <Text
                           style={[
                             styles.facilityName,
