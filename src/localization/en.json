@@ -355,7 +355,9 @@
       "endDateLabel": "End",
       "tapToUpload": "Tap to take / choose an ID photo",
       "removePhoto": "Remove Photo",
-      "summaryTitle": "Request Summary"
+      "summaryTitle": "Request Summary",
+      "localNotifTitle": "Request Sent Successfully!",
+      "localNotifBody": "The owner of {{property}} will review your request within 3 days."
     },
     "review": {
       "title": "Review Request",
@@ -1014,7 +1016,17 @@
     "contactSupport": "Contact Support",
     "accountSection": "Account",
     "deleteAccountConfirm": "Confirm Account Deletion",
-    "deleteAccountPermanent": "Delete Account Permanently"
+    "deleteAccountPermanent": "Delete Account Permanently",
+    "deleteConfirmEmail": "Please type {{email}} to confirm.",
+    "deleteEmptyPassword": "Please enter your password.",
+    "deleteWrongEmail": "Type your email correctly to confirm account deletion.",
+    "deleteWrongPassword": "Incorrect password or an error occurred.",
+    "deleteFailMsg": "An error occurred while deleting the account. Please contact support@kosanku.id",
+    "deleteSuccessMsg": "Account successfully deleted.",
+    "logoutTitle": "Logout",
+    "logoutConfirm": "Are you sure you want to log out?",
+    "testNotifTitle": "Notification Test",
+    "testNotifBody": "This is a local notification that appears after 5 seconds."
   },
   "navigation": {
     "owner": {
@@ -1095,7 +1107,12 @@
     "success": "Success",
     "error": "Error",
     "sent": "Sent",
-    "dataNotFound": "Data not found"
+    "dataNotFound": "Data not found",
+    "fail": "Failed",
+    "invalidNikLength": "ID Number (NIK) must be 16 digits.",
+    "duplicateNik": "This NIK is already registered on another account.",
+    "notAllowed": "Not Allowed",
+    "all": "All"
   },
   "searchScreen": {
     "genderOptions": {
@@ -1195,11 +1212,12 @@
     "statusUnavailable": "Unavailable",
     "roomNumber": "Room {{number}}",
     "floorNumber": "Floor {{number}}",
-    "perMonth": "per month",
+    "perMonth": "/month",
     "facilitiesTitle": "Room Facilities",
     "rulesTitle": "Boarding house Rules",
     "priceLabel": "Price/month",
-    "btnRent": "Request Rent"
+    "btnRent": "Request Rent",
+    "cannotRentOwn": "You cannot rent your own property."
   },
   "ownerRentalRequest": {
     "headerTitle": "Rental Requests",
@@ -1297,10 +1315,10 @@
     "Tidak boleh mabuk dan merokok": "No drunkenness or smoking"
   },
   "dbNotification": {
-    "invoice_paid_tenant_title": "Invoice Paid & Payment Receipt 🧾",
-    "invoice_paid_tenant_body": "Invoice {{invoiceNumber}} (Room {{room}} at {{property}}) of {{amount}} has been automatically settled via Xendit ({{channel}}). Tap to view your payment receipt.",
-    "invoice_paid_owner_title": "Funds Received & Invoice Settled 💰",
-    "invoice_paid_owner_body": "Tenant in Room {{room}} ({{property}}) has paid invoice {{invoiceNumber}} of {{amount}} via Xendit. The invoice has been recorded in your financial report.",
+    "invoice_paid_tenant_title": "Invoice Payment Successful 🧾",
+    "invoice_paid_tenant_body": "Payment for invoice {{invoiceNumber}} (Room {{room}} at {{property}}) of {{amount}} was successful via Xendit ({{channel}}). Tap to view details.",
+    "invoice_paid_owner_title": "Invoice Payment Received 💰",
+    "invoice_paid_owner_body": "Tenant in Room {{room}} ({{property}}) has paid invoice {{invoiceNumber}} of {{amount}} via Xendit. The payment has been recorded in your financial report.",
     "rental_expired_title": "Rental Request Expired",
     "rental_expired_body": "Your rental request has expired because there was no response within 3 business days.",
     "invoice_generated_title": "New Invoice Available",
@@ -1329,5 +1347,12 @@
   },
   "rentalRequest": {
     "identityGuarantee": "Identity Guarantee"
+  },
+  "roleRegistration": {
+    "duplicateNik": "This NIK is already registered. Please use your own NIK.",
+    "saveFail": "Failed to save owner profile.",
+    "profileCompleteMsg": "Owner profile successfully completed! Your identity is being verified by the admin.",
+    "updateRoleFail": "Failed to change account mode.",
+    "registerSuccessMsg": "You have successfully registered as a Property Owner! Your identity is being verified by the admin."
   }
 }

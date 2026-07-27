@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAuthStore from '../store/authStore';
 import { subscribeToAuthChanges, getUserProfile, updateFcmToken, getCurrentSession } from '../services/authService';
+import { syncLanguagePreferenceToBackend } from '../localization/i18n';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '../utils/notificationUtils';
 import COLORS from '../constants/colors';
 
@@ -82,6 +83,7 @@ const AppNavigator = () => {
           if (fcmToken) {
             await updateFcmToken(session.user.id, fcmToken);
           }
+          await syncLanguagePreferenceToBackend();
           
           // Mencegah race condition: jika authStore sudah keburu di-update oleh authService
           // dengan role yang benar, jangan timpa dengan data usang (role null) dari fetch ini.

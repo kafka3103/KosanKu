@@ -137,23 +137,19 @@ serve(async (req: Request) => {
 
         if (newInvoices) {
           for (const invoice of newInvoices) {
-            const notifTitle = 'Tagihan Baru Tersedia';
-            const notifBody = `Tagihan bulan ini sebesar Rp ${Number(invoice.total_amount).toLocaleString('id-ID')} telah tersedia. Jatuh tempo: ${new Date(invoice.due_date).toLocaleDateString('id-ID')}`;
+            const notifTitleKey = 'invoice_generated_title';
+            const notifBodyJson = JSON.stringify({
+              key: 'invoice_generated_body',
+              params: {
+                amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`,
+                dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID')
+              }
+            });
 
             await supabaseAdmin.from('notifications').insert({
               user_id: invoice.tenant_id,
-<<<<<<< HEAD
-<<<<<<< HEAD
-              title: notifTitle,
-              body: notifBody,
-=======
-              title: 'invoice_generated_title',
-              body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
->>>>>>> rijal
-=======
-              title: 'invoice_generated_title',
-              body: JSON.stringify({ key: 'invoice_generated_body', params: { amount: `Rp ${Number(invoice.total_amount).toLocaleString('id-ID')}`, dueDate: new Date(invoice.due_date).toLocaleDateString('id-ID') } }),
->>>>>>> 76b31cab6566d65008a3fd94717b52035b93ca9e
+              title: notifTitleKey,
+              body: notifBodyJson,
               type: 'invoice_generated',
               reference_id: invoice.id,
               reference_type: 'invoice',
@@ -162,8 +158,8 @@ serve(async (req: Request) => {
             // Kirim push notification ke device tenant
             await triggerPushNotification(
               invoice.tenant_id,
-              notifTitle,
-              notifBody,
+              notifTitleKey,
+              notifBodyJson,
               { type: 'invoice_generated', referenceId: invoice.id, referenceType: 'invoice' }
             );
           }

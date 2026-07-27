@@ -21,9 +21,10 @@ import {
 } from 'react-native';
 
 import { format, addMonths } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../../localization/i18n';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -41,7 +42,7 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (date) => format(date, 'd MMMM yyyy', { locale: idLocale });
+const formatDate = (date, i18n) => format(date, 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
 
 const DURATION_OPTIONS = [1, 3, 6, 12];
 
@@ -81,7 +82,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const handleSubmit = async () => {
     if (!isNiksLocked) {
       if (!tenantNIK || tenantNIK.length !== 16 || !/^\d+$/.test(tenantNIK)) {
-        Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
+        Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));
         return;
       }
     }
@@ -99,7 +100,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
               if (!isNiksLocked) {
                 const isUnique = await checkNikUnique(tenantNIK, currentUser.id);
                 if (!isUnique) {
-                   Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain.');
+                   Alert.alert(t('common.fail', 'Gagal'), t('common.duplicateNik', 'NIK sudah terdaftar pada akun lain.'));
                    setIsLoading(false);
                    return;
                 }
@@ -131,8 +132,8 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
               // Panggil Local Notification sebagai pemberitahuan lokal di HP penyewa
               scheduleLocalNotification(
-                "Pengajuan Berhasil Dikirim!",
-                `Pemilik kos ${property?.name} akan meninjau pengajuan Anda dalam waktu 3 hari.`,
+                t('rental.request.localNotifTitle', 'Pengajuan Berhasil Dikirim!'),
+                t('rental.request.localNotifBody', 'Pemilik kos {{property}} akan meninjau pengajuan Anda dalam waktu 3 hari.', { property: property?.name }),
                 { type: 'rental_request', status: 'pending' },
                 2
               );
@@ -252,12 +253,12 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           <View style={styles.dateRow}>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
+              <Text style={styles.dateValue}>{formatDate(startDate, i18n)}</Text>
             </View>
             <Text style={styles.dateSep}>→</Text>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.endDateLabel', 'Selesai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+              <Text style={styles.dateValue}>{formatDate(endDate, i18n)}</Text>
             </View>
           </View>
         </View>

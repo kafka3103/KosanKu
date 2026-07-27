@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 
 import { getLocalizedField } from '../../utils/useLocalizedField';
 import useAuthStore from '../../store/authStore';
@@ -12,6 +12,8 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import { TENANT_SCREENS } from '../../constants/screenNames';
+import i18n from '../../localization/i18n';
+
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -20,10 +22,10 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
@@ -80,6 +82,13 @@ const ContractDetailScreen = ({ route, navigation }) => {
     activeInvoice = contract.invoices.find(inv => inv.status !== 'paid') || contract.invoices[0];
   }
 
+  // Calculate facilities
+  const facilities = property?.general_facilities || [];
+  
+  // Calculate optional facilities from contract
+  const activeContractFacilities = contract?.contract_facilities?.filter(cf => cf.status === 'active') || [];
+  const requestedContractFacilities = contract?.contract_facilities?.filter(cf => cf.status === 'pending') || [];
+
   const handleCallOwner = (phone) => {
     if (!phone) return;
     Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() =>
@@ -131,12 +140,12 @@ const ContractDetailScreen = ({ route, navigation }) => {
             <View style={styles.contractDates}>
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.start_date, i18n)}</Text>
               </View>
               <View style={styles.dateSeparator} />
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.end_date, i18n)}</Text>
               </View>
             </View>
           )}
@@ -174,6 +183,54 @@ const ContractDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
         </View>
+
+        {/* Facilities */}
+        {facilities.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.facilitiesLabel}>{t('myRent.facilities', 'Fasilitas:')}</Text>
+            <View style={styles.facilitiesWrap}>
+              {facilities.map((f, i) => (
+                <View key={i} style={styles.facilityTag}>
+                  <Text style={styles.facilityTagText}>{f}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Optional Facilities */}
+        {(activeContractFacilities.length > 0 || requestedContractFacilities.length > 0) && (
+          <View style={styles.card}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="sparkles" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.optionalFacilitiesTitle}>{t('myRent.additionalFacilities', 'Fasilitas Tambahan')}</Text>
+              </View>
+            </View>
+
+            {activeContractFacilities.map((cf) => (
+              <View key={cf.id} style={styles.optionalFacilityItem}>
+                <Text style={styles.optionalFacilityName}>
+                  {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
+                </Text>
+                <Text style={styles.optionalFacilityPrice}>
+                  {formatCurrency(cf.price_per_month)}{t('roomDetail.perMonth', '/bulan')}
+                </Text>
+              </View>
+            ))}
+
+            {requestedContractFacilities.map((cf) => (
+              <View key={cf.id} style={styles.optionalFacilityItem}>
+                <Text style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
+                  {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
+                </Text>
+                <View style={styles.requestBadgeInline}>
+                  <Text style={styles.requestBadgeTextInline}>{t('myRent.waitingConfirm', 'Menunggu Konfirmasi')}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Payment Progress */}
         {contract && activeInvoice && (
@@ -458,6 +515,44 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: FONT_WEIGHT.medium,
   },
+  facilitiesContainer: { marginTop: SPACING[2] },
+  facilitiesLabel: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary, marginBottom: SPACING[2] },
+  facilitiesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  facilityTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: COLORS.background,
+    borderRadius: BORDER_RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  facilityTagText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary },
+  optionalFacilitiesBox: {
+    marginTop: SPACING[3],
+    padding: SPACING[3],
+    backgroundColor: COLORS.primarySurface,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  optionalFacilitiesTitle: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primary,
+  },
+  optionalFacilityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  optionalFacilityName: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, flex: 1 },
+  optionalFacilityPrice: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary },
+  requestBadgeInline: {
+    backgroundColor: COLORS.warningLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  requestBadgeTextInline: { fontSize: 10, color: COLORS.warning, fontWeight: 'bold' },
 });
 
 export default ContractDetailScreen;

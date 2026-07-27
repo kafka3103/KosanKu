@@ -75,7 +75,7 @@ const SettingsScreen = ({ navigation }) => {
         {
           text: t('settings.btnSendResetEmail', 'Kirim Email Reset'),
           onPress: () => {
-            Alert.alert('Email Terkirim', 'Cek inbox email Anda untuk link reset password.');
+            Alert.alert(t('settings.emailSentTitle', 'Email Terkirim'), t('settings.emailSentMsg', 'Cek inbox email Anda untuk link reset password.'));
           },
         },
       ]
@@ -88,12 +88,12 @@ const SettingsScreen = ({ navigation }) => {
 
   const executeDeleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert('Error', isGoogleOnly ? `Harap ketik ${currentUser?.email} untuk konfirmasi.` : 'Harap masukkan password Anda.');
+      Alert.alert(t('common.error', 'Error'), isGoogleOnly ? t('settings.deleteConfirmEmail', 'Harap ketik {{email}} untuk konfirmasi.', { email: currentUser?.email }) : t('settings.deleteEmptyPassword', 'Harap masukkan password Anda.'));
       return;
     }
 
     if (isGoogleOnly && deletePassword.trim().toLowerCase() !== currentUser?.email?.toLowerCase()) {
-      Alert.alert('Error', 'Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.');
+      Alert.alert(t('common.error', 'Error'), t('settings.deleteWrongEmail', 'Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.'));
       return;
     }
 
@@ -105,7 +105,7 @@ const SettingsScreen = ({ navigation }) => {
       
       if (verifyError) {
         setIsDeleting(false);
-        Alert.alert('Gagal', 'Password salah atau terjadi kesalahan.');
+        Alert.alert(t('common.fail', 'Gagal'), t('settings.deleteWrongPassword', 'Password salah atau terjadi kesalahan.'));
         return;
       }
     }
@@ -115,10 +115,10 @@ const SettingsScreen = ({ navigation }) => {
     setIsDeleting(false);
     
     if (deleteError) {
-      Alert.alert('Gagal', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id');
+      Alert.alert(t('common.fail', 'Gagal'), t('settings.deleteFailMsg', 'Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id'));
     } else {
       setShowDeleteModal(false);
-      Alert.alert('Sukses', 'Akun berhasil dihapus.', [
+      Alert.alert(t('common.success', 'Sukses'), t('settings.deleteSuccessMsg', 'Akun berhasil dihapus.'), [
         {
           text: 'OK',
           onPress: async () => {
@@ -130,10 +130,10 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
   const handleLogout = () => {
-    Alert.alert('Keluar', 'Yakin ingin keluar dari akun?', [
+    Alert.alert(t('settings.logoutTitle', 'Keluar'), t('settings.logoutConfirm', 'Yakin ingin keluar dari akun?'), [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       {
-        text: 'Keluar',
+        text: t('settings.logoutTitle', 'Keluar'),
         style: 'destructive',
         onPress: async () => {
           await logout();
@@ -187,6 +187,20 @@ const SettingsScreen = ({ navigation }) => {
             />
           }
         />
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => {
+            scheduleLocalNotification(
+              "Uji Coba Notifikasi",
+              "Ini adalah notifikasi lokal yang muncul setelah 5 detik.",
+              { type: 'test' },
+              5
+            );
+          }}
+        >
+          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.actionButtonText}>Uji Coba Notifikasi Lokal (5 detik)</Text>
+        </TouchableOpacity>
         <SettingRow
           icon="mail-outline"
           label={t('settings.notifications.email')}
