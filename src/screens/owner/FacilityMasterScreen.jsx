@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   infoText: { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.info ?? '#1D4ED8', lineHeight: 18 },
 
-  filterRow: { flexDirection: 'row', paddingHorizontal: SPACING[4], paddingBottom: SPACING[2], gap: SPACING[2] },
+  filterRow: { flexDirection: 'row', paddingHorizontal: SPACING[4], paddingTop: SPACING[3], paddingBottom: SPACING[2], gap: SPACING[2] },
   filterChip: { paddingHorizontal: SPACING[4], paddingVertical: SPACING[2], borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
   filterChipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
   filterChipText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
