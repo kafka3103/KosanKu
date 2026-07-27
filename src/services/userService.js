@@ -178,7 +178,8 @@ export const uploadAvatar = async (userId, localUri) => {
       .from(AVATARS_BUCKET)
       .getPublicUrl(fileName);
 
-    return { url: data.publicUrl, error: null };
+    const urlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+    return { url: urlWithTimestamp, error: null };
   } catch (err) {
     return { url: null, error: err };
   }

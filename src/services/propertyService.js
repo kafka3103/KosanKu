@@ -177,7 +177,8 @@ export const uploadPropertyPhoto = async (propertyId, localUri, fileName) => {
       .from(PROPERTY_PHOTOS_BUCKET)
       .getPublicUrl(path);
 
-    return { url: data.publicUrl, error: null };
+    const urlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+    return { url: urlWithTimestamp, error: null };
   } catch (err) {
     return { url: null, error: err };
   }
@@ -343,7 +344,8 @@ export const uploadRoomPhoto = async (roomId, localUri, fileName) => {
       .from(ROOM_PHOTOS_BUCKET)
       .getPublicUrl(path);
 
-    return { url: data.publicUrl, error: null };
+    const urlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+    return { url: urlWithTimestamp, error: null };
   } catch (err) {
     return { url: null, error: err };
   }
@@ -488,7 +490,7 @@ export const getOwnerDashboardStats = async (ownerId) => {
     // Total properti & kamar
     supabaseClient
       .from('properties')
-      .select('id, rooms(id, status)')
+      .select('id, rooms(id, status, is_deleted, contracts(status))')
       .eq('owner_id', ownerId)
       .eq('is_deleted', false),
 
@@ -512,23 +514,30 @@ export const getOwnerDashboardStats = async (ownerId) => {
   const invoices = invoicesResult.data ?? [];
   const pendingRequests = requestsResult.data ?? [];
 
-  const allRooms = properties.flatMap((p) => p.rooms ?? []);
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const allRooms = properties
+    .flatMap((p) => p.rooms ?? [])
+    .filter((r) => r.is_deleted === false);
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM local time
 
   const monthlyInvoices = invoices.filter(
     (inv) => inv.billing_period?.startsWith(currentMonth)
   );
   const monthlyRevenue = monthlyInvoices
     .filter((inv) => inv.status === 'paid')
-    .reduce((sum, inv) => sum + parseFloat(inv.total_amount ?? 0), 0);
+    .reduce((sum, inv) => sum + parseFloat(inv.paid_amount ?? 0), 0);
   const unpaidCount = invoices.filter((inv) => ['unpaid', 'overdue'].includes(inv.status)).length;
 
   return {
     data: {
       totalProperties: properties.length,
       totalRooms: allRooms.length,
-      occupiedRooms: allRooms.filter((r) => r.status === 'occupied').length,
-      availableRooms: allRooms.filter((r) => r.status === 'available').length,
+      occupiedRooms: allRooms.filter(
+        (r) => r.status === 'occupied' || (r.contracts && r.contracts.some(c => c.status === 'active'))
+      ).length,
+      availableRooms: allRooms.filter(
+        (r) => r.status === 'available' && (!r.contracts || !r.contracts.some(c => c.status === 'active'))
+      ).length,
       monthlyRevenue,
       unpaidInvoicesCount: unpaidCount,
       pendingRequests,
