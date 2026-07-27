@@ -1,0 +1,604 @@
+--- SHEET: Sheet1 ---
+[
+  [
+    "No",
+    "No Fungsi",
+    "Deskripsi Fungsional",
+    "Kelompok Uji",
+    "Prosedur & Kasus uji",
+    "Hasil yang Diharapkan",
+    "Hasil Test",
+    "Tester",
+    "Tgl Testing",
+    "Keterangan"
+  ],
+  [
+    "PENCARI KOS (TENANT)"
+  ],
+  [
+    "FUNGSI LOGIN"
+  ],
+  [
+    1,
+    "F001",
+    "Login Aplikasi",
+    "Tidak Normal",
+    "a). Kosongkan kolom login",
+    "Menampilkan notifikasi “Error, Field ini wajib diisi”."
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "b). Kosongkan kolom password"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "c). Klik tombol Login"
+  ],
+  [
+    2,
+    "F001",
+    "Login Aplikasi",
+    "Tidak Normal",
+    "Masukan value",
+    "Menampilkan notifikasi “Login Gagal, akun tidak terdaftar atau kombinasi email dan password salah”"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "Email: kelompok5@gmail.com dan Password: 123"
+  ],
+  [
+    3,
+    "F001",
+    "Login Aplikasi",
+    "Normal",
+    "Klik teks yang bertuliskan Sign Up pada bagian bawah.",
+    "Menampilkan daftar list untuk membuat akun baru, Pilih sebagai Pencari Kosan."
+  ],
+  [
+    4,
+    "F001",
+    "Login Aplikasi",
+    "Tidak Normal",
+    "a). Isi kolom dengan ketentuan:",
+    "Menampilkan notifikasi “Akun sudah terdaftar, Email sudah terdaftar”"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "b). Nama lengkap: Kelompok5"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "c). Nomor Handphone : 089689398827"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "d). Email: (email yang sudah terdaftar)"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "e). Kata sandi: 12345678"
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "f). Konfirmasi kata sandi: 12345678"
+  ],
+  [
+    5,
+    "F001",
+    "Login Aplikasi",
+    "Normal",
+    "Isi kolom Nama lengkap, nomor handphone, email, kata sandi, dan konfirmasi kata sandi, kemudian klik daftar.",
+    "Menampilkan Halaman utama “Cari Kosan”"
+  ],
+  [
+    "FUNGSI DRAWER"
+  ],
+  [
+    6,
+    "F002",
+    "Drawer",
+    "Normal",
+    "Klik garis tiga yang berada disebelah kiri atas.",
+    "Menampilkan halaman drawer yang berisi Nama akun, Profil, Pengaturan, Beralih ke Mode Pemilik, dan keluar."
+  ],
+  [
+    7,
+    "F002",
+    "Drawer",
+    "Normal",
+    "Klik “Pengaturan” pada bagian drawer.",
+    "Menampilkan halaman pengaturan yang berisi informasi turn on/off notifikasi, bahasa, keamanan dan, Keluar/hapus akun."
+  ],
+  [
+    null,
+    "F002",
+    "Drawer",
+    "Normal",
+    "Klik Bahasa pada menu preferensi, kemudian pilih “English”",
+    "Aplikasi akan berubah dari bahasa indonesia menjadi bahasa inggris."
+  ],
+  [
+    null,
+    "F003",
+    "Drawer",
+    "Normal",
+    "a.) Klik Ubah Password",
+    "Menampilkan Notifikasi “Email Terkirim” dan informasi utnuk cek inboox email untuk reset password."
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "b.) Kirim Email Reset"
+  ],
+  [
+    "FUNGSI CARI KOS"
+  ],
+  [
+    6,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Klik tombol Lokasi Saya yang berada dibawah kanan.",
+    "Menampilkan lokasi keberadaan  saat ini."
+  ],
+  [
+    7,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Klik tombol refresh pada Lokasi terdeteksi. Diurutkan terdekat.",
+    "Mengembalikan lokasi sebelumnya dengan mengarahkan kedalam lokasi kos terdekat."
+  ],
+  [],
+  [
+    null,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Isi search bar cari kosan dengan nama kos yang terdaftar dalam aplikasi.",
+    "Menampilkan ikon rumah kos yang dicari  "
+  ],
+  [
+    8,
+    null,
+    "Cari Kosan",
+    "Normal",
+    null,
+    "Menampilkan detail rinci filter pencarian yang berisi kota, kebijakan gender, tipe kamar, serta kisaran harga."
+  ],
+  [],
+  [
+    null,
+    "F003",
+    null,
+    null,
+    "Klik “Filter Aktif” "
+  ],
+  [],
+  [],
+  [
+    null,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Klik “Daftar List Kosan”",
+    "Menampilkan seluruh kos yang terdaftar pada aplikasi."
+  ],
+  [
+    9,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Klik icon rumah berwarna hijau pada lokasi.",
+    "Menampilkan Kos yang terdaftar dalam aplikasi."
+  ],
+  [
+    10,
+    null,
+    "Cari Kosan",
+    "Normal",
+    "Klik tombol “Rute Peta” pada tampilan icon rumah.",
+    "Mengarahkan kedalam aplikasi google maps untuk memberikan rute perjalanan menuju lokasi kos. "
+  ],
+  [
+    null,
+    "F003"
+  ],
+  [
+    11,
+    null,
+    "Cari Kosan",
+    "Normal",
+    "Klik tombol “Lihat Detail Kosan” pada tampilan icon rumah.",
+    "Menampilkan Detail kos yang dipilih, yang berisi Harga Kamar dengan detail didalamnya, Informasi Kos, Fasilitas bersama, dan Ulasan penilaian yang diberikan penghuni."
+  ],
+  [],
+  [
+    null,
+    "F003"
+  ],
+  [
+    12,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Klik tombol “Detail” pada list kamar kos yang tersedia",
+    "Menampilkan informasi kamar yang berisi fasilitas kamar serta peraturan kosan."
+  ],
+  [
+    13,
+    "F003",
+    "Cari Kosan",
+    "Normal",
+    "Klik tombol “Ajukan Sewa”",
+    "Menampilkan informasi detail untuk mengajukan sewa kos."
+  ],
+  [
+    14,
+    null,
+    "Cari Kosan",
+    "Normal",
+    "Pilih Durasi sewa, Upload foto KTP, dan pesan untuk pemilik kos (opsional). Terdapat ringkasan pengajuan harga/bulan dan durasi sewa, kemudian klik tombol “Kirim Pengajuan”.",
+    "Menampilkan notifikasi “Konfirmasi Pengajuan” klik “Kirim pengajuan”. Menampilkan notifikasi “Pengajuan Dikirim”."
+  ],
+  [],
+  [
+    null,
+    "F003"
+  ],
+  [
+    "FAVORIT SAYA"
+  ],
+  [
+    null,
+    "F003",
+    "Favorit Kos",
+    "Normal",
+    "Klik icon Favorit yang berada di Bottom Navigation Bar.",
+    "Menampilkan halaman utama favorit."
+  ],
+  [
+    null,
+    "F003",
+    "Favorit Kos",
+    "Normal",
+    "Klik “Jelajahi Kosan”",
+    "Menampilkan halaman lokasi utama untuk mencari kos yang akan diberi favorit."
+  ],
+  [
+    null,
+    "F003",
+    "Favorit Kos",
+    "Normal",
+    "Klik icon rumah berwarna hijau, kemudian klik “Lihat Detail Kosan”, lalu klik icon love yang berada disebelah atas kanan. Kemudian kembali ke menu favorit saya.",
+    "Menampilkan semua daftar kos yang sudah diberi favorit."
+  ],
+  [
+    null,
+    "F003",
+    "Favorit Kos",
+    "Normal",
+    "Klik icon love yang berwarna merah",
+    "Menampilkan notifikasi “Hapus kos dari daftar favorit?”"
+  ],
+  [
+    "HUNIAN SAYA"
+  ],
+  [
+    null,
+    "F004",
+    "Hunian Saya",
+    "Normal",
+    null,
+    "Menampilkan semua informasi pengajuan sewa kos yang sudah diajukan sebelumnya. Jika belum dikonfirmasi oleh owner maka status menjadi “Menunggu Konfirmasi” dan jika sudah di konfirmasi oleh owner status menjadi “Disetujui”"
+  ],
+  [],
+  [],
+  [
+    null,
+    null,
+    null,
+    null,
+    "Klik icon Rumah yang berada di Bottom Navigation Bar."
+  ],
+  [
+    "NOTIFIKASI"
+  ],
+  [
+    null,
+    "F005",
+    "Notifikasi",
+    "Normal",
+    "Klik icon Lonceng yang berada di Bottom Navigation Bar.",
+    "Menampilkan semua notfikasi yang berasal dari dalam aplikasi."
+  ],
+  [
+    "PROFIL"
+  ],
+  [
+    null,
+    "F006",
+    "Profil",
+    "Normal",
+    "Klik icon profil yang berada di Bottom Navigation Bar.",
+    "Menampilkan informasi pemilik akun yang terdiri dari nama lengkap, email, nomor telepon, jenis kelamin, kota asal dan data tambahan pencari kos."
+  ],
+  [
+    null,
+    "F006",
+    "Profil",
+    "Normal",
+    "Pilih jenis kelamin, dan kota asal. Kemudian klik simpan perubahan.",
+    "Menampilkan notifikasi “Profil berhasil diperbarui”."
+  ],
+  [
+    null,
+    "F006",
+    "Profil",
+    "Normal",
+    "Pilih Beralih Peran",
+    "Menampilkan ke halaman yang dialihkan yaitu halaman owner."
+  ],
+  [
+    "PEMILIK KOS (OWNER)"
+  ],
+  [
+    "DRAWER"
+  ],
+  [
+    null,
+    "F007",
+    "Drawer",
+    "Normal",
+    "Klik garis tiga yang berada disebelah kiri atas.",
+    "Menampilkan halaman drawer yang berisi Pengajuan Masuk, Penghuni, laporan, dan Pengaturan."
+  ],
+  [
+    null,
+    "F007",
+    "Drawer",
+    "Normal",
+    null,
+    "Menampilkan semua pengajuan yang di ajukan oleh penghuni, mulai dari Menunggu, Disetujui, Ditolak dan, Semua. "
+  ],
+  [
+    null,
+    null,
+    null,
+    null,
+    "Pilih Pengajuan Masuk"
+  ],
+  [
+    null,
+    "F007",
+    "Drawer",
+    "Normal",
+    "Pilih Penghuni",
+    "Menampilkan daftar penghuni kos yang tinggal."
+  ],
+  [
+    null,
+    "F007",
+    "Drawer",
+    "Normal",
+    "Pilih Pengaturan",
+    "Menampilkan informasi terkait notifikasi, preferensi bahasa, keamanan, dan akun."
+  ],
+  [
+    "KELOLA PROPERTI"
+  ],
+  [
+    null,
+    null,
+    "Kelola Daftar Penghuni",
+    "Normal",
+    "Klik tombol daftar penghuni.",
+    "Menampilkan semua daftar penghuni yang tinggal didalam kos milik owner."
+  ],
+  [
+    null,
+    null,
+    "Laporan",
+    "Normal",
+    "Klik tombol Laporan.",
+    "Menampilkan data laporan uang masuk dan uang yang belum masuk selama 12 bulan terakhir."
+  ],
+  [
+    null,
+    null,
+    "Master Fasilitas",
+    "Normal",
+    "Klik tombol master Fasilitas.",
+    "Menampilkan semua fasilitas kos yang tersedia."
+  ],
+  [
+    null,
+    null,
+    "Tambah Master Fasilitas",
+    "Tidak Normal",
+    "Kosongkan semua field yang tersedia, kemudian klik tombol Tambahkan",
+    "Menampilkan eror peringatan “Nama fasilitas wajib diisi.” "
+  ],
+  [
+    null,
+    null,
+    "Tambah Master Fasilitas ",
+    "Normal",
+    "Isi kolom nama fasilitas, kategori, dan ikon, kemudian klik tombol tambahkan.",
+    "Menampilkan Notifikasi “Fasilitas baru berhasil di tambahkan”"
+  ],
+  [
+    null,
+    null,
+    "Ubah Master Fasilitas",
+    "Normal",
+    "Klik ikon update pada list fasilitas, kemudian ubah bagian yang akan diperbarui, lalu klik tombol simpan perubahan ",
+    "Menampilkan notifikasi “Fasilitas baru berhasil diperbarui”"
+  ],
+  [
+    null,
+    null,
+    "Delete Master Fasilitas",
+    "Normal",
+    "Klik ikon sampah pada daftar list fasilitas.",
+    "Menampilkan notifikasi “Yakin ingin menghapus fasilitas dari master fasilitas?” kemudian klik hapus."
+  ],
+  [],
+  [],
+  [
+    "PROPERTI SAYA"
+  ],
+  [
+    null,
+    null,
+    "Properti Saya",
+    "Normal",
+    "Klik icon laporan yang berada di Bottom Navigation Bar.",
+    "Menampilkan semua daftar kos yang sudah didaftarkan kedalam aplikasi KosanKu."
+  ],
+  [
+    null,
+    null,
+    "Properti Saya",
+    "Normal",
+    "Klik tombol tambah properti (+), kosongkan kolom “Nama Properti” atau “Alamat”, lalu klik Simpan properti.",
+    "Menampilkan eror peringatan: “Nama properti wajib diisi”"
+  ],
+  [
+    null,
+    null,
+    "Properti Saya",
+    "Normal",
+    "Klik klik tombol tambah (+). Isi formulir dengan data properti yang valid (nama, lokasi, fasilitas) dan unggah foto. Klik Simpan",
+    "Menampilkan notifikasi “Properti berhasil ditambahkan” dan properti baru muncul di daftar."
+  ],
+  [
+    null,
+    null,
+    "Properti Saya",
+    "Normal",
+    "Klik edit pada daftar list kost yang tersedia. ",
+    "Menampilkan daftar detail kamar kos yang akan diperbarui, kemudian klik “Perbarui Properti”. Akan menampilkan notifikasi “Properti berhasil diperbarui”."
+  ],
+  [
+    null,
+    null,
+    "Properti Saya",
+    "Normal",
+    "Klik hapus pada daftar list kost yang tersedia.",
+    "Menampilkan notifikasi “Yakin ingin mengahpus kos, semua kamar dalam properti ini juga akan dihapus.” Kemudian klik Hapus "
+  ],
+  [],
+  [],
+  [],
+  [],
+  [
+    "DAFTAR TAGIHAN"
+  ],
+  [
+    null,
+    null,
+    "Properti Saya",
+    "Normal",
+    "Klik icon tagihan yang berada di Bottom Navigation Bar.",
+    "Menampilkan jumlah total seluruh tagihan yang terdapat dalam kos yang didaftarkan."
+  ],
+  [
+    null,
+    null,
+    null,
+    "Normal",
+    "Pilih  button “Semua”",
+    "Menampilkan semua daftar tagihan yang ada."
+  ],
+  [
+    null,
+    null,
+    null,
+    "Normal",
+    "Pilih button “Belum Bayar”",
+    "Menampilkan total harga yang belum dilunasi oleh penghuni kos."
+  ],
+  [
+    null,
+    null,
+    null,
+    "Normal",
+    "Pilih button “Terlambat”",
+    "Menampilkan total harga kos yang telat dibayar oleh penghuni, serta akan menampilkan notifikasi keterlambatan pembayaran kamar kos. "
+  ],
+  [
+    null,
+    null,
+    null,
+    "Normal",
+    "Pilih button “Lunas”",
+    "Menampilkan daftar tagihan yang sudah dilunasi oleh penghuni."
+  ],
+  [
+    "NOTIFIKASI"
+  ],
+  [
+    null,
+    null,
+    "Notifikasi",
+    "Normal",
+    "Klik icon Lonceng yang berada di Bottom Navigation Bar.",
+    "Menampilkan semua notfikasi yang berasal dari dalam aplikasi."
+  ],
+  [
+    "PROFIL"
+  ],
+  [
+    null,
+    null,
+    "Profil",
+    "Normal",
+    "Klik icon profil yang berada di Bottom Navigation Bar.",
+    "Menampilkan informasi pemilik akun yang terdiri dari nama lengkap, email, nomor telepon, jenis kelamin, kota asal dan data tambahan pencari kos."
+  ],
+  [
+    null,
+    null,
+    "Profil",
+    "Normal",
+    "Pilih jenis kelamin, dan kota asal. Kemudian klik simpan perubahan.",
+    "Menmapilkan notifikasi “Profil berhasil diperbarui”."
+  ],
+  [
+    null,
+    "F006",
+    "Profil",
+    "Normal",
+    "Pilih Beralih Peran",
+    "Menampilkan ke halaman yang dialihkan yaitu halaman Pencari Kos."
+  ],
+  [],
+  []
+]
