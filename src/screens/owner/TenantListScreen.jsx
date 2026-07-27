@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
@@ -31,7 +31,7 @@ import { getOwnerActiveTenants } from '../../services/propertyService';
 const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy', { locale: i18n?.language === 'id' ? idLocale : undefined });
+    return format(new Date(dateStr), 'd MMM yyyy', { locale: i18n?.language === 'id' ? idLocale : enLocale });
   } catch {
     return dateStr;
   }

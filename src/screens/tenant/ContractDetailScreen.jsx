@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 
 import { getLocalizedField } from '../../utils/useLocalizedField';
 import COLORS from '../../constants/colors';
@@ -19,10 +19,10 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
@@ -129,12 +129,12 @@ const ContractDetailScreen = ({ route, navigation }) => {
             <View style={styles.contractDates}>
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.start_date, i18n)}</Text>
               </View>
               <View style={styles.dateSeparator} />
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.end_date, i18n)}</Text>
               </View>
             </View>
           )}
