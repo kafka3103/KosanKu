@@ -35,7 +35,7 @@ import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { getUserProfile, updateUserProfile, uploadAvatar, getTenantProfile, upsertTenantProfile } from '../../services/userService';
+import { getUserProfile, updateUserProfile, uploadAvatar, getTenantProfile, upsertTenantProfile, getOwnerProfile, upsertOwnerProfile } from '../../services/userService';
 import { logout, deleteAccount } from '../../services/authService';
 import { USER_ROLE } from '../../constants/userRole';
 
@@ -99,6 +99,13 @@ const ProfileScreen = ({ navigation }) => {
   const [emergencyName, setEmergencyName] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
 
+  // Owner Specific States
+  const [ownerKtpNumber, setOwnerKtpNumber] = useState('');
+  const [ownerNpwpNumber, setOwnerNpwpNumber] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [bankAccountName, setBankAccountName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
   const [isCityModalVisible, setIsCityModalVisible] = useState(false);
   const [citySearchText, setCitySearchText] = useState('');
@@ -124,6 +131,15 @@ const ProfileScreen = ({ navigation }) => {
         setOccupation(getLocalizedField(tenantData, 'occupation', i18n.language) || '');
         setEmergencyName(tenantData.emergency_contact_name || '');
         setEmergencyPhone(tenantData.emergency_contact_phone || '');
+      }
+    } else {
+      const { data: ownerData } = await getOwnerProfile(currentUser.id);
+      if (ownerData) {
+        setOwnerKtpNumber(ownerData.ktp_number || '');
+        setOwnerNpwpNumber(ownerData.npwp_number || '');
+        setBankName(ownerData.bank_name || '');
+        setBankAccountName(ownerData.bank_account_name || '');
+        setBankAccountNumber(ownerData.bank_account_number || '');
       }
     }
 
@@ -252,6 +268,7 @@ const ProfileScreen = ({ navigation }) => {
     });
 
     let tenantError = null;
+    let ownerError = null;
     if (!isOwner) {
       const { error: tError } = await upsertTenantProfile(currentUser.id, {
         occupation: occupation.trim() || null,
@@ -259,12 +276,21 @@ const ProfileScreen = ({ navigation }) => {
         emergency_contact_phone: emergencyPhone.trim() || null,
       });
       tenantError = tError;
+    } else {
+      const { error: oError } = await upsertOwnerProfile(currentUser.id, {
+        ktp_number: ownerKtpNumber.trim() || null,
+        npwp_number: ownerNpwpNumber.trim() || null,
+        bank_name: bankName.trim() || null,
+        bank_account_name: bankAccountName.trim() || null,
+        bank_account_number: bankAccountNumber.trim() || null,
+      });
+      ownerError = oError;
     }
 
     setIsSaving(false);
 
-    if (error || tenantError) {
-      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || t('profile.saveFailed', 'Gagal menyimpan profil'));
+    if (error || tenantError || ownerError) {
+      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || ownerError?.message || t('profile.saveFailed', 'Gagal menyimpan profil'));
     } else if (data) {
       Alert.alert(t('common.buttons.success', 'Berhasil'), t('profile.updateSuccess', 'Profil berhasil diperbarui'));
       setProfile(data);
@@ -441,6 +467,52 @@ const ProfileScreen = ({ navigation }) => {
               icon="call-outline"
               placeholder={t('profile.emergencyPhonePlaceholder', 'Contoh: +628123456789')}
               keyboardType="phone-pad"
+            />
+          </>
+        )}
+
+        {isOwner && (
+          <>
+            <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
+              <Text style={styles.sectionTitle}>{t('profile.ownerExtraData', 'Data Tambahan Pemilik Kosan')}</Text>
+            </View>
+            <EditableInfoRow
+              label={t('profile.ownerKtp', 'Nomor Induk Kependudukan (NIK)')}
+              value={ownerKtpNumber}
+              onChangeText={setOwnerKtpNumber}
+              icon="card-outline"
+              placeholder="Contoh: 3201234567890123"
+              keyboardType="numeric"
+            />
+            <EditableInfoRow
+              label={t('profile.ownerNpwp', 'NPWP (Opsional)')}
+              value={ownerNpwpNumber}
+              onChangeText={setOwnerNpwpNumber}
+              icon="document-text-outline"
+              placeholder="Contoh: 12.345.678.9-012.000"
+              keyboardType="numeric"
+            />
+            <EditableInfoRow
+              label={t('profile.bankName', 'Nama Bank')}
+              value={bankName}
+              onChangeText={setBankName}
+              icon="business-outline"
+              placeholder="Contoh: BCA, BNI, Mandiri"
+            />
+            <EditableInfoRow
+              label={t('profile.bankAccountName', 'Nama Pemilik Rekening')}
+              value={bankAccountName}
+              onChangeText={setBankAccountName}
+              icon="person-outline"
+              placeholder="Sesuai buku tabungan"
+            />
+            <EditableInfoRow
+              label={t('profile.bankAccountNumber', 'Nomor Rekening')}
+              value={bankAccountNumber}
+              onChangeText={setBankAccountNumber}
+              icon="wallet-outline"
+              placeholder="Contoh: 1234567890"
+              keyboardType="numeric"
             />
           </>
         )}

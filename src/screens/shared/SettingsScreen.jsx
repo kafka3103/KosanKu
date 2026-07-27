@@ -25,7 +25,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { logout, updatePassword, deleteAccount } from '../../services/authService';
+import { logout, updatePassword, deleteAccount, sendPasswordResetEmail } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
@@ -68,8 +68,17 @@ const SettingsScreen = ({ navigation }) => {
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
           text: t('settings.btnSendResetEmail', 'Kirim Email Reset'),
-          onPress: () => {
-            Alert.alert(t('settings.emailSentTitle', 'Email Terkirim'), t('settings.emailSentMsg', 'Cek inbox email Anda untuk link reset password.'));
+          onPress: async () => {
+            if (!currentUser?.email) {
+              Alert.alert(t('common.error', 'Error'), t('settings.noEmailFound', 'Email pengguna tidak ditemukan.'));
+              return;
+            }
+            const { error } = await sendPasswordResetEmail({ email: currentUser.email });
+            if (error) {
+              Alert.alert(t('common.error', 'Gagal'), error.message || t('settings.emailSendFailMsg', 'Gagal mengirim email reset password.'));
+            } else {
+              Alert.alert(t('settings.emailSentTitle', 'Email Terkirim'), t('settings.emailSentMsg', 'Cek inbox email Anda untuk link reset password.'));
+            }
           },
         },
       ]

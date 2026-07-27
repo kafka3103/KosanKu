@@ -94,6 +94,12 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
 
   const handleSubmit = async () => {
+    const ownerId = property?.owner_id ?? property?.users_owner_id_fkey?.id;
+    if (currentUser?.id === ownerId) {
+      Alert.alert(t('common.fail', 'Gagal'), t('rental.request.selfRentalError', 'Anda tidak dapat menyewa kamar di properti milik sendiri.'));
+      return;
+    }
+
     if (!isNiksLocked) {
       if (!tenantNIK || tenantNIK.length !== 16 || !/^\d+$/.test(tenantNIK)) {
         Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));

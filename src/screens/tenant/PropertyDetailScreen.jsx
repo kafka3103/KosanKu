@@ -253,7 +253,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           >
             <Ionicons name="map" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
             <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
-              {t('propertyDetail.openMap', '🗺️ Buka Rute di Google Maps (Peta Bawaan HP)')}
+              {t('propertyDetail.openMap', 'Buka Rute di Google Maps')}
             </Text>
           </TouchableOpacity>
         )}

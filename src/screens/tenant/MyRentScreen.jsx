@@ -103,8 +103,9 @@ const MyRentScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStore();
 
-  const [contract, setContract] = useState(null);
+  const [contracts, setContracts] = useState([]);
   const [recentInvoices, setRecentInvoices] = useState([]);
+  const [invoiceFilter, setInvoiceFilter] = useState('all');
   const [rentalRequests, setRentalRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -124,9 +125,9 @@ const MyRentScreen = ({ navigation }) => {
       getTenantRentalRequests(currentUser.id),
     ]);
 
-    if (!contractResult.error) setContract(contractResult.data);
+    if (!contractResult.error) setContracts(contractResult.data || []);
     if (!invoicesResult.error && invoicesResult.data) {
-      setRecentInvoices(invoicesResult.data.slice(0, 3));
+      setRecentInvoices(invoicesResult.data);
     }
     if (!requestsResult.error && requestsResult.data) {
       setRentalRequests(requestsResult.data.filter((r) => ['pending', 'approved'].includes(r.status)));
@@ -165,20 +166,7 @@ const MyRentScreen = ({ navigation }) => {
     );
   };
 
-  const handleRequestFacility = async (facilityId) => {
-    if (!contract?.id) return;
-    setIsRequesting(true);
-    const { error } = await requestOptionalFacility(contract.id, facilityId);
-    setIsRequesting(false);
 
-    if (error) {
-      Alert.alert(t('myRent.reqFail', 'Gagal'), error.message || t('myRent.reqFailMsg', 'Terjadi kesalahan saat mengajukan fasilitas.'));
-    } else {
-      setShowFacilityModal(false);
-      Alert.alert(t('myRent.reqSuccess', 'Berhasil'), t('myRent.reqSuccessMsg', 'Pengajuan fasilitas terkirim. Menunggu persetujuan pemilik.'));
-      loadData(true);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -189,7 +177,7 @@ const MyRentScreen = ({ navigation }) => {
   }
 
   // Belum punya hunian aktif
-  if (!contract && rentalRequests.length === 0) {
+  if (contracts.length === 0 && rentalRequests.length === 0) {
     return (
       <ScrollView
         style={styles.container}
@@ -230,12 +218,7 @@ const MyRentScreen = ({ navigation }) => {
     );
   }
 
-  const room = contract?.rooms;
-  const property = room?.properties;
-  const owner = property?.users;
-  const facilities = room?.room_facilities?.map((rf) => rf.facility_master?.name).filter(Boolean) ?? [];
-  const activeContractFacilities = (contract?.contract_facilities || []).filter((f) => f.status === 'active');
-  const requestedContractFacilities = (contract?.contract_facilities || []).filter((f) => f.status === 'requested');
+
 
   return (
     <>
@@ -259,14 +242,14 @@ const MyRentScreen = ({ navigation }) => {
             <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
               <Text style={styles.headerSubtitle}>
-                {contract ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
+                {contracts.length > 0 ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
               </Text>
             </View>
           </View>
         </View>
 
         {/* Pengajuan Pending (jika belum punya kontrak) */}
-        {!contract && rentalRequests.length > 0 && (
+        {contracts.length === 0 && rentalRequests.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('myRent.rentRequest', 'Pengajuan Sewa')}</Text>
             {rentalRequests.map((req) => {
@@ -301,147 +284,51 @@ const MyRentScreen = ({ navigation }) => {
         )}
 
         {/* Kontrak Aktif */}
-        {contract && (
-          <>
-            {/* Room Card */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>
-              <View style={styles.roomCard}>
-                {room?.photo_urls?.[0] || property?.cover_photo_url ? (
-                  <Image
-                    source={{ uri: room?.photo_urls?.[0] ?? property?.cover_photo_url }}
-                    style={styles.roomPhoto}
-                  />
-                ) : (
-                  <View style={styles.roomPhotoPlaceholder}>
-                    <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
-                  </View>
-                )}
-                <View style={styles.roomInfo}>
-                  <Text style={styles.roomPropertyName}>{property?.name}</Text>
-                  <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
-                    <Text style={[styles.roomAddress, { marginTop: 0 }]}>
-                      {property?.address_line}, {property?.city}
-                    </Text>
-                  </View>
-                  <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)} {t('myRent.perMonth', 'per month')}</Text>
-                </View>
-              </View>
-
-              {/* Contract Dates */}
-              <View style={styles.contractDates}>
-                <View style={styles.dateItem}>
-                  <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
-                  <Text style={styles.dateValue}>{formatDate(contract.start_date, i18n.language)}</Text>
-                </View>
-                <View style={styles.dateSeparator} />
-                <View style={styles.dateItem}>
-                  <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
-                  <Text style={styles.dateValue}>{formatDate(contract.end_date, i18n.language)}</Text>
-                </View>
-              </View>
-
-              {/* Facilities */}
-              {facilities.length > 0 && (
-                <View style={styles.facilitiesContainer}>
-                  <Text style={styles.facilitiesLabel}>{t('myRent.facilities', 'Fasilitas:')}</Text>
-                  <View style={styles.facilitiesWrap}>
-                    {facilities.map((f, i) => (
-                      <View key={i} style={styles.facilityTag}>
-                        <DynamicText style={styles.facilityTagText}>{f}</DynamicText>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Optional Facilities */}
-              {(activeContractFacilities.length > 0 || requestedContractFacilities.length > 0) && (
-                <View style={styles.optionalFacilitiesBox}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Ionicons name="sparkles" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                      <Text style={styles.optionalFacilitiesTitle}>{t('myRent.additionalFacilities', 'Fasilitas Tambahan')}</Text>
-                    </View>
-                  </View>
-
-                  {activeContractFacilities.map((cf) => (
-                    <View key={cf.id} style={styles.optionalFacilityItem}>
-                      <DynamicText style={styles.optionalFacilityName}>
-                        {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
-                      </DynamicText>
-                      <Text style={styles.optionalFacilityPrice}>
-                        {formatCurrency(cf.price_per_month)}{t('roomDetail.perMonth', '/bulan')}
-                      </Text>
-                    </View>
-                  ))}
-
-                  {requestedContractFacilities.map((cf) => (
-                    <View key={cf.id} style={styles.optionalFacilityItem}>
-                      <DynamicText style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
-                        {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
-                      </DynamicText>
-                      <View style={styles.requestBadgeInline}>
-                        <Text style={styles.requestBadgeTextInline}>{t('myRent.waitingConfirm', 'Menunggu Konfirmasi')}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={styles.addFacilityBtn}
-                onPress={() => setShowFacilityModal(true)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
-                <Text style={styles.addFacilityBtnText}>{t('myRent.requestAdditional', 'Ajukan Fasilitas Tambahan')}</Text>
-              </TouchableOpacity>
-            </View>
-
-
-            {/* Owner Contact */}
-            {owner && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('myRent.contactOwner', 'Hubungi Pemilik')}</Text>
-                <View style={styles.ownerCard}>
-                  <View style={styles.ownerAvatar}>
-                    <Text style={styles.ownerAvatarText}>
-                      {owner.full_name?.[0]?.toUpperCase() ?? 'O'}
-                    </Text>
-                  </View>
-                  <View style={styles.ownerInfo}>
-                    <Text style={styles.ownerName}>{owner.full_name}</Text>
-                    <Text style={styles.ownerPhone}>{owner.phone_number ?? 'Tidak tersedia'}</Text>
-                  </View>
-                  {owner.phone_number && (
-                    <View style={{ flexDirection: 'row' }}>
-                      <TouchableOpacity
-                        style={[styles.callBtn, { marginRight: 8 }]}
-                        onPress={() => handleCallOwner(owner.phone_number)}
-                      >
-                        <Ionicons name="call" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                        <Text style={styles.callBtnText}>{t('myRent.call', 'Hubungi')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.callBtn, { backgroundColor: '#25D366', borderColor: '#25D366' }]}
-                        onPress={() => {
-                          let phone = owner.phone_number.replace(/\D/g, '');
-                          if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-                          const url = `whatsapp://send?phone=${phone}&text=Halo Bapak/Ibu ${owner.full_name}, saya penyewa kosan Anda di aplikasi KosanKu.`;
-                          Linking.openURL(url).catch(() => Alert.alert(t('myRent.callFail', 'Gagal'), 'WhatsApp tidak terinstal'));
-                        }}
-                      >
-                        <Ionicons name="logo-whatsapp" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                        <Text style={[styles.callBtnText, { color: '#FFF' }]}>WhatsApp</Text>
-                      </TouchableOpacity>
+        {contracts.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>
+            {contracts.map((contract) => {
+              const room = contract?.rooms;
+              const property = room?.properties;
+              return (
+                <TouchableOpacity
+                  key={contract.id}
+                  style={styles.roomCard}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('ContractDetailScreen', { 
+                    request: { 
+                      status: contract.status, 
+                      rooms: contract.rooms, 
+                      contracts: [contract] 
+                    } 
+                  })}
+                >
+                  {room?.photo_urls?.[0] || property?.cover_photo_url ? (
+                    <Image
+                      source={{ uri: room?.photo_urls?.[0] ?? property?.cover_photo_url }}
+                      style={styles.roomPhoto}
+                    />
+                  ) : (
+                    <View style={styles.roomPhotoPlaceholder}>
+                      <Ionicons name="bed-outline" size={32} color={COLORS.textTertiary} />
                     </View>
                   )}
-                </View>
-              </View>
-            )}
+                  <View style={styles.roomInfo}>
+                    <Text style={styles.roomPropertyName}>{property?.name}</Text>
+                    <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                      <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
+                      <Text style={[styles.roomAddress, { marginTop: 0 }]}>
+                        {property?.address_line}, {property?.city}
+                      </Text>
+                    </View>
+                    <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)} {t('myRent.perMonth', '/ bulan')}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
             {/* Recent Invoices */}
             <View style={styles.section}>
@@ -449,12 +336,41 @@ const MyRentScreen = ({ navigation }) => {
                 <Text style={styles.sectionTitle}>{t('myRent.recentInvoices', 'Tagihan Terbaru')}</Text>
               </View>
 
-              {recentInvoices.length === 0 ? (
+              {/* Invoice Filters */}
+              <View style={styles.filterContainer}>
+                {['all', 'unpaid', 'paid'].map((filterType) => (
+                  <TouchableOpacity
+                    key={filterType}
+                    style={[styles.filterChip, invoiceFilter === filterType && styles.filterChipActive]}
+                    onPress={() => setInvoiceFilter(filterType)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.filterText, invoiceFilter === filterType && styles.filterTextActive]}>
+                      {filterType === 'all' ? 'Semua' : filterType === 'unpaid' ? 'Belum Lunas' : 'Lunas'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {recentInvoices
+                .filter((invoice) => {
+                  if (invoiceFilter === 'all') return true;
+                  if (invoiceFilter === 'paid') return invoice.status === 'paid';
+                  return invoice.status !== 'paid'; // unpaid or partial
+                })
+                .length === 0 ? (
                 <View style={styles.emptyInvoice}>
                   <Text style={styles.emptyInvoiceText}>{t('myRent.noInvoices', 'Belum ada tagihan')}</Text>
                 </View>
               ) : (
-                recentInvoices.map((invoice) => {
+                recentInvoices
+                  .filter((invoice) => {
+                    if (invoiceFilter === 'all') return true;
+                    if (invoiceFilter === 'paid') return invoice.status === 'paid';
+                    return invoice.status !== 'paid';
+                  })
+                  .slice(0, 10)
+                  .map((invoice) => {
                   const statusConfig = getInvoiceStatusConfig(t);
                   const status = statusConfig[invoice.status] ?? statusConfig.unpaid;
                   return (
@@ -483,60 +399,7 @@ const MyRentScreen = ({ navigation }) => {
                 })
               )}
             </View>
-          </>
-        )}
       </ScrollView>
-
-      {/* Facility Request Modal */}
-      <Modal
-        visible={showFacilityModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFacilityModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('myRent.requestFacility', 'Ajukan Fasilitas')}</Text>
-              <TouchableOpacity onPress={() => setShowFacilityModal(false)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalSubtitle}>{t('myRent.chooseFacility', 'Pilih fasilitas tambahan yang ingin Anda pasang di kamar ini.')}</Text>
-
-            <ScrollView style={styles.facilityList}>
-              {masterFacilities.map((facility) => {
-                const isAlreadyActive = activeContractFacilities.some(cf => cf.facility_id === facility.id);
-                const isAlreadyRequested = requestedContractFacilities.some(cf => cf.facility_id === facility.id);
-                const disabled = isAlreadyActive || isAlreadyRequested || isRequesting;
-
-                return (
-                  <TouchableOpacity
-                    key={facility.id}
-                    style={[styles.facilityOption, disabled && styles.facilityOptionDisabled]}
-                    disabled={disabled}
-                    onPress={() => handleRequestFacility(facility.id)}
-                  >
-                    <View style={styles.facilityOptionLeft}>
-                      <Ionicons name="apps-outline" size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
-                      <View style={{ marginLeft: 12 }}>
-                        <DynamicText style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{getLocalizedField(facility, 'name')}</DynamicText>
-                        {isAlreadyActive ? (
-                          <Text style={styles.facilityOptionStatus}>{t('myRent.installed', 'Sudah terpasang')}</Text>
-                        ) : isAlreadyRequested ? (
-                          <Text style={styles.facilityOptionStatus}>{t('myRent.waitingApproval', 'Menunggu persetujuan')}</Text>
-                        ) : null}
-                      </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={disabled ? COLORS.grey200 : COLORS.grey400} />
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 };
@@ -781,6 +644,33 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   emptyInvoiceText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
+  // Filter Styles
+  filterContainer: {
+    flexDirection: 'row',
+    marginBottom: SPACING[3],
+    gap: SPACING[2],
+  },
+  filterChip: {
+    paddingHorizontal: SPACING[4],
+    paddingVertical: SPACING[2],
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textSecondary,
+  },
+  filterTextActive: {
+    color: COLORS.white,
+    fontWeight: FONT_WEIGHT.bold,
+  },
   // Optional Facilities
   optionalFacilitiesBox: {
     backgroundColor: COLORS.primarySurface,
