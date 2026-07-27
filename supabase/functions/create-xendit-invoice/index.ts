@@ -136,30 +136,6 @@ serve(async (req) => {
       });
     }
 
-    // Validasi: nominal cicilan tidak boleh melebihi sisa hutang
-    if (amountToPay > remainingDebt) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Nominal melebihi sisa tagihan. Sisa hutang: Rp ${remainingDebt.toLocaleString("id-ID")}`,
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validasi: pembayaran pertama wajib minimal 50% dari total tagihan (DP)
-    const isFirstPayment = currentPaid === 0;
-    const minimumDP = Math.ceil(totalAmount * 0.5);
-    if (isFirstPayment && amountToPay < minimumDP) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Pembayaran pertama minimal 50% dari total tagihan (Rp ${minimumDP.toLocaleString("id-ID")})`,
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Ambil data penyewa (tenant) terpisah
     const { data: tenant } = await supabaseAdmin
       .from("users")
