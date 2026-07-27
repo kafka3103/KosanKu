@@ -101,7 +101,7 @@ const PropertyCard = ({ property, onPress }) => {
   const isOwnProperty = property.owner_id === currentUser?.id;
 
   return (
-    <TouchableOpacity style={[styles.propertyCard, isOwnProperty && { borderColor: 'red', borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.propertyCard, isOwnProperty && { borderColor: COLORS.primary, borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.cardPhoto}>
         {property.cover_photo_url ? (
           <Image source={{ uri: property.cover_photo_url }} style={styles.cardImage} />
@@ -114,8 +114,9 @@ const PropertyCard = ({ property, onPress }) => {
           <Text style={styles.availableTagText}>{t('searchScreen.availableCount', '{{count}} tersedia', { count: availableCount })}</Text>
         </View>
         {isOwnProperty && (
-          <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: 'red', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
-            <Text style={[styles.availableTagText, { color: 'white', fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Sendiri')}</Text>
+          <View style={[styles.availableTag, { top: 12, right: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }]}>
+            <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
+            <Text style={[styles.availableTagText, { color: COLORS.white, fontWeight: 'bold' }]}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
           </View>
         )}
         <View style={styles.genderTag}>
@@ -566,6 +567,12 @@ const SearchScreen = ({ navigation }) => {
                         );
                       })()}
                     </View>
+                    {selectedMapProperty.owner_id === currentUser?.id && (
+                      <View style={{ alignSelf: 'flex-start', backgroundColor: COLORS.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', marginBottom: 4, marginTop: 2 }}>
+                        <Ionicons name="key" size={10} color={COLORS.white} style={{ marginRight: 2 }} />
+                        <Text style={{ fontSize: 9, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+                      </View>
+                    )}
                     <Text style={styles.mapPreviewAddress} numberOfLines={1}>{selectedMapProperty.address_line}, {selectedMapProperty.city}</Text>
                     {selectedMapProperty.distanceKm != null && (
                       <Text style={styles.mapPreviewDistance}>

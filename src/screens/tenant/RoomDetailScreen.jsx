@@ -187,7 +187,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          {room?.size_sqm && (
+          {!!room?.size_sqm && (
             <View style={styles.metaRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
@@ -200,7 +200,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
             </View>
           )}
 
-          {(getLocalizedField(room, 'description') || room?.description) && (
+          {!!(getLocalizedField(room, 'description') || room?.description) && (
             <View style={styles.descriptionCard}>
               <Text style={styles.descriptionText}>{getLocalizedField(room, 'description')}</Text>
             </View>
@@ -230,7 +230,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
                       />
                       <View>
                         <DynamicText style={styles.facilityName}>{getLocalizedField(fac, 'name')}</DynamicText>
-                        {fac.additional_cost && (
+                        {!!fac.additional_cost && (
                           <Text style={styles.additionalCost}>
                             +{formatCurrency(fac.additional_cost)}
                           </Text>
@@ -245,7 +245,7 @@ const RoomDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Property Rules */}
-        {property?.rules && (
+        {!!property?.rules && (
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
               <Ionicons name="document-text" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />

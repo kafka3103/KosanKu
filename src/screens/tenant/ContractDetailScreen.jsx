@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
 import { getLocalizedField } from '../../utils/useLocalizedField';
+import useAuthStore from '../../store/authStore';
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
@@ -44,6 +45,7 @@ const getStatusConfig = (status, t) => {
 const ContractDetailScreen = ({ route, navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { currentUser } = useAuthStore();
   const { request } = route.params || {};
 
   if (!request) {
@@ -151,7 +153,13 @@ const ContractDetailScreen = ({ route, navigation }) => {
               />
             ) : (
               <View style={styles.roomPhotoPlaceholder}>
-                <Ionicons name="bed-outline" size={32} color={COLORS.textTertiary} />
+                <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
+              </View>
+            )}
+            {property?.owner_id === currentUser?.id && (
+              <View style={{ position: 'absolute', top: 0, left: 0, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
+                <Text style={{ fontSize: 10, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
               </View>
             )}
             <View style={styles.roomInfo}>

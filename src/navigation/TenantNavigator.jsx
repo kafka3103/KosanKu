@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -199,9 +199,13 @@ const TenantDrawerContent = ({ navigation }) => {
     <View style={[styles.drawerContainer, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>
-          <Text style={styles.drawerAvatarText}>
-            {currentUser?.full_name?.[0]?.toUpperCase() ?? 'T'}
-          </Text>
+          {currentUser?.avatar_url ? (
+            <Image source={{ uri: currentUser.avatar_url }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+          ) : (
+            <Text style={styles.drawerAvatarText}>
+              {currentUser?.full_name?.[0]?.toUpperCase() ?? 'T'}
+            </Text>
+          )}
         </View>
         <Text style={styles.drawerUserName}>{currentUser?.full_name ?? 'Tenant'}</Text>
         <Text style={styles.drawerUserRole}>{t('auth.register.roleTenant')}</Text>

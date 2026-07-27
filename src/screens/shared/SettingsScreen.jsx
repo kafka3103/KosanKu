@@ -151,9 +151,9 @@ const SettingsScreen = ({ navigation }) => {
     >
       <View style={styles.settingLeft}>
         <Text style={styles.settingLabel}>{label}</Text>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
+        {!!value && <Text style={styles.settingValue}>{value}</Text>}
       </View>
-      {rightElement ?? (showArrow && onPress && <Text style={styles.settingArrow}>›</Text>)}
+      {rightElement ?? (!!showArrow && !!onPress && <Text style={styles.settingArrow}>›</Text>)}
     </TouchableOpacity>
   );
 

@@ -114,10 +114,10 @@ const NotifCard = ({ notif, onRead, i18n, t }) => {
 };
 
 const NotificationScreen = () => {
+  const { currentUser, userRole } = useAuthStore();
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { currentUser } = useAuthStore();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -136,8 +136,17 @@ const NotificationScreen = () => {
 
     let mergedList = dbNotifs ?? [];
 
+    const TENANT_NOTIF_TYPES = ['invoice_generated', 'rental_request_approved', 'rental_request_rejected', 'invoice_due_soon', 'invoice_overdue'];
+    const OWNER_NOTIF_TYPES = ['rental_request_new', 'tenant_runaway'];
+
+    if (userRole === 'owner') {
+      mergedList = mergedList.filter(n => !TENANT_NOTIF_TYPES.includes(n.type));
+    } else if (userRole === 'tenant') {
+      mergedList = mergedList.filter(n => !OWNER_NOTIF_TYPES.includes(n.type));
+    }
+
     // Jika Owner, ambil langsung pengajuan sewa pending
-    if (currentUser.role === 'owner') {
+    if (userRole === 'owner') {
       const { data: pendingReqs } = await supabaseClient
         .from('rental_requests')
         .select('*')
@@ -227,7 +236,7 @@ const NotificationScreen = () => {
     }
 
     // Jika Tenant, ambil SEMUA pengajuan sewa (pending, approved, rejected) + tagihan unpaid
-    if (currentUser.role === 'tenant') {
+    if (userRole === 'tenant') {
       await useNotificationStore.getState().initVirtualReads();
       const isVirtualRead = useNotificationStore.getState().isVirtualRead;
 
@@ -388,52 +397,27 @@ const NotificationScreen = () => {
     if (!notif.is_read) {
       await handleMarkRead(notif.id);
     }
-    if (currentUser?.role === 'owner') {
-      if (notif.type === 'rental_request_new' || notif.reference_type === 'rental_request') {
+    
+    if (userRole === 'owner') {
+      if (notif.type === 'rental_request_new' || notif.type === 'rental_request_pending' || notif.reference_type === 'rental_request') {
         navigation.navigate('RentalRequest');
       } else if (notif.reference_type === 'invoice') {
         navigation.navigate('OwnerInvoiceList');
+      } else {
+        // Fallback for owner
+        navigation.navigate('OwnerMain');
       }
-    } else if (currentUser?.role === 'tenant') {
-      if (notif.type === 'rental_request_approved' || notif.reference_type === 'invoice' || notif.reference_type === 'rental_request') {
-        if (notif.reference_id && notif.reference_type === 'invoice') {
-          try {
-            // Fetch the invoice to get contract_id, then get rental_request_id
-            const { data: invData } = await supabaseClient.from('invoices').select('contract_id').eq('id', notif.reference_id).single();
-            if (invData?.contract_id) {
-              const { data: contractData } = await supabaseClient.from('contracts').select('rental_request_id').eq('id', invData.contract_id).single();
-              if (contractData?.rental_request_id) {
-                const { data: reqData } = await supabaseClient
-                  .from('rental_requests')
-                  .select(`
-                    *,
-                    contracts (
-                      id, start_date, end_date, status, monthly_rate,
-
-                      invoices (id, status, total_amount, paid_amount, due_date, billing_period)
-                    ),
-                    rooms(
-                      room_number, base_price, photo_urls,
-                      room_facilities(facility_master(name, icon_name)),
-                      properties(name, address_line, city, cover_photo_url, general_facilities, users(full_name, phone_number))
-                    )
-                  `)
-                  .eq('id', contractData.rental_request_id)
-                  .single();
-                  
-                if (reqData) {
-                  navigation.navigate('MyRentStack', {
-                    screen: 'ContractDetailScreen',
-                    params: { request: reqData },
-                  });
-                  return;
-                }
-              }
-            }
-          } catch (e) {
-            console.error('Failed to fetch request for notification', e);
-          }
-        } else if (notif.reference_id && notif.reference_type === 'rental_request') {
+    } else if (userRole === 'tenant') {
+      if (notif.reference_type === 'invoice') {
+        if (notif.reference_id) {
+          navigation.navigate('MyRentStack', {
+            screen: 'InvoiceDetail',
+            params: { invoiceId: notif.reference_id },
+          });
+          return;
+        }
+      } else if (notif.type === 'rental_request_approved' || notif.reference_type === 'rental_request') {
+        if (notif.reference_id) {
           try {
             const { data: reqData } = await supabaseClient
               .from('rental_requests')
@@ -441,7 +425,6 @@ const NotificationScreen = () => {
                 *,
                 contracts (
                   id, start_date, end_date, status, monthly_rate,
-
                   invoices (id, status, total_amount, paid_amount, due_date, billing_period)
                 ),
                 rooms(
@@ -464,9 +447,11 @@ const NotificationScreen = () => {
             console.error('Failed to fetch request for notification', e);
           }
         }
-        
         navigation.navigate('MyRentStack');
       } else if (notif.type === 'rental_request_rejected' || notif.type === 'rental_request_pending') {
+        navigation.navigate('MyRentStack');
+      } else {
+        // Fallback for tenant
         navigation.navigate('MyRentStack');
       }
     }

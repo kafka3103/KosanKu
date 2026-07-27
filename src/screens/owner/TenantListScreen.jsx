@@ -82,7 +82,7 @@ const TenantCard = ({ contract, onCall, onWhatsApp, t, i18n }) => {
           <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
           <Text style={styles.tenantContact}>{tenant?.phone_number ?? tenant?.email ?? '—'}</Text>
         </View>
-        {tenant?.phone_number && (
+        {!!tenant?.phone_number && (
           <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
             <TouchableOpacity
               style={[styles.callBtn, { backgroundColor: '#25D366' + '20' }]}
@@ -154,6 +154,12 @@ const TenantListScreen = ({ navigation }) => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
     const { data, error } = await getOwnerActiveTenants(currentUser.id);
+    console.log('[DEBUG TenantListScreen] loadTenants for owner:', currentUser.id);
+    console.log('[DEBUG TenantListScreen] Contracts data:', data ? data.length : null, 'Error:', error);
+    if (data) {
+      console.log('[DEBUG TenantListScreen] Contracts detail:', JSON.stringify(data, null, 2));
+    }
+    
     if (!error && data) setContracts(data);
     setIsLoading(false);
     setIsRefreshing(false);

@@ -17,7 +17,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -218,9 +218,13 @@ const OwnerDrawerContent = ({ navigation }) => {
       {/* Header Drawer */}
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>
-          <Text style={styles.drawerAvatarText}>
-            {currentUser?.full_name?.[0]?.toUpperCase() ?? 'O'}
-          </Text>
+          {currentUser?.avatar_url ? (
+            <Image source={{ uri: currentUser.avatar_url }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+          ) : (
+            <Text style={styles.drawerAvatarText}>
+              {currentUser?.full_name?.[0]?.toUpperCase() ?? 'O'}
+            </Text>
+          )}
         </View>
         <Text style={styles.drawerUserName}>{currentUser?.full_name ?? 'Owner'}</Text>
         <Text style={styles.drawerUserRole}>{t('auth.register.roleOwner')}</Text>

@@ -373,6 +373,12 @@ const MyRentScreen = ({ navigation }) => {
                   <Ionicons name="bed-outline" size={48} color={COLORS.textTertiary} />
                 </View>
               )}
+              {property?.owner_id === currentUser?.id && (
+                <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
+                  <Text style={{ fontSize: 10, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+                </View>
+              )}
               <View style={styles.roomInfo}>
                 <Text style={styles.roomPropertyName}>{property?.name}</Text>
                 <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>

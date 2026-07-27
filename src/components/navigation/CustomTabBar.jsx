@@ -100,13 +100,12 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   // Sembunyikan tab bar jika layar yang aktif meminta display: 'none'
   const activeRoute = state.routes[state.index];
   const { options } = descriptors[activeRoute.key];
-  if (options.tabBarStyle?.display === 'none') {
-    return null;
-  }
+  const isHidden = options.tabBarStyle?.display === 'none';
 
   return (
     <View
       style={{
+        display: isHidden ? 'none' : 'flex',
         position: 'absolute',
         bottom: insets.bottom + 16,
         left: TAB_BAR_MARGIN_LEFT,

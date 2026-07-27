@@ -226,6 +226,10 @@ const ProfileScreen = ({ navigation }) => {
       Alert.alert(t('common.buttons.error', 'Error'), t('profile.nameReq', 'Nama Lengkap wajib diisi'));
       return;
     }
+    if (!phoneNumber.trim()) {
+      Alert.alert(t('common.buttons.error', 'Error'), t('profile.phoneReq', 'Nomor Telepon wajib diisi'));
+      return;
+    }
     setIsSaving(true);
     const { data, error } = await updateUserProfile(currentUser.id, {
       full_name: fullName.trim(),
@@ -372,7 +376,7 @@ const ProfileScreen = ({ navigation }) => {
         />
         <InfoRow label={t('profile.emailLabel', 'Email')} value={profile?.email ?? currentUser?.email} icon="mail-outline" />
         <EditableInfoRow
-          label={t('profile.phoneLabel', 'Nomor Telepon')}
+          label={t('profile.phoneLabel', 'Nomor Telepon') + ' *'}
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           icon="call-outline"

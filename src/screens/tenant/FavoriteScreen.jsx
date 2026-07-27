@@ -36,7 +36,7 @@ const formatCurrency = (amount) =>
     maximumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const FavoriteCard = ({ favorite, onPress, onRemove, t }) => {
+const FavoriteCard = ({ favorite, onPress, onRemove, t, currentUser }) => {
   const property = favorite.properties;
   const rooms = property?.rooms ?? [];
   const availableRooms = rooms.filter((r) => r.status === 'available');
@@ -44,8 +44,10 @@ const FavoriteCard = ({ favorite, onPress, onRemove, t }) => {
     ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0)))
     : null;
 
+  const isOwnProperty = property?.owner_id === currentUser?.id;
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.card, isOwnProperty && { borderColor: COLORS.primary, borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
       {/* Photo */}
       <View style={styles.photoContainer}>
         {property?.cover_photo_url ? (
@@ -56,8 +58,14 @@ const FavoriteCard = ({ favorite, onPress, onRemove, t }) => {
           </View>
         )}
         <TouchableOpacity style={styles.heartBtn} onPress={onRemove} activeOpacity={0.7}>
-          <Text style={styles.heartText}>❤️</Text>
+          <Ionicons name="heart" size={20} color={COLORS.error} />
         </TouchableOpacity>
+        {isOwnProperty && (
+          <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
+            <Text style={{ fontSize: 10, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+          </View>
+        )}
         {availableRooms.length > 0 && (
           <View style={styles.availableBadge}>
             <Text style={styles.availableBadgeText}>{t('favorites.available', '{{count}} tersedia', { count: availableRooms.length })}</Text>
@@ -182,6 +190,7 @@ const FavoriteScreen = ({ navigation }) => {
           <FavoriteCard
             favorite={item}
             t={t}
+            currentUser={currentUser}
             onPress={() =>
               navigation.navigate(TENANT_SCREENS.SEARCH_STACK, {
                 screen: TENANT_SCREENS.PROPERTY_DETAIL,

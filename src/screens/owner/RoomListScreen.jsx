@@ -64,7 +64,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
       {/* Price & Size */}
       <View style={styles.roomMeta}>
         <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
-        {room.size_sqm && (
+        {!!room.size_sqm && (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
             <Text style={styles.roomSize}>{room.size_sqm} m²</Text>

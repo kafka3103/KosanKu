@@ -196,7 +196,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         </View>
         <Text style={styles.infoText}>{property?.address_line}</Text>
         <Text style={styles.infoText}>{property?.district ? `${property.district}, ` : ''}{property?.city}</Text>
-        {property?.postal_code && <Text style={styles.infoText}>{t('propertyDetail.postalCode', 'Kode Pos: ')}{property.postal_code}</Text>}
+        {!!property?.postal_code && <Text style={styles.infoText}>{t('propertyDetail.postalCode', 'Kode Pos: ')}{property.postal_code}</Text>}
 
         {property?.latitude != null && property?.longitude != null && (
           <View style={{ borderRadius: BORDER_RADIUS.md, overflow: 'hidden', marginTop: SPACING[3], borderWidth: 1, borderColor: COLORS.border, height: 200 }}>
@@ -276,7 +276,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           </Text>
         </View>
       </View>
-      {(getLocalizedField(property, 'rules') || property?.rules) && (
+      {!!(getLocalizedField(property, 'rules') || property?.rules) && (
         <View style={styles.rulesCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
@@ -287,7 +287,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           ))}
         </View>
       )}
-      {property?.description && (
+      {!!property?.description && (
         <View style={styles.infoCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="information-circle" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
@@ -311,7 +311,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             <Text style={styles.ownerName}>{property?.users?.full_name ?? '—'}</Text>
             <Text style={styles.ownerPhone}>{property?.users?.phone_number ?? '—'}</Text>
           </View>
-          {property?.users?.phone_number && (
+          {!!property?.users?.phone_number && (
             <TouchableOpacity 
               style={{ backgroundColor: '#25D366', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
               onPress={() => {
@@ -343,7 +343,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           ))}
         </View>
       )}
-      {(getLocalizedField(property, 'rules') || property?.rules) && (
+      {!!(getLocalizedField(property, 'rules') || property?.rules) && (
         <View style={styles.rulesCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
@@ -393,7 +393,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.reviewStarText}>{Number(rev.average_rating).toFixed(1)}</Text>
               </View>
             </View>
-            {(getLocalizedField(rev, 'comment') || rev.comment) && <Text style={styles.reviewComment}>{getLocalizedField(rev, 'comment')}</Text>}
+            {!!(getLocalizedField(rev, 'comment') || rev.comment) && <Text style={styles.reviewComment}>{getLocalizedField(rev, 'comment')}</Text>}
           </View>
         ))
       )}
@@ -451,6 +451,13 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <View style={styles.availableBadge}>
             <Text style={styles.availableBadgeText}>{t('propertyDetail.roomsAvailable', '{{count}} kamar tersedia', { count: availableRooms.length })}</Text>
           </View>
+
+          {property?.owner_id === currentUser?.id && (
+            <View style={{ position: 'absolute', top: insets.top + 16, left: 16, backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="key" size={14} color={COLORS.white} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 12, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+            </View>
+          )}
         </View>
 
         {/* Property Name & Address */}
