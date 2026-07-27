@@ -429,7 +429,7 @@ const NotificationScreen = () => {
                 ),
                 rooms(
                   room_number, base_price, photo_urls,
-                  room_facilities(facility_master(name, icon_name)),
+                  room_facilities(facility_master(name)),
                   properties(name, address_line, city, cover_photo_url, general_facilities, users(full_name, phone_number))
                 )
               `)

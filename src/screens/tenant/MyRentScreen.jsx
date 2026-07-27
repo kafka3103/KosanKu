@@ -518,7 +518,7 @@ const MyRentScreen = ({ navigation }) => {
                     onPress={() => handleRequestFacility(facility.id)}
                   >
                     <View style={styles.facilityOptionLeft}>
-                      <Ionicons name={FACILITY_ICON_MAP[facility.icon_name] || facility.icon_name || 'apps'} size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
+                      <Ionicons name="apps-outline" size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
                       <View style={{ marginLeft: 12 }}>
                         <DynamicText style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</DynamicText>
                         {isAlreadyActive ? (

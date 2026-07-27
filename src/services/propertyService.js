@@ -219,7 +219,7 @@ export const getPropertyRooms = async (propertyId) => {
       *,
       room_facilities(
         *,
-        facility_master(name, icon_name, category)
+        facility_master(name, category)
       )
     `)
     .eq('property_id', propertyId)
@@ -814,7 +814,7 @@ export const getOwnerActiveTenants = async (ownerId) => {
 /**
  * Tambahkan fasilitas baru ke master fasilitas
  *
- * @param {Object} facilityData - { name, icon_name, description, category }
+ * @param {Object} facilityData - { name, category }
  */
 export const createFacilityMaster = async (facilityData) => {
   const { data, error } = await supabaseClient
@@ -830,7 +830,7 @@ export const createFacilityMaster = async (facilityData) => {
  * Perbarui data fasilitas master
  *
  * @param {string} facilityId
- * @param {Object} updates - { name, icon_name, description, category }
+ * @param {Object} updates - { name, category }
  */
 export const updateFacilityMaster = async (facilityId, updates) => {
   const { data, error } = await supabaseClient

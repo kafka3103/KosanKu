@@ -98,7 +98,7 @@ export const getTenantActiveContract = async (tenantId) => {
         base_price,
         photo_urls,
         room_facilities(
-          facility_master(name, icon_name)
+          facility_master(name)
         ),
         properties(
           name,
@@ -150,7 +150,7 @@ export const getContractById = async (contractId) => {
       *,
       rooms(
         *,
-        room_facilities(facility_master(name, icon_name)),
+        room_facilities(facility_master(name)),
         properties(*)
       ),
       users!contracts_tenant_id_fkey(full_name, phone_number, email, avatar_url),
@@ -203,7 +203,7 @@ export const getContractFacilities = async (contractId) => {
     .from('contract_facilities')
     .select(`
       *,
-      facility_master(name, icon_name)
+      facility_master(name)
     `)
     .eq('contract_id', contractId)
     .order('created_at', { ascending: true });
