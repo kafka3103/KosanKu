@@ -123,6 +123,7 @@ const SettingsScreen = ({ navigation }) => {
       ]);
     }
   };
+
   const handleLogout = () => {
     Alert.alert(t('settings.logoutTitle', 'Keluar'), t('settings.logoutConfirm', 'Yakin ingin keluar dari akun?'), [
       { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
@@ -167,33 +168,34 @@ const SettingsScreen = ({ navigation }) => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}>
         {/* Notifikasi */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.notifications.title', 'Notifikasi')}</Text>
-          <SettingRow
-            icon="notifications-outline"
-            label={t('settings.notifications.push')}
-            rightElement={
-              <Switch
-                value={notifEnabled}
-                onValueChange={setNotifEnabled}
-                trackColor={{ false: COLORS.grey300, true: COLORS.primary }}
-                thumbColor={COLORS.white}
-              />
-            }
-          />
-          <SettingRow
-            icon="mail-outline"
-            label={t('settings.notifications.email')}
-            rightElement={
-              <Switch
-                value={emailNotif}
-                onValueChange={setEmailNotif}
-                trackColor={{ false: COLORS.grey300, true: COLORS.primary }}
-                thumbColor={COLORS.white}
-              />
-            }
-          />
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('settings.notifications.title', 'Notifikasi')}</Text>
+        <SettingRow
+          icon="notifications-outline"
+          label={t('settings.notifications.push')}
+          rightElement={
+            <Switch
+              value={notifEnabled}
+              onValueChange={setNotifEnabled}
+              trackColor={{ false: COLORS.grey300, true: COLORS.primary }}
+              thumbColor={COLORS.white}
+            />
+          }
+        />
+
+        <SettingRow
+          icon="mail-outline"
+          label={t('settings.notifications.email')}
+          rightElement={
+            <Switch
+              value={emailNotif}
+              onValueChange={setEmailNotif}
+              trackColor={{ false: COLORS.grey300, true: COLORS.primary }}
+              thumbColor={COLORS.white}
+            />
+          }
+        />
+      </View>
 
         {/* Preferensi */}
         <View style={styles.section}>

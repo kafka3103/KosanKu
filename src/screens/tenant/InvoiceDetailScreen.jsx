@@ -12,6 +12,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
@@ -150,12 +151,12 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('invoiceDetail.title', 'Detail Tagihan')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.white} style={{ marginRight: 12 }} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t('invoiceDetail.title', 'Detail Tagihan')}</Text>
+          </View>
           <Text style={styles.invoiceNumber}>{invoice.invoice_number}</Text>
         </View>
 
@@ -251,7 +252,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
 
       {/* Payment CTA */}
       {['unpaid', 'partial', 'overdue'].includes(invoice.status) && (
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : (Platform.OS === 'android' ? 48 : 24) }]}>
           <View style={{ flex: 1, marginRight: SPACING[3] }}>
             <Text style={styles.bottomLabel}>
               {invoice.status === 'partial' ? t('invoiceDetail.remainAmount', 'Sisa Tagihan yang Harus Dibayar') : t('invoiceDetail.totalAmount', 'Total Tagihan Pembayaran')}
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[2] },
+  backBtn: { },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -408,7 +409,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING[5],
-    paddingVertical: SPACING[4],
+    paddingTop: SPACING[4],
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     ...SHADOW.xl,
