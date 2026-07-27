@@ -34,7 +34,6 @@ export const searchProperties = async (filters = {}) => {
 
   // Gunakan rooms!inner HANYA jika filter spesifik kamar (minPrice, maxPrice, atau roomType) sedang aktif digunakan
   const hasRoomFilter = minPrice != null || maxPrice != null;
-  const hasRoomFilter = minPrice != null || maxPrice != null;
   const roomsRelation = hasRoomFilter ? 'rooms!inner' : 'rooms';
 
   let query = supabaseClient
