@@ -31,10 +31,10 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
   const { currentUser, setAuthenticatedUser, currentSession, switchRole } = useAuthStore();
 
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Owner States
   const [identityPhoto, setIdentityPhoto] = useState(null);
-  
+
   // Tenant States
   const [occupation, setOccupation] = useState('');
   const [emergencyName, setEmergencyName] = useState('');
@@ -65,7 +65,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Silakan unggah foto kartu identitas (KTP/SIM/Paspor/KTM).');
       return;
     }
-    
+
     setIsLoading(true);
     const { path, error: uploadError } = await uploadKtpPhoto(currentUser.id, identityPhoto);
     if (uploadError) {
@@ -73,17 +73,17 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Gagal mengunggah foto identitas.');
       return;
     }
-    
+
     const { data: ownerData, error: ownerError } = await upsertOwnerProfile(currentUser.id, {
       ktp_photo_url: path
     });
-    
+
     if (ownerError) {
       setIsLoading(false);
       Alert.alert('Gagal', 'Gagal menyimpan profil pemilik.');
       return;
     }
-    
+
     if (isCompletingProfile) {
       setIsLoading(false);
       Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi!', [
@@ -93,13 +93,13 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     }
 
     const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.BOTH });
-    
+
     setIsLoading(false);
     if (userError) {
       Alert.alert('Gagal', 'Gagal mengubah mode akun.');
       return;
     }
-    
+
     Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan!', [
       {
         text: 'OK',
@@ -119,20 +119,20 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
       Alert.alert('Gagal', 'Harap lengkapi semua data.');
       return;
     }
-    
+
     setIsLoading(true);
     const { data: tenantData, error: tenantError } = await upsertTenantProfile(currentUser.id, {
       occupation,
       emergency_contact_name: emergencyName,
       emergency_contact_phone: emergencyPhone
     });
-    
+
     if (tenantError) {
       setIsLoading(false);
       Alert.alert('Gagal', 'Gagal menyimpan profil pencari kos.');
       return;
     }
-    
+
     if (isCompletingProfile) {
       setIsLoading(false);
       Alert.alert('Berhasil', 'Profil Pencari Kos berhasil dilengkapi!', [
@@ -142,13 +142,13 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     }
 
     const { data: userData, error: userError } = await updateUserProfile(currentUser.id, { role: USER_ROLE.BOTH });
-    
+
     setIsLoading(false);
     if (userError) {
       Alert.alert('Gagal', 'Gagal mengubah mode akun.');
       return;
     }
-    
+
     Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pencari Kosan!', [
       {
         text: 'OK',
@@ -170,8 +170,8 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
+          <TouchableOpacity
+            style={styles.backBtn}
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
@@ -210,7 +210,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
           ) : (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Lengkapi Profil Pencari Kos</Text>
-              
+
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Pekerjaan / Status</Text>
                 <TextInput
@@ -220,7 +220,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
                   onChangeText={setOccupation}
                 />
               </View>
-              
+
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Nama Kontak Darurat</Text>
                 <TextInput

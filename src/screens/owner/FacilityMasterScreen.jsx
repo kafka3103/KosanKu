@@ -238,7 +238,7 @@ const FacilityMasterScreen = ({ navigation }) => {
       />
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={openAdd} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { bottom: Math.max((insets?.bottom || 0) + 16, 30) }]} onPress={openAdd} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={COLORS.white} />
       </TouchableOpacity>
 
@@ -405,7 +405,6 @@ const styles = StyleSheet.create({
 
   fab: {
     position: 'absolute',
-    bottom: 30,
     right: 24,
     width: 58,
     height: 58,

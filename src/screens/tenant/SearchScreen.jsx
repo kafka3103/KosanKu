@@ -656,7 +656,7 @@ const SearchScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING[6] }}>
               {/* Kota */}
               <Text style={styles.filterLabel}>{t('searchScreen.city', 'Kota')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
