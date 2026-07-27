@@ -817,9 +817,16 @@ export const getOwnerActiveTenants = async (ownerId) => {
  * @param {Object} facilityData - { name, category }
  */
 export const createFacilityMaster = async (facilityData) => {
+  const translated = await translateMultipleFields({ name: facilityData.name });
+
+  const finalData = {
+    ...facilityData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .insert(facilityData)
+    .insert(finalData)
     .select()
     .single();
 
@@ -833,9 +840,16 @@ export const createFacilityMaster = async (facilityData) => {
  * @param {Object} updates - { name, category }
  */
 export const updateFacilityMaster = async (facilityId, updates) => {
+  let finalData = { ...updates };
+  
+  if (updates.name) {
+    const translated = await translateMultipleFields({ name: updates.name });
+    finalData = { ...finalData, ...translated };
+  }
+
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .update(updates)
+    .update(finalData)
     .eq('id', facilityId)
     .select()
     .single();

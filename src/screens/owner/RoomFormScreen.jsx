@@ -36,9 +36,10 @@ import {
   setBulkRoomFacilities,
   uploadMultipleRoomPhotos,
 } from '../../services/propertyService';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 const RoomFormScreen = ({ navigation, route }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const existingRoom = route.params?.room ?? null;
   const propertyId = route.params?.propertyId;
   const isEdit = !!existingRoom;
@@ -475,7 +476,7 @@ const RoomFormScreen = ({ navigation, route }) => {
                             isSelected && styles.facilityNameSelected,
                           ]}
                         >
-                          {fac.name}
+                          {getLocalizedField(fac, 'name')}
                         </Text>
                         {isSelected && (
                           <Text style={styles.facilityCheck}>✓</Text>

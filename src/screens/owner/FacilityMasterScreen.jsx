@@ -35,6 +35,7 @@ import {
   deleteFacilityMaster,
 } from '../../services/propertyService';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 const INITIAL_FORM = {
   name: '',
@@ -203,7 +204,7 @@ const FacilityMasterScreen = ({ navigation }) => {
           return (
             <View style={styles.facilityCard}>
               <View style={styles.facilityInfo}>
-                <Text style={styles.facilityName}>{item.name}</Text>
+                <Text style={styles.facilityName}>{getLocalizedField(item, 'name')}</Text>
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryText}>
                     {item.category === 'general' ? t('facilityMaster.catGeneral', 'Umum') : 
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
   },
   infoText: { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.info ?? '#1D4ED8', lineHeight: 18 },
 
-  filterRow: { flexDirection: 'row', paddingHorizontal: SPACING[4], paddingBottom: SPACING[2], gap: SPACING[2] },
+  filterRow: { flexDirection: 'row', paddingHorizontal: SPACING[4], paddingTop: SPACING[4], paddingBottom: SPACING[2], gap: SPACING[2] },
   filterChip: { paddingHorizontal: SPACING[4], paddingVertical: SPACING[2], borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
   filterChipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
   filterChipText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },

@@ -211,7 +211,7 @@ const ContractDetailScreen = ({ route, navigation }) => {
             {activeContractFacilities.map((cf) => (
               <View key={cf.id} style={styles.optionalFacilityItem}>
                 <Text style={styles.optionalFacilityName}>
-                  {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
+                  {cf.custom_facility_name || (cf.facility_master ? getLocalizedField(cf.facility_master, 'name') : null) || t('myRent.optionalFacility', 'Fasilitas Opsional')}
                 </Text>
                 <Text style={styles.optionalFacilityPrice}>
                   {formatCurrency(cf.price_per_month)}{t('roomDetail.perMonth', '/bulan')}
@@ -222,7 +222,7 @@ const ContractDetailScreen = ({ route, navigation }) => {
             {requestedContractFacilities.map((cf) => (
               <View key={cf.id} style={styles.optionalFacilityItem}>
                 <Text style={[styles.optionalFacilityName, { color: COLORS.textSecondary }]}>
-                  {cf.custom_facility_name || cf.facility_master?.name || t('myRent.optionalFacility', 'Fasilitas Opsional')}
+                  {cf.custom_facility_name || (cf.facility_master ? getLocalizedField(cf.facility_master, 'name') : null) || t('myRent.optionalFacility', 'Fasilitas Opsional')}
                 </Text>
                 <View style={styles.requestBadgeInline}>
                   <Text style={styles.requestBadgeTextInline}>{t('myRent.waitingConfirm', 'Menunggu Konfirmasi')}</Text>

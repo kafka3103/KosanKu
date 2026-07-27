@@ -15,10 +15,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
-import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';

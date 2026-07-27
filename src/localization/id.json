@@ -707,6 +707,7 @@
     "nameLabel": "Nama Fasilitas *",
     "namePlaceholder": "Misal: WiFi 100 Mbps, AC 1 PK, dll",
     "categoryLabel": "Kategori",
+    "filterAll": "Semua Kategori",
     "catGeneral": "Umum",
     "catOptional": "Opsional",
     "catRoom": "Kamar",

@@ -37,6 +37,7 @@ import { getTenantRentalRequests } from '../../services/searchService';
 import { subscribeToUserInvoicesRealtime } from '../../services/xenditService';
 import { getFacilityMaster, requestOptionalFacility } from '../../services/propertyService';
 import { TENANT_SCREENS } from '../../constants/screenNames';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -520,7 +521,7 @@ const MyRentScreen = ({ navigation }) => {
                     <View style={styles.facilityOptionLeft}>
                       <Ionicons name="apps-outline" size={24} color={disabled ? COLORS.textTertiary : COLORS.primary} />
                       <View style={{ marginLeft: 12 }}>
-                        <DynamicText style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{facility.name}</DynamicText>
+                        <DynamicText style={[styles.facilityOptionName, disabled && { color: COLORS.textTertiary }]}>{getLocalizedField(facility, 'name')}</DynamicText>
                         {isAlreadyActive ? (
                           <Text style={styles.facilityOptionStatus}>{t('myRent.installed', 'Sudah terpasang')}</Text>
                         ) : isAlreadyRequested ? (

@@ -40,6 +40,7 @@ import {
   uploadMultiplePropertyPhotos,
   getFacilityMaster,
 } from '../../services/propertyService';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 const GENDER_OPTIONS = (t) => [
   { value: 'male', label: t('property.form.genderMale', 'Putra'), icon: 'man-outline' },
@@ -762,7 +763,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                         isSelected && styles.facilityLabelSelected,
                       ]}
                     >
-                      {fac.name}
+                      {getLocalizedField(fac, 'name')}
                     </Text>
                   </TouchableOpacity>
                 );

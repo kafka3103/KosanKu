@@ -707,6 +707,7 @@
     "nameLabel": "Facility Name *",
     "namePlaceholder": "e.g., 100 Mbps WiFi, AC, etc.",
     "categoryLabel": "Category",
+    "filterAll": "All Categories",
     "catGeneral": "General",
     "catOptional": "Optional",
     "catRoom": "Room",
