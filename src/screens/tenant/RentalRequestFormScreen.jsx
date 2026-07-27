@@ -82,7 +82,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const handleSubmit = async () => {
     if (!isNiksLocked) {
       if (!tenantNIK || tenantNIK.length !== 16 || !/^\d+$/.test(tenantNIK)) {
-        Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
+        Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));
         return;
       }
     }
@@ -100,7 +100,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
               if (!isNiksLocked) {
                 const isUnique = await checkNikUnique(tenantNIK, currentUser.id);
                 if (!isUnique) {
-                   Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain.');
+                   Alert.alert(t('common.fail', 'Gagal'), t('common.duplicateNik', 'NIK sudah terdaftar pada akun lain.'));
                    setIsLoading(false);
                    return;
                 }
@@ -132,8 +132,8 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
               // Panggil Local Notification sebagai pemberitahuan lokal di HP penyewa
               scheduleLocalNotification(
-                "Pengajuan Berhasil Dikirim!",
-                `Pemilik kos ${property?.name} akan meninjau pengajuan Anda dalam waktu 3 hari.`,
+                t('rental.request.localNotifTitle', 'Pengajuan Berhasil Dikirim!'),
+                t('rental.request.localNotifBody', 'Pemilik kos {{property}} akan meninjau pengajuan Anda dalam waktu 3 hari.', { property: property?.name }),
                 { type: 'rental_request', status: 'pending' },
                 2
               );

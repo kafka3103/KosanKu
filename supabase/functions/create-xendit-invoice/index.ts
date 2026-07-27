@@ -109,8 +109,8 @@ serve(async (req) => {
       } 
       // Validasi 3: Cegah Underpayment cicilan (Min 10% sisa atau 100rb)
       else {
-        let minPayment = Math.max(100000, remainingAmount * 0.1);
-        if (remainingAmount <= 100000) {
+        let minPayment = Math.max(50000, remainingAmount * 0.1);
+        if (remainingAmount <= 50000) {
           minPayment = remainingAmount; // Wajib lunas jika sisa dikit
         }
         

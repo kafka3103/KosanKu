@@ -65,7 +65,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
 
   const handleRegisterOwner = async () => {
     if (!ktpNumber || ktpNumber.length !== 16 || !/^\d+$/.test(ktpNumber)) {
-      Alert.alert('Gagal', 'NIK harus terdiri dari 16 digit angka.');
+      Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));
       return;
     }
     
@@ -75,7 +75,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     const isUnique = await checkNikUnique(ktpNumber, currentUser.id);
     if (!isUnique) {
       setIsLoading(false);
-      Alert.alert('Gagal', 'NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.');
+      Alert.alert(t('common.fail', 'Gagal'), t('roleRegistration.duplicateNik', 'NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.'));
       return;
     }
 
@@ -87,7 +87,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     
     if (ownerError) {
       setIsLoading(false);
-      Alert.alert('Gagal', 'Gagal menyimpan profil pemilik.');
+      Alert.alert(t('common.fail', 'Gagal'), t('roleRegistration.saveFail', 'Gagal menyimpan profil pemilik.'));
       return;
     }
 
@@ -106,7 +106,7 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     
     if (isCompletingProfile) {
       setIsLoading(false);
-      Alert.alert('Berhasil', 'Profil Pemilik berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.', [
+      Alert.alert(t('common.success', 'Berhasil'), t('roleRegistration.profileCompleteMsg', 'Profil Pemilik berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.'), [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
       return;
@@ -116,11 +116,11 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
     
     setIsLoading(false);
     if (userError) {
-      Alert.alert('Gagal', 'Gagal mengubah mode akun.');
+      Alert.alert(t('common.fail', 'Gagal'), t('roleRegistration.updateRoleFail', 'Gagal mengubah mode akun.'));
       return;
     }
     
-    Alert.alert('Berhasil', 'Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda sedang diverifikasi oleh admin.', [
+    Alert.alert(t('common.success', 'Berhasil'), t('roleRegistration.registerSuccessMsg', 'Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda sedang diverifikasi oleh admin.'), [
       {
         text: 'OK',
         onPress: () => {

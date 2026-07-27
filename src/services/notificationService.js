@@ -25,32 +25,10 @@ import i18n from '../localization/i18n';
  */
 const triggerPushNotification = async (userId, title, body, data = {}) => {
   try {
-    let pushTitle = title;
-    let pushBody = body;
-
-    // Coba translate title
-    if (i18n.exists(`dbNotification.${title}`)) {
-      pushTitle = i18n.t(`dbNotification.${title}`);
-    } else if (typeof title === 'string' && title.includes('_')) {
-      // Fallback bersihkan format key jika terjemahan tidak ditemukan
-      pushTitle = title.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    }
-
-    // Coba translate body (karena formatnya JSON { key, params })
-    try {
-      const parsed = JSON.parse(body);
-      if (parsed && parsed.key) {
-        if (i18n.exists(`dbNotification.${parsed.key}`)) {
-          pushBody = i18n.t(`dbNotification.${parsed.key}`, parsed.params || {});
-        } else {
-          // Fallback string bersih jika key terjemahan belum ada, JANGAN kirim JSON mentah ke HP
-          const paramValues = Object.values(parsed.params || {}).join(' - ');
-          pushBody = paramValues ? `Notifikasi: ${paramValues}` : 'Anda memiliki pemberitahuan baru / New notification';
-        }
-      }
-    } catch (e) {
-      // Abaikan jika bukan JSON
-    }
+    // Jangan terjemahkan title & body di sini!
+    // Biarkan Edge Function 'send-notification' yang menerjemahkan sesuai preferred_language user tujuan
+    const pushTitle = title;
+    const pushBody = body;
 
     const res = await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
       method: 'POST',

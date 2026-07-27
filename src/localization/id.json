@@ -355,7 +355,9 @@
       "endDateLabel": "Selesai",
       "tapToUpload": "Ketuk untuk ambil / pilih foto KTP",
       "removePhoto": "Hapus Foto",
-      "summaryTitle": "Ringkasan Pengajuan"
+      "summaryTitle": "Ringkasan Pengajuan",
+      "localNotifTitle": "Pengajuan Berhasil Dikirim!",
+      "localNotifBody": "Pemilik kos {{property}} akan meninjau pengajuan Anda dalam waktu 3 hari."
     },
     "review": {
       "title": "Tinjau Pengajuan",
@@ -1005,7 +1007,17 @@
     "contactSupport": "Hubungi Support",
     "accountSection": "Akun",
     "deleteAccountConfirm": "Konfirmasi Hapus Akun",
-    "deleteAccountPermanent": "Hapus Akun Permanen"
+    "deleteAccountPermanent": "Hapus Akun Permanen",
+    "deleteConfirmEmail": "Harap ketik {{email}} untuk konfirmasi.",
+    "deleteEmptyPassword": "Harap masukkan password Anda.",
+    "deleteWrongEmail": "Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.",
+    "deleteWrongPassword": "Password salah atau terjadi kesalahan.",
+    "deleteFailMsg": "Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id",
+    "deleteSuccessMsg": "Akun berhasil dihapus.",
+    "logoutTitle": "Keluar",
+    "logoutConfirm": "Yakin ingin keluar dari akun?",
+    "testNotifTitle": "Uji Coba Notifikasi",
+    "testNotifBody": "Ini adalah notifikasi lokal yang muncul setelah 5 detik."
   },
   "navigation": {
     "owner": {
@@ -1084,7 +1096,12 @@
     "success": "Berhasil",
     "error": "Error",
     "sent": "Terkirim",
-    "dataNotFound": "Data tidak ditemukan"
+    "dataNotFound": "Data tidak ditemukan",
+    "fail": "Gagal",
+    "invalidNikLength": "NIK harus terdiri dari 16 digit angka.",
+    "duplicateNik": "NIK sudah terdaftar pada akun lain.",
+    "notAllowed": "Tidak Diizinkan",
+    "all": "Semua"
   },
   "searchScreen": {
     "genderOptions": {
@@ -1188,7 +1205,8 @@
     "facilitiesTitle": "Fasilitas Kamar",
     "rulesTitle": "Peraturan Kosan",
     "priceLabel": "Harga/bulan",
-    "btnRent": "Ajukan Sewa"
+    "btnRent": "Ajukan Sewa",
+    "cannotRentOwn": "Anda tidak dapat menyewa properti milik sendiri."
   },
   "ownerRentalRequest": {
     "headerTitle": "Pengajuan Sewa",
@@ -1307,5 +1325,12 @@
   },
   "rentalRequest": {
     "identityGuarantee": "Jaminan Identitas"
+  },
+  "roleRegistration": {
+    "duplicateNik": "NIK sudah terdaftar pada akun lain. Gunakan NIK Anda sendiri.",
+    "saveFail": "Gagal menyimpan profil pemilik.",
+    "profileCompleteMsg": "Profil Pemilik berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.",
+    "updateRoleFail": "Gagal mengubah mode akun.",
+    "registerSuccessMsg": "Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda sedang diverifikasi oleh admin."
   }
 }
