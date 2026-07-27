@@ -303,6 +303,7 @@ const SearchScreen = ({ navigation }) => {
       minPrice: filterMinPrice ? parseFloat(filterMinPrice) : undefined,
       maxPrice: filterMaxPrice ? parseFloat(filterMaxPrice) : undefined,
     });
+    console.log('[SearchScreen] searchProperties result:', { dataLength: data?.length, error });
     if (!error && data) {
       const withDistance = data.map((prop) => {
         const dist = calculateDistance(
