@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -34,10 +34,10 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
@@ -166,8 +166,8 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
             <Text style={[styles.statusLabel, { color: status.color }]}>{status.label}</Text>
             <Text style={styles.statusSubtitle}>
               {invoice.status === 'paid'
-                ? t('invoiceDetail.paidOn', `Dibayar: ${formatDate(invoice.paid_at)}`, { date: formatDate(invoice.paid_at) })
-                : t('invoiceDetail.dueOn', `Jatuh tempo: ${formatDate(invoice.due_date)}`, { date: formatDate(invoice.due_date) })}
+                ? t('invoiceDetail.paidOn', `Dibayar: ${formatDate(invoice.paid_at, i18n)}`, { date: formatDate(invoice.paid_at, i18n) })
+                : t('invoiceDetail.dueOn', `Jatuh tempo: ${formatDate(invoice.due_date, i18n)}`, { date: formatDate(invoice.due_date, i18n) })}
             </Text>
           </View>
         </View>
@@ -190,7 +190,7 @@ const InvoiceDetailScreen = ({ navigation, route }) => {
             <Text style={styles.infoLabel}>{t('invoiceDetail.period', 'Periode: ')}</Text>
             <Text style={styles.infoValue}>
               {invoice.billing_period
-                ? format(new Date(invoice.billing_period), 'MMMM yyyy', { locale: i18n.language === 'id' ? idLocale : undefined })
+                ? format(new Date(invoice.billing_period), 'MMMM yyyy', { locale: i18n.language === 'en' ? enLocale : idLocale })
                 : '—'}
             </Text>
           </Text>

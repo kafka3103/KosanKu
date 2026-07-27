@@ -381,7 +381,7 @@ const ProfileScreen = ({ navigation }) => {
         />
         <SelectableInfoRow
           label={t('profile.genderLabel', 'Jenis Kelamin')}
-          value={gender}
+          value={gender === 'Laki-laki' ? t('profile.genderMale', 'Laki-laki') : gender === 'Perempuan' ? t('profile.genderFemale', 'Perempuan') : gender}
           onPress={() => setIsGenderModalVisible(true)}
           icon="male-female-outline"
           placeholder={t('profile.genderPlaceholder', 'Pilih Jenis Kelamin')}

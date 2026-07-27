@@ -4,7 +4,7 @@
  */
 
 import { format, formatDistanceToNow, differenceInDays, parseISO, isValid } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 
 /**
  * Format tanggal ke format lokal yang mudah dibaca
@@ -20,7 +20,7 @@ export const formatDate = (dateInput, formatPattern = 'd MMMM yyyy', language = 
   if (!isValid(date)) return '-';
 
   return format(date, formatPattern, {
-    locale: language === 'id' ? idLocale : undefined,
+    locale: language === 'id' ? idLocale : enLocale,
   });
 };
 
@@ -47,7 +47,7 @@ export const formatRelativeTime = (dateInput, language = 'id') => {
 
   return formatDistanceToNow(date, {
     addSuffix: true,
-    locale: language === 'id' ? idLocale : undefined,
+    locale: language === 'id' ? idLocale : enLocale,
   });
 };
 

@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 
 import { format, addMonths } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -41,7 +41,7 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (date) => format(date, 'd MMMM yyyy', { locale: idLocale });
+const formatDate = (date, i18n) => format(date, 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
 
 const DURATION_OPTIONS = [1, 3, 6, 12];
 
@@ -251,12 +251,12 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
           <View style={styles.dateRow}>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
+              <Text style={styles.dateValue}>{formatDate(startDate, i18n)}</Text>
             </View>
             <Text style={styles.dateSep}>→</Text>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>{t('rental.request.endDateLabel', 'Selesai')}</Text>
-              <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+              <Text style={styles.dateValue}>{formatDate(endDate, i18n)}</Text>
             </View>
           </View>
         </View>

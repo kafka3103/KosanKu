@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 
 import COLORS from '../../constants/colors';
@@ -54,25 +54,25 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
 };
 
-const formatDateTime = (dateStr) => {
+const formatDateTime = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy, HH:mm', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMM yyyy, HH:mm', { locale: i18n?.language === 'en' ? enLocale : idLocale });
   } catch {
     return dateStr;
   }
 };
 
-const RequestCard = ({ request, onApprove, onReject, t }) => {
+const RequestCard = ({ request, onApprove, onReject, t, i18n }) => {
   const statusConfig = STATUS_CONFIG(t);
   const status = statusConfig[request.status] ?? statusConfig.pending;
   const tenant = request.users;
@@ -124,7 +124,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
           <Ionicons name="calendar" size={14} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
           <Text style={styles.infoRow}>
-            {t('ownerRentalRequest.start', 'Mulai')}: <Text style={styles.infoBold}>{formatDate(request.requested_start_date)}</Text>
+            {t('ownerRentalRequest.start', 'Mulai')}: <Text style={styles.infoBold}>{formatDate(request.requested_start_date, i18n)}</Text>
           </Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
@@ -168,7 +168,7 @@ const RequestCard = ({ request, onApprove, onReject, t }) => {
         <View style={styles.expiryWarning}>
           <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
           <Text style={styles.expiryText}>
-            {t('ownerRentalRequest.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(request.expires_at) })}
+            {t('ownerRentalRequest.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(request.expires_at, i18n) })}
           </Text>
         </View>
       ) : null}
@@ -402,12 +402,7 @@ const RentalRequestScreen = ({ navigation }) => {
         )}
         renderItem={({ item }) => {
           return (
-            <RequestCard
-              request={item}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              t={t}
-            />
+            <RequestCard request={item} onApprove={handleApprove} onReject={handleReject} t={t} i18n={i18n} />
           );
         }}
       />

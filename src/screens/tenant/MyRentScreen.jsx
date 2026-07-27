@@ -73,10 +73,11 @@ const formatDate = (dateStr, lang) => {
   }
 };
 
-const formatDateTime = (dateStr) => {
+const formatDateTime = (dateStr, lang) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm', { locale: idLocale });
+    const locale = lang === 'en' ? enLocale : idLocale;
+    return format(new Date(dateStr), 'dd MMM yyyy, HH:mm', { locale });
   } catch {
     return dateStr;
   }
@@ -321,13 +322,13 @@ const MyRentScreen = ({ navigation }) => {
                 <Text style={styles.requestProperty}>{property?.name}</Text>
                 <Text style={styles.requestRoom}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
                 <Text style={styles.requestDate}>
-                  {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at) })}
+                  {t('myRent.submittedOn', 'Diajukan: {{date}}', { date: formatDate(req.created_at, i18n.language) })}
                 </Text>
                 {req.status === 'pending' && req.expires_at ? (
                   <View style={styles.expiryWarning}>
                     <Ionicons name="time" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
                     <Text style={styles.expiryText}>
-                      {t('myRent.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(req.expires_at) })}
+                      {t('myRent.expiryWarning', 'Batal otomatis pada {{time}}', { time: formatDateTime(req.expires_at, i18n.language) })}
                     </Text>
                   </View>
                 ) : null}
@@ -392,12 +393,12 @@ const MyRentScreen = ({ navigation }) => {
             <View style={styles.contractDates}>
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.start', 'Mulai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.start_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.start_date, i18n.language)}</Text>
               </View>
               <View style={styles.dateSeparator} />
               <View style={styles.dateItem}>
                 <Text style={styles.dateLabel}>{t('myRent.end', 'Selesai')}</Text>
-                <Text style={styles.dateValue}>{formatDate(contract.end_date)}</Text>
+                <Text style={styles.dateValue}>{formatDate(contract.end_date, i18n.language)}</Text>
               </View>
             </View>
 
@@ -532,7 +533,7 @@ const MyRentScreen = ({ navigation }) => {
                   <View style={styles.invoiceLeft}>
                     <Ionicons name={status.icon} size={24} color={status.color} />
                     <View>
-                      <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period)}</Text>
+                      <Text style={styles.invoicePeriod}>{formatPeriod(invoice.billing_period, i18n.language)}</Text>
                       <Text style={[styles.invoiceStatus, { color: status.color }]}>
                         {status.label}
                       </Text>
