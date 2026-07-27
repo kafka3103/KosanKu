@@ -22,7 +22,6 @@ import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { getTenantActiveContract } from '../../services/invoiceService';
 import { checkTenantProfileExists } from '../../services/userService';
 import { getRoomDetails } from '../../services/propertyService';
 import DynamicText from '../../components/shared/DynamicText';
@@ -410,7 +409,7 @@ const styles = StyleSheet.create({
   rulesText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, lineHeight: 22 },
   bottomBar: {
     position: 'absolute',
-    bottom: 96,
+    bottom: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',

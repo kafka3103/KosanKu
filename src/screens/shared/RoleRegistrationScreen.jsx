@@ -217,7 +217,8 @@ const RoleRegistrationScreen = ({ navigation, route }) => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.navigate(targetRole === USER_ROLE.OWNER ? 'TenantMain' : 'OwnerMain');
+                const currentRole = useAuthStore.getState().userRole;
+                navigation.navigate(currentRole === USER_ROLE.OWNER ? 'OwnerMain' : 'TenantMain');
               }
             }}
           >

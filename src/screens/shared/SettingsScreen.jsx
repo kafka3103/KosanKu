@@ -158,25 +158,25 @@ const SettingsScreen = ({ navigation }) => {
   );
 
   return (
-    <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        {navigation?.canGoBack?.() && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
-          </TouchableOpacity>
-        )}
-        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {navigation?.canGoBack?.() && (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.white} style={{ marginRight: 12 }} />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+        </View>
       </View>
 
-      {/* Notifikasi */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}>
+        {/* Notifikasi */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.notifications.title', 'Notifikasi')}</Text>
         <SettingRow
+          icon="notifications-outline"
           label={t('settings.notifications.push')}
           rightElement={
             <Switch
@@ -187,21 +187,8 @@ const SettingsScreen = ({ navigation }) => {
             />
           }
         />
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => {
-            scheduleLocalNotification(
-              "Uji Coba Notifikasi",
-              "Ini adalah notifikasi lokal yang muncul setelah 5 detik.",
-              { type: 'test' },
-              5
-            );
-          }}
-        >
-          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.actionButtonText}>Uji Coba Notifikasi Lokal (5 detik)</Text>
-        </TouchableOpacity>
         <SettingRow
+          icon="mail-outline"
           label={t('settings.notifications.email')}
           rightElement={
             <Switch
@@ -218,6 +205,7 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.preferences.title')}</Text>
         <SettingRow
+          icon="language-outline"
           label={t('settings.preferences.language')}
           value={currentLang === 'id' ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English'}
           onPress={handleChangeLanguage}
@@ -228,18 +216,22 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.account.title')}</Text>
         <SettingRow
+          icon="key-outline"
           label={t('settings.account.changePassword')}
           onPress={handleChangePassword}
         />
         <SettingRow
+          icon="shield-checkmark-outline"
           label={t('settings.account.privacyPolicy')}
           onPress={() => Linking.openURL('https://kosanku.id/privacy')}
         />
         <SettingRow
+          icon="document-text-outline"
           label={t('settings.account.termsOfService')}
           onPress={() => Linking.openURL('https://kosanku.id/terms')}
         />
         <SettingRow
+          icon="headset-outline"
           label={t('settings.contactSupport', 'Hubungi Support')}
           onPress={() => Linking.openURL('mailto:support@kosanku.id')}
         />
@@ -249,14 +241,16 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.accountSection', 'Akun')}</Text>
         <TouchableOpacity style={styles.logoutRow} onPress={handleLogout} activeOpacity={0.7}>
-          <Text style={styles.logoutText}>🚪 {t('profile.logoutButton')}</Text>
+          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+          <Text style={[styles.logoutText, { marginLeft: 8 }]}>{t('profile.logoutButton')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteRow}
           onPress={handleDeleteAccount}
           activeOpacity={0.7}
         >
-          <Text style={styles.deleteText}>🗑️ {t('settings.btnDeleteAccount', 'Hapus Akun')}</Text>
+          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+          <Text style={[styles.deleteText, { marginLeft: 8 }]}>{t('settings.btnDeleteAccount', 'Hapus Akun')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -265,7 +259,7 @@ const SettingsScreen = ({ navigation }) => {
         <Text style={styles.footerText}>KosanKu v1.0.0</Text>
         <Text style={styles.footerSubtext}>© 2025 KosanKu. All rights reserved.</Text>
       </View>
-    </ScrollView>
+      </ScrollView>
       {/* Modal Hapus Akun */}
       <Modal
         visible={showDeleteModal}
@@ -317,7 +311,7 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 };
 
@@ -380,6 +374,8 @@ const styles = StyleSheet.create({
     marginLeft: SPACING[2],
   },
   logoutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING[5],
     paddingVertical: SPACING[4],
     borderBottomWidth: 1,
@@ -387,10 +383,12 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: FONT_SIZE.base,
-    color: COLORS.primary,
+    color: COLORS.error,
     fontWeight: FONT_WEIGHT.medium,
   },
   deleteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING[5],
     paddingVertical: SPACING[4],
   },

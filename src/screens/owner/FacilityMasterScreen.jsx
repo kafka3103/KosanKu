@@ -126,6 +126,12 @@ const FacilityMasterScreen = ({ navigation }) => {
       Alert.alert('Error', result.error.message || t('facilityMaster.errorGeneric', 'Terjadi kesalahan.'));
     } else {
       setIsModalVisible(false);
+      Alert.alert(
+        t('common.success', 'Sukses'),
+        editingFacility
+          ? t('facilityMaster.editSuccess', 'Fasilitas berhasil diperbarui.')
+          : t('facilityMaster.addSuccess', 'Fasilitas baru berhasil ditambahkan.')
+      );
       load(true);
     }
   };
@@ -144,6 +150,7 @@ const FacilityMasterScreen = ({ navigation }) => {
             if (error) {
               Alert.alert('Error', error.message || t('facilityMaster.deleteErrorInUse', 'Tidak bisa menghapus fasilitas yang masih digunakan.'));
             } else {
+              Alert.alert(t('common.success', 'Sukses'), t('facilityMaster.deleteSuccess', 'Fasilitas berhasil dihapus.'));
               setFacilities((prev) => prev.filter((f) => f.id !== facility.id));
             }
           },
@@ -163,12 +170,13 @@ const FacilityMasterScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color={COLORS.primaryLight} />
-          <Text style={styles.backBtnText}>{t('common.buttons.back', 'Kembali')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('facilityMaster.headerTitle', 'Master Fasilitas')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('facilityMaster.headerTitle', 'Master Fasilitas')}</Text>
+        </View>
         <Text style={styles.headerSubtitle}>{t('facilityMaster.headerSubtitle', '{{count}} fasilitas terdaftar', { count: facilities.length })}</Text>
       </View>
 
@@ -242,7 +250,7 @@ const FacilityMasterScreen = ({ navigation }) => {
         onRequestClose={() => setIsModalVisible(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           style={styles.modalOverlay}
         >
           <View style={styles.modalContent}>
@@ -346,10 +354,10 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base, marginLeft: 2 },
   headerTitle: { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, color: COLORS.white },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2, marginLeft: 32 },
 
   infoBanner: {
     flexDirection: 'row',

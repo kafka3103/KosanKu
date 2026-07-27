@@ -14,6 +14,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+
 
 import COLORS from '../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../constants/typography';
@@ -149,9 +151,9 @@ const TenantDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: t('navigation.tenant.profile'), screen: TENANT_SCREENS.PROFILE, icon: '👤' },
-    { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: '⚙️' },
+    { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: 'settings-outline' },
   ];
+
   const [hasOwnerProfile, setHasOwnerProfile] = React.useState(false);
 
   React.useEffect(() => {
@@ -212,7 +214,7 @@ const TenantDrawerContent = ({ navigation }) => {
             style={styles.drawerMenuItem}
             onPress={() => navigation.navigate(item.screen)}
           >
-            <Text style={styles.drawerMenuIcon}>{item.icon}</Text>
+            <Ionicons name={item.icon} size={24} color={COLORS.textSecondary} style={styles.drawerMenuIcon} />
             <Text style={styles.drawerMenuLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -251,11 +253,7 @@ const TenantNavigator = () => {
         component={TenantBottomTabNavigator}
         options={{ drawerItemStyle: { display: 'none' } }}
       />
-      <TenantDrawer.Screen
-        name={TENANT_SCREENS.PROFILE}
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
+
       <TenantDrawer.Screen
         name={TENANT_SCREENS.SETTINGS}
         component={SettingsScreen}
