@@ -147,7 +147,7 @@ serve(async (req) => {
       }
 
       // 5. Kirim Notifikasi Real-Time & Buat Bukti Invoice ke Owner & Tenant
-      const formattedAmt = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(newPaidAmount);
+      const formattedAmt = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(incomingAmount);
 
       const notifications = [
         // Notifikasi / Bukti Invoice untuk Tenant (Penghuni)
@@ -176,12 +176,30 @@ serve(async (req) => {
       console.log(`🔔 Notifikasi & invoice lunas telah dikirim ke Tenant (${invoice.tenant_id}) dan Owner (${invoice.owner_id})`);
 
       // 6. Kirim Push Notification (FCM) ke device Tenant & Owner
-      // Untuk push notification OS, gunakan teks string langsung (karena OS tidak bisa merender JSON i18n key)
-      const pushTitleTenant = "Pembayaran Berhasil 💸";
-      const pushBodyTenant = `Tagihan ${invoice.invoice_number || 'Kos'} sebesar ${formattedAmt} telah terbayar.`;
+      // Kirim i18n key + JSON params agar diterjemahkan secara otomatis
+      // oleh send-notification berdasarkan preferensi bahasa (preferred_language) pengguna di database.
+      const pushTitleTenant = "invoice_paid_tenant_title";
+      const pushBodyTenant = JSON.stringify({
+        key: "invoice_paid_tenant_body",
+        params: {
+          invoiceNumber: invoice.invoice_number || "Kos",
+          room: roomNum,
+          property: propName,
+          amount: formattedAmt,
+          channel: payment_channel || "Checkout",
+        },
+      });
       
-      const pushTitleOwner = "Pembayaran Diterima 💰";
-      const pushBodyOwner = `Pembayaran tagihan ${invoice.invoice_number || 'Kos'} untuk kamar ${roomNum} sebesar ${formattedAmt} telah diterima.`;
+      const pushTitleOwner = "invoice_paid_owner_title";
+      const pushBodyOwner = JSON.stringify({
+        key: "invoice_paid_owner_body",
+        params: {
+          invoiceNumber: invoice.invoice_number || "Kos",
+          room: roomNum,
+          property: propName,
+          amount: formattedAmt,
+        },
+      });
 
       await Promise.all([
         triggerPushNotification(

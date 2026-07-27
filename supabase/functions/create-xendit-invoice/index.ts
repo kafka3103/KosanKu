@@ -78,7 +78,6 @@ serve(async (req) => {
       });
     }
 
-<<<<<<< HEAD
     // 3. Validasi & Hitung sisa tagihan yang harus dibayar
     const totalAmount = parseFloat(invoice.total_amount);
     const paidAmount = parseFloat(invoice.paid_amount || 0);
@@ -110,8 +109,8 @@ serve(async (req) => {
       } 
       // Validasi 3: Cegah Underpayment cicilan (Min 10% sisa atau 100rb)
       else {
-        let minPayment = Math.max(100000, remainingAmount * 0.1);
-        if (remainingAmount <= 100000) {
+        let minPayment = Math.max(50000, remainingAmount * 0.1);
+        if (remainingAmount <= 50000) {
           minPayment = remainingAmount; // Wajib lunas jika sisa dikit
         }
         
@@ -128,42 +127,10 @@ serve(async (req) => {
     
     // Pastikan amountToPay dibulatkan ke integer
     amountToPay = Math.round(amountToPay);
-=======
-    // Hitung sisa tagihan yang harus dibayar
-    const totalAmount = parseFloat(invoice.total_amount);
-    const currentPaid = parseFloat(invoice.paid_amount || 0);
-    const remainingDebt = Math.round(totalAmount - currentPaid);
-    const defaultAmountToPay = remainingDebt;
-    const amountToPay = requestedAmount ? Math.round(parseFloat(requestedAmount)) : defaultAmountToPay;
->>>>>>> parent of 7243e77 (Revert "feat: implement tenant navigation flow, payment/contract screens, and associated services with supporting database policies")
 
     // Validasi: nominal tidak boleh <= 0 (tagihan sudah lunas atau input invalid)
     if (amountToPay <= 0) {
       return new Response(JSON.stringify({ success: false, error: "Tagihan ini sudah lunas" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validasi: nominal cicilan tidak boleh melebihi sisa hutang
-    if (amountToPay > remainingDebt) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Nominal melebihi sisa tagihan. Sisa hutang: Rp ${remainingDebt.toLocaleString("id-ID")}`,
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validasi: pembayaran pertama wajib minimal 50% dari total tagihan (DP)
-    const isFirstPayment = currentPaid === 0;
-    const minimumDP = Math.ceil(totalAmount * 0.5);
-    if (isFirstPayment && amountToPay < minimumDP) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Pembayaran pertama minimal 50% dari total tagihan (Rp ${minimumDP.toLocaleString("id-ID")})`,
-      }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

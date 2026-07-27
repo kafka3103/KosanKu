@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import idTranslations from './id.json';
 import enTranslations from './en.json';
+import supabaseClient from '../services/supabaseClient';
 
 const LANGUAGE_STORAGE_KEY = '@kosanku_language';
 
@@ -27,15 +28,46 @@ const detectStoredLanguage = async () => {
 };
 
 /**
- * Simpan preferensi bahasa ke AsyncStorage
+ * Simpan preferensi bahasa ke AsyncStorage & sinkronkan ke Supabase
  * @param {string} languageCode - 'id' | 'en'
  */
 export const saveLanguagePreference = async (languageCode) => {
   try {
     await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, languageCode);
     await i18n.changeLanguage(languageCode);
+
+    // Sinkronkan preferensi bahasa ke server Supabase (kolom preferred_language di tabel users)
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session?.user?.id) {
+        await supabaseClient
+          .from('users')
+          .update({ preferred_language: languageCode })
+          .eq('id', session.user.id);
+      }
+    } catch (_) {
+      // Abaikan jika tidak tersambung ke network / belum login
+    }
   } catch (error) {
     console.error('Gagal menyimpan preferensi bahasa:', error);
+  }
+};
+
+/**
+ * Sinkronkan preferensi bahasa saat user login/restoration sesi
+ */
+export const syncLanguagePreferenceToBackend = async () => {
+  try {
+    const storedLanguage = await detectStoredLanguage();
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session?.user?.id && storedLanguage) {
+      await supabaseClient
+        .from('users')
+        .update({ preferred_language: storedLanguage })
+        .eq('id', session.user.id);
+    }
+  } catch (_) {
+    // Abaikan jika gagal sinkronisasi
   }
 };
 
