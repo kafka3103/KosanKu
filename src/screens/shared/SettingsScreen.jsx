@@ -25,7 +25,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { logout, updatePassword, deleteAccount, sendPasswordResetEmail } from '../../services/authService';
+import { logout, loginWithEmail, deactivateAccount, sendPasswordResetEmail, updatePassword } from '../../services/authService';
 import { saveLanguagePreference } from '../../localization/i18n';
 import { scheduleLocalNotification } from '../../utils/notificationUtils';
 
@@ -41,6 +41,7 @@ const SettingsScreen = ({ navigation }) => {
   const { currentUser, currentSession } = useAuthStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [modalKey, setModalKey] = useState(0);
@@ -114,8 +115,8 @@ const SettingsScreen = ({ navigation }) => {
       }
     }
 
-    // Jika password benar, lanjutkan hapus akun
-    const { error: deleteError } = await deleteAccount();
+    // Jika password benar, lanjutkan nonaktifkan akun
+    const { error: deleteError } = await deactivateAccount();
     setIsDeleting(false);
 
     if (deleteError) {
@@ -146,6 +147,17 @@ const SettingsScreen = ({ navigation }) => {
         },
       },
     ]);
+  };
+
+  const handleSupportWhatsApp = () => {
+    setShowSupportModal(false);
+    const message = encodeURIComponent(t('supportModal.waTemplate', 'Halo Admin KosanKu, saya butuh bantuan terkait aplikasi KosanKu.'));
+    Linking.openURL(`https://wa.me/6288214717823?text=${message}`);
+  };
+
+  const handleSupportEmail = () => {
+    setShowSupportModal(false);
+    Linking.openURL('mailto:projectprg6.kosanku@gmail.com');
   };
 
   const SettingRow = ({ icon, label, value, onPress, rightElement, showArrow = true }) => (
@@ -180,36 +192,6 @@ const SettingsScreen = ({ navigation }) => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}>
-        {/* Notifikasi */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.notifications.title', 'Notifikasi')}</Text>
-        <SettingRow
-          icon="notifications-outline"
-          label={t('settings.notifications.push')}
-          rightElement={
-            <Switch
-              value={notifEnabled}
-              onValueChange={setNotifEnabled}
-              trackColor={{ false: COLORS.grey300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          }
-        />
-
-        <SettingRow
-          icon="mail-outline"
-          label={t('settings.notifications.email')}
-          rightElement={
-            <Switch
-              value={emailNotif}
-              onValueChange={setEmailNotif}
-              trackColor={{ false: COLORS.grey300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-            />
-          }
-        />
-      </View>
-
         {/* Preferensi */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.preferences.title')}</Text>
@@ -232,17 +214,17 @@ const SettingsScreen = ({ navigation }) => {
           <SettingRow
             icon="shield-checkmark-outline"
             label={t('settings.account.privacyPolicy')}
-            onPress={() => Linking.openURL('https://kosanku.id/privacy')}
+            onPress={() => navigation.navigate('PrivacyPolicy')}
           />
           <SettingRow
             icon="document-text-outline"
             label={t('settings.account.termsOfService')}
-            onPress={() => Linking.openURL('https://kosanku.id/terms')}
+            onPress={() => navigation.navigate('TermsOfService')}
           />
           <SettingRow
             icon="headset-outline"
             label={t('settings.contactSupport', 'Hubungi Support')}
-            onPress={() => Linking.openURL('mailto:support@kosanku.id')}
+            onPress={() => setShowSupportModal(true)}
           />
         </View>
 
@@ -259,7 +241,7 @@ const SettingsScreen = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-            <Text style={[styles.deleteText, { marginLeft: 8 }]}>{t('settings.btnDeleteAccount', 'Hapus Akun')}</Text>
+            <Text style={[styles.deleteText, { marginLeft: 8 }]}>{t('settings.deleteAccount', 'Nonaktifkan Akun')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -280,16 +262,14 @@ const SettingsScreen = ({ navigation }) => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t('settings.deleteAccountConfirm', 'Konfirmasi Hapus Akun')}</Text>
+                <Text style={styles.modalTitle}>{t('settings.deleteAccount', 'Nonaktifkan Akun')}</Text>
                 <TouchableOpacity onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
                   <Ionicons name="close" size={24} color={COLORS.textSecondary} />
                 </TouchableOpacity>
               </View>
 
               <Text style={styles.modalSubtitle}>
-                {isGoogleOnly
-                  ? `Ketik "${currentUser?.email}" untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan.`
-                  : "Masukkan password Anda untuk mengonfirmasi penghapusan akun. Tindakan ini tidak dapat dibatalkan."}
+                {t('settings.deleteWarning', 'Tindakan ini akan menonaktifkan akun Anda. Profil dan data Anda akan disembunyikan. Lanjutkan?')}
               </Text>
 
               <View style={styles.inputContainer}>
@@ -312,11 +292,7 @@ const SettingsScreen = ({ navigation }) => {
                 onPress={executeDeleteAccount}
                 disabled={isDeleting}
               >
-                {isDeleting ? (
-                  <ActivityIndicator color={COLORS.white} />
-                ) : (
-                  <Text style={styles.modalDeleteBtnText}>{t('settings.deleteAccountPermanent', 'Hapus Akun Permanen')}</Text>
-                )}
+                {isDeleting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.modalDeleteBtnText}>{t('settings.deleteAccount', 'Nonaktifkan Akun')}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -361,6 +337,37 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </Modal>
       )}
+
+      {/* Modal Contact Support */}
+      <Modal
+        visible={showSupportModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSupportModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('supportModal.title', 'Hubungi Support')}</Text>
+
+            <TouchableOpacity style={styles.supportOption} onPress={handleSupportWhatsApp}>
+              <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+              <Text style={styles.supportOptionText}>{t('supportModal.whatsapp', 'Chat via WhatsApp')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.supportOption} onPress={handleSupportEmail}>
+              <Ionicons name="mail" size={24} color={COLORS.primary} />
+              <Text style={styles.supportOptionText}>{t('supportModal.email', 'Kirim via Email')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalDeleteBtn, { backgroundColor: COLORS.grey300, marginTop: SPACING[4] }]}
+              onPress={() => setShowSupportModal(false)}
+            >
+              <Text style={styles.modalDeleteBtnText}>{t('common.buttons.cancel', 'Batal')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -530,6 +537,23 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.base,
     color: COLORS.textPrimary,
   },
+  supportOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING[3],
+    paddingHorizontal: SPACING[4],
+    backgroundColor: COLORS.grey100,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING[3],
+    width: '100%',
+  },
+  supportOptionText: {
+    fontSize: FONT_SIZE.base,
+    color: COLORS.textPrimary,
+    marginLeft: SPACING[3],
+    fontWeight: FONT_WEIGHT.medium,
+  },
 });
 
 export default SettingsScreen;
+

@@ -44,8 +44,8 @@
       "loginWithEmail": "Sign In with Email"
     },
     "register": {
-      "title": "Create Account",
-      "subtitle": "Join KosanKu today",
+      "title": "Create a New Account",
+      "subtitle": "Join KosanKu",
       "fullNameLabel": "Full Name",
       "fullNamePlaceholder": "Enter your full name",
       "emailLabel": "Email",
@@ -61,6 +61,7 @@
       "roleTenant": "Room Seeker",
       "registerButton": "Sign Up",
       "loginLink": "Already have an account? Sign In",
+      "alreadyHaveAccount": "Already have an account?",
       "termsText": "By signing up, you agree to our",
       "termsLink": "Terms & Conditions",
       "signUpGoogle": "Sign up with Google"
@@ -1016,19 +1017,16 @@
     "changePasswordTitle": "Change Password",
     "changePasswordMsg": "This will send a password reset link to your email.",
     "btnSendResetEmail": "Send Reset Email",
-    "deleteAccountTitle": "⚠️ Delete Account",
-    "deleteAccountMsg": "Deleted accounts cannot be recovered. All your data will be lost.",
-    "btnDeleteAccount": "Delete Account",
     "contactSupport": "Contact Support",
     "accountSection": "Account",
-    "deleteAccountConfirm": "Confirm Account Deletion",
-    "deleteAccountPermanent": "Delete Account Permanently",
-    "deleteConfirmEmail": "Please type {{email}} to confirm.",
+    "deleteAccount": "Deactivate Account",
+    "deleteWarning": "This action will deactivate your account. Your profile and data will be hidden. Continue?",
+    "deleteConfirmEmail": "Please type {{email}} to confirm account deactivation.",
     "deleteEmptyPassword": "Please enter your password.",
-    "deleteWrongEmail": "Type your email correctly to confirm account deletion.",
+    "deleteWrongEmail": "Type your email correctly to confirm account deactivation.",
     "deleteWrongPassword": "Incorrect password or an error occurred.",
-    "deleteFailMsg": "An error occurred while deleting the account. Please contact support@kosanku.id",
-    "deleteSuccessMsg": "Account successfully deleted.",
+    "deleteFailMsg": "An error occurred while deactivating your account. Please contact support@kosanku.id",
+    "deleteSuccessMsg": "Account successfully deactivated.",
     "logoutTitle": "Logout",
     "logoutConfirm": "Are you sure you want to log out?",
     "testNotifTitle": "Notification Test",
@@ -1365,5 +1363,60 @@
     "profileCompleteMsg": "Owner profile successfully completed! Your identity is being verified by the admin.",
     "updateRoleFail": "Failed to change account mode.",
     "registerSuccessMsg": "You have successfully registered as a Property Owner! Your identity is being verified by the admin."
+  },
+  "supportModal": {
+    "title": "Contact Support",
+    "whatsapp": "Chat via WhatsApp",
+    "email": "Send via Email",
+    "waTemplate": "Hello KosanKu Admin, I need help regarding the KosanKu app."
+  },
+  "privacyPolicyScreen": {
+    "title": "Privacy Policy",
+    "intro": "At KosanKu, we highly value and protect your data privacy.",
+    "outro": "If you have any questions regarding your privacy, please contact our Support team via the Settings menu.",
+    "sections": [
+      {
+        "icon": "document-text-outline",
+        "title": "1. Data Collection",
+        "content": "We collect your personal data (name, phone number, NIK, etc.) exclusively for rental purposes and user identity security verification."
+      },
+      {
+        "icon": "shield-checkmark-outline",
+        "title": "2. Data Usage",
+        "content": "Your data is secure and will not be sold to any third parties. It is used entirely to improve our services and ensure smooth transactions within the KosanKu ecosystem."
+      },
+      {
+        "icon": "lock-closed-outline",
+        "title": "3. Protection & Security",
+        "content": "All credential data, passwords, and sensitive information are encrypted using the latest industry standards with highly secure backend technology."
+      }
+    ]
+  },
+  "termsOfServiceScreen": {
+    "title": "Terms of Service",
+    "intro": "Welcome to KosanKu! Below are the terms and conditions for using our application.",
+    "outro": "Thank you for joining the safe and comfortable KosanKu community!",
+    "sections": [
+      {
+        "icon": "checkmark-circle-outline",
+        "title": "1. Acceptance of Terms",
+        "content": "By registering and using the KosanKu app, you declare that you have read, understood, and agreed to be bound by all these terms and conditions."
+      },
+      {
+        "icon": "person-outline",
+        "title": "2. User Responsibilities",
+        "content": "As a tenant or owner, you must provide accurate and truthful information. It is strictly prohibited to use this platform for fraud or other illegal activities."
+      },
+      {
+        "icon": "wallet-outline",
+        "title": "3. Transactions & Payments",
+        "content": "KosanKu provides a platform to connect both parties and mediate payments using an official third party (Xendit). The smooth running of rental transactions is a shared responsibility."
+      },
+      {
+        "icon": "warning-outline",
+        "title": "4. Account Termination",
+        "content": "KosanKu reserves the right to block, suspend, or delete your account at any time without prior notice if any rule violations detrimental to others are found."
+      }
+    ]
   }
 }

@@ -258,6 +258,8 @@ const OwnerDrawerContent = ({ navigation }) => {
 };
 
 import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
+import PrivacyPolicyScreen from '../screens/shared/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
 
 /**
  * Owner Root Navigator — Drawer yang membungkus Bottom Tab
@@ -312,6 +314,16 @@ const OwnerNavigator = () => {
       <OwnerDrawer.Screen
         name="RoleRegistrationScreen"
         component={RoleRegistrationScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: false }}
+      />
+      <OwnerDrawer.Screen
+        name="TermsOfService"
+        component={TermsOfServiceScreen}
         options={{ headerShown: false }}
       />
       <OwnerDrawer.Screen

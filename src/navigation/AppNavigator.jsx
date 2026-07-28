@@ -5,13 +5,13 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Image, Alert } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAuthStore from '../store/authStore';
-import { subscribeToAuthChanges, getUserProfile, updateFcmToken, getCurrentSession } from '../services/authService';
+import { subscribeToAuthChanges, getUserProfile, updateFcmToken, getCurrentSession, logout } from '../services/authService';
 import { syncLanguagePreferenceToBackend } from '../localization/i18n';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '../utils/notificationUtils';
 import COLORS from '../constants/colors';
@@ -107,6 +107,14 @@ const AppNavigator = () => {
           }
 
           if (userProfile) {
+            // Cek apakah akun dinonaktifkan (Soft Delete)
+            if (userProfile.is_active === false) {
+              Alert.alert('Akun Dinonaktifkan', 'Akun Anda telah dinonaktifkan. Silakan hubungi support untuk informasi lebih lanjut.');
+              await logout();
+              useAuthStore.getState().clearAuthState();
+              return;
+            }
+
             let lastUsedRole = null;
             if (userProfile.role === USER_ROLE.BOTH) {
               try {

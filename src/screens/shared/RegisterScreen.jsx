@@ -270,9 +270,9 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={styles.footerText}>{t('auth.register.alreadyHaveAccount', 'Already have an account?')} </Text>
+            <Text style={styles.footerText}>{t('auth.register.alreadyHaveAccount', 'Sudah punya akun?')} </Text>
             <TouchableOpacity onPress={() => navigation.navigate(AUTH_SCREENS.LOGIN)}>
-              <Text style={styles.footerLink}>{t('auth.login', 'Login')}</Text>
+              <Text style={styles.footerLink}>{t('auth.login.loginButton', 'Masuk')}</Text>
             </TouchableOpacity>
           </View>
 

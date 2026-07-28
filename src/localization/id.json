@@ -1,20 +1,20 @@
 {
   "auth": {
     "login": {
-      "title": "Welcome Back!",
+      "title": "Selamat Datang Kembali!",
       "subtitle": "Masuk untuk melanjutkan",
       "emailLabel": "Email",
       "emailPlaceholder": "Masukkan email",
       "phoneLabel": "Nomor Telepon",
       "phonePlaceholder": "+628123456789",
-      "passwordLabel": "Password",
-      "passwordPlaceholder": "Masukkan password",
-      "rememberMe": "Remember me",
+      "passwordLabel": "Kata Sandi",
+      "passwordPlaceholder": "Masukkan kata sandi",
+      "rememberMe": "Ingat saya",
       "forgetPassword": "Lupa password?",
-      "loginButton": "Login",
-      "or": "OR",
-      "dontHaveAccount": "Don't have an account?",
-      "signUp": "Sign Up",
+      "loginButton": "Masuk",
+      "or": "ATAU",
+      "dontHaveAccount": "Belum punya akun?",
+      "signUp": "Daftar",
       "registerLink": "Belum punya akun? Daftar"
     },
     "forgotPassword": {
@@ -61,6 +61,7 @@
       "roleTenant": "Pencari Kosan",
       "registerButton": "Daftar",
       "loginLink": "Sudah punya akun? Masuk",
+      "alreadyHaveAccount": "Sudah punya akun?",
       "termsText": "Dengan mendaftar, Anda menyetujui",
       "termsLink": "Syarat & Ketentuan",
       "signUpGoogle": "Daftar dengan Google"
@@ -1007,19 +1008,18 @@
     "changePasswordTitle": "Ubah Password",
     "changePasswordMsg": "Fitur ubah password akan membuka halaman reset via email.",
     "btnSendResetEmail": "Kirim Email Reset",
-    "deleteAccountTitle": "⚠️ Hapus Akun",
-    "deleteAccountMsg": "Akun yang dihapus tidak dapat dipulihkan. Seluruh data Anda akan hilang.",
-    "btnDeleteAccount": "Hapus Akun",
     "contactSupport": "Hubungi Support",
     "accountSection": "Akun",
-    "deleteAccountConfirm": "Konfirmasi Hapus Akun",
-    "deleteAccountPermanent": "Hapus Akun Permanen",
-    "deleteConfirmEmail": "Harap ketik {{email}} untuk konfirmasi.",
-    "deleteEmptyPassword": "Harap masukkan password Anda.",
-    "deleteWrongEmail": "Ketik email Anda dengan benar untuk mengonfirmasi penghapusan akun.",
-    "deleteWrongPassword": "Password salah atau terjadi kesalahan.",
-    "deleteFailMsg": "Terjadi kesalahan saat menghapus akun. Silakan hubungi support@kosanku.id",
-    "deleteSuccessMsg": "Akun berhasil dihapus.",
+    "deleteAccountTitle": "⚠️ Nonaktifkan Akun",
+    "deleteAccountMsg": "Tindakan ini akan menonaktifkan akun Anda. Profil dan data Anda akan disembunyikan. Lanjutkan?",
+    "btnDeleteAccount": "Nonaktifkan Akun",
+    "deleteWarning": "Tindakan ini akan menonaktifkan akun Anda. Profil dan data Anda akan disembunyikan. Lanjutkan?",
+    "deleteConfirmEmail": "Harap ketik {{email}} untuk konfirmasi penonaktifan akun.",
+    "deleteEmptyPassword": "Harap masukkan kata sandi Anda.",
+    "deleteWrongEmail": "Ketik email Anda dengan benar untuk mengonfirmasi penonaktifan akun.",
+    "deleteWrongPassword": "Kata sandi salah atau terjadi kesalahan.",
+    "deleteFailMsg": "Terjadi kesalahan saat menonaktifkan akun. Silakan hubungi support@kosanku.id",
+    "deleteSuccessMsg": "Akun berhasil dinonaktifkan.",
     "logoutTitle": "Keluar",
     "logoutConfirm": "Yakin ingin keluar dari akun?",
     "testNotifTitle": "Uji Coba Notifikasi",
@@ -1343,5 +1343,60 @@
     "profileCompleteMsg": "Profil Pemilik berhasil dilengkapi! Identitas Anda sedang diverifikasi oleh admin.",
     "updateRoleFail": "Gagal mengubah mode akun.",
     "registerSuccessMsg": "Anda berhasil terdaftar sebagai Pemilik Kosan! Identitas Anda sedang diverifikasi oleh admin."
+  },
+  "supportModal": {
+    "title": "Hubungi Support",
+    "whatsapp": "Chat via WhatsApp",
+    "email": "Kirim via Email",
+    "waTemplate": "Halo Admin KosanKu, saya butuh bantuan terkait aplikasi KosanKu."
+  },
+  "privacyPolicyScreen": {
+    "title": "Kebijakan Privasi",
+    "intro": "Kami di KosanKu sangat menghargai dan melindungi privasi data Anda.",
+    "outro": "Jika ada pertanyaan mengenai privasi Anda, silakan hubungi tim Support kami melalui menu Pengaturan.",
+    "sections": [
+      {
+        "icon": "document-text-outline",
+        "title": "1. Pengumpulan Data",
+        "content": "Kami mengumpulkan data pribadi Anda (nama, nomor telepon, NIK, dsb) secara eksklusif untuk keperluan penyewaan dan verifikasi keamanan identitas pengguna."
+      },
+      {
+        "icon": "shield-checkmark-outline",
+        "title": "2. Penggunaan Data",
+        "content": "Data Anda aman dan tidak akan kami jual ke pihak ketiga manapun. Data digunakan sepenuhnya untuk meningkatkan pelayanan dan memastikan transaksi di dalam ekosistem KosanKu berjalan lancar."
+      },
+      {
+        "icon": "lock-closed-outline",
+        "title": "3. Perlindungan & Keamanan",
+        "content": "Seluruh data kredensial, kata sandi, dan informasi sensitif dienkripsi menggunakan sistem standar industri terkini dengan teknologi backend yang sangat aman."
+      }
+    ]
+  },
+  "termsOfServiceScreen": {
+    "title": "Syarat & Ketentuan",
+    "intro": "Selamat datang di KosanKu! Berikut adalah syarat dan ketentuan penggunaan aplikasi kami.",
+    "outro": "Terima kasih telah bergabung bersama komunitas KosanKu yang aman dan nyaman!",
+    "sections": [
+      {
+        "icon": "checkmark-circle-outline",
+        "title": "1. Penerimaan Syarat",
+        "content": "Dengan mendaftar dan menggunakan aplikasi KosanKu, Anda menyatakan telah membaca, memahami, dan setuju untuk terikat dengan seluruh syarat dan ketentuan ini."
+      },
+      {
+        "icon": "person-outline",
+        "title": "2. Tanggung Jawab Pengguna",
+        "content": "Sebagai penyewa (Tenant) maupun pemilik (Owner), Anda wajib memberikan informasi yang akurat dan jujur. Dilarang keras menggunakan platform ini untuk tindakan penipuan atau aktivitas ilegal lainnya."
+      },
+      {
+        "icon": "wallet-outline",
+        "title": "3. Transaksi & Pembayaran",
+        "content": "KosanKu menyediakan platform untuk mempertemukan kedua belah pihak dan menengahi pembayaran menggunakan pihak ketiga yang resmi (Xendit). Kelancaran transaksi sewa menyewa adalah tanggung jawab bersama."
+      },
+      {
+        "icon": "warning-outline",
+        "title": "4. Pemutusan Akun",
+        "content": "KosanKu berhak memblokir, menangguhkan, atau menghapus akun Anda sewaktu-waktu tanpa pemberitahuan sebelumnya jika ditemukan indikasi pelanggaran aturan yang merugikan pihak lain."
+      }
+    ]
   }
 }

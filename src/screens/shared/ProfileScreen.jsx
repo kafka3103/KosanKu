@@ -338,6 +338,14 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
+  if (!currentUser) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <>
       {/* Header (Fixed) */}

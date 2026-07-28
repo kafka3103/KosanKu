@@ -286,6 +286,37 @@ export const logout = async () => {
 };
 
 /**
+ * Menonaktifkan akun pengguna (Soft Delete).
+ * Mengubah nilai is_active menjadi false di tabel public.users.
+ */
+export const deactivateAccount = async () => {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Tidak ada sesi pengguna aktif");
+
+    const { error } = await supabaseClient
+      .from('users')
+      .update({ is_active: false })
+      .eq('id', user.id);
+    
+    if (error) {
+      console.error('Error deactivating account:', error);
+      return { error };
+    }
+
+    // Jika berhasil, otomatis sign out dan bersihkan state
+    await supabaseClient.auth.signOut();
+    try { await GoogleSignin.signOut(); } catch (e) { }
+    const store = useAuthStore.getState();
+    store.clearAuthState();
+    
+    return { error: null };
+  } catch (err) {
+    return { error: err };
+  }
+};
+
+/**
  * Hapus Akun Permanen
  * Memanggil RPC delete_user di backend yang akan menghapus data di auth.users
  * dan memicu cascade delete ke public.users

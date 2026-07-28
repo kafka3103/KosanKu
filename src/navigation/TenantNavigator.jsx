@@ -37,6 +37,9 @@ import MyRentScreen from '../screens/tenant/MyRentScreen';
 import ContractDetailScreen from '../screens/tenant/ContractDetailScreen';
 import InvoiceDetailScreen from '../screens/tenant/InvoiceDetailScreen';
 import PaymentScreen from '../screens/tenant/PaymentScreen';
+import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
+import PrivacyPolicyScreen from '../screens/shared/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
 
 // Shared Screens
 import NotificationScreen from '../screens/shared/NotificationScreen';
@@ -237,8 +240,6 @@ const TenantDrawerContent = ({ navigation }) => {
   );
 };
 
-import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
-
 /**
  * Tenant Root Navigator — Drawer + Bottom Tab
  */
@@ -266,6 +267,16 @@ const TenantNavigator = () => {
       <TenantDrawer.Screen
         name="RoleRegistrationScreen"
         component={RoleRegistrationScreen}
+        options={{ headerShown: false }}
+      />
+      <TenantDrawer.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: false }}
+      />
+      <TenantDrawer.Screen
+        name="TermsOfService"
+        component={TermsOfServiceScreen}
         options={{ headerShown: false }}
       />
     </TenantDrawer.Navigator>
