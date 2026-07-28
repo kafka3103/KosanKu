@@ -347,7 +347,7 @@
       "duplicateMsg": "Kamar ini sudah memiliki pengajuan sewa yang sedang diproses.",
       "failTitle": "Gagal",
       "sentTitle": "Pengajuan Dikirim! 🎉",
-      "sentMsg": "Pengajuan sewa Anda berhasil dikirim. Pemilik kos akan membalas dalam 3 hari kerja.",
+      "sentMsg": "Pengajuan sewa Anda berhasil dikirim. Pemilik kos akan meninjau pengajuan dalam beberapa jam kedepan.",
       "errorTitle": "Error",
       "errorMsg": "Terjadi kesalahan, coba lagi.",
       "manualInput": "Atau masukkan manual:",
@@ -358,7 +358,7 @@
       "removePhoto": "Hapus Foto",
       "summaryTitle": "Ringkasan Pengajuan",
       "localNotifTitle": "Pengajuan Berhasil Dikirim!",
-      "localNotifBody": "Pemilik kos {{property}} akan meninjau pengajuan Anda dalam waktu 3 hari."
+      "localNotifBody": "Pemilik kos {{property}} akan meninjau pengajuan Anda dalam beberapa jam kedepan."
     },
     "review": {
       "title": "Tinjau Pengajuan",

@@ -51,7 +51,6 @@
     "plugins": [
       "expo-location",
       "expo-image-picker",
-      "expo-camera",
       [
         "expo-notifications",
         {
