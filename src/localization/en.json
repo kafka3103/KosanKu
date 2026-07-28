@@ -347,7 +347,7 @@
       "duplicateMsg": "This room already has a rental request pending processing.",
       "failTitle": "Failed",
       "sentTitle": "Request Sent! 🎉",
-      "sentMsg": "Your rental request has been successfully sent. The owner will reply within 3 business days.",
+      "sentMsg": "Your rental request has been successfully sent. The owner will review your request in the next few hours.",
       "errorTitle": "Error",
       "errorMsg": "An error occurred, please try again.",
       "manualInput": "Or enter manually:",
@@ -358,7 +358,7 @@
       "removePhoto": "Remove Photo",
       "summaryTitle": "Request Summary",
       "localNotifTitle": "Request Sent Successfully!",
-      "localNotifBody": "The owner of {{property}} will review your request within 3 days."
+      "localNotifBody": "The owner of {{property}} will review your request in the next few hours."
     },
     "review": {
       "title": "Review Request",
