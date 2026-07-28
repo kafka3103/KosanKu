@@ -1057,6 +1057,14 @@
     }
   },
   "common": {
+    "perMonth": "/bln",
+    "sort": {
+      "title": "Urutkan",
+      "asc": "A-Z",
+      "desc": "Z-A",
+      "priceAsc": "Termurah",
+      "priceDesc": "Termahal"
+    },
     "buttons": {
       "save": "Simpan",
       "cancel": "Batal",
@@ -1141,7 +1149,7 @@
     "filterBtn": "Filter",
     "filterActive": "Aktif",
     "viewMap": "Lihat Peta",
-    "viewList": "Daftar List Kosan",
+    "viewList": "Daftar Kos",
     "mapRoute": "Rute Peta",
     "viewDetail": "Lihat Detail Kosan",
     "propertiesFound": "{{count}} kosan ditemukan",
@@ -1207,7 +1215,7 @@
     "statusUnavailable": "Tidak Tersedia",
     "roomNumber": "Kamar {{number}}",
     "floorNumber": "Lantai {{number}}",
-    "perMonth": "/bulan",
+    "perMonth": "bulan",
     "facilitiesTitle": "Fasilitas Kamar",
     "rulesTitle": "Peraturan Kosan",
     "priceLabel": "Harga/bulan",

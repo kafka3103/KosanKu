@@ -777,7 +777,7 @@
     "femaleOnly": "👩 Female",
     "mixed": "👫 Mixed",
     "startFrom": "Start from",
-    "perMonth": "/month",
+    "perMonth": "month",
     "notAvailable": "Not available",
     "removeTitle": "Remove Favorite",
     "removeMsg": "Remove \"{{name}}\" from favorites?",
@@ -1066,6 +1066,14 @@
     }
   },
   "common": {
+    "perMonth": "/mo",
+    "sort": {
+      "title": "Sort by",
+      "asc": "A-Z",
+      "desc": "Z-A",
+      "priceAsc": "Lowest Price",
+      "priceDesc": "Highest Price"
+    },
     "buttons": {
       "save": "Save",
       "cancel": "Cancel",
@@ -1150,7 +1158,7 @@
     "filterBtn": "Filter",
     "filterActive": "Active",
     "viewMap": "View Map",
-    "viewList": "View List",
+    "viewList": "Kost List",
     "mapRoute": "Map Route",
     "viewDetail": "View Boarding house Detail",
     "propertiesFound": "{{count}} boarding house found",

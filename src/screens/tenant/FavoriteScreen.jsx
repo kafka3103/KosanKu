@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
@@ -87,7 +88,7 @@ const FavoriteCard = ({ favorite, onPress, onRemove, t, currentUser }) => {
           </Text>
           {minPrice != null ? (
             <Text style={styles.price}>
-              {t('favorites.startFrom', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('favorites.perMonth', '/bln')}
+              {t('favorites.startFrom', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('common.perMonth')}
             </Text>
           ) : (
             <Text style={styles.noRoomText}>{t('favorites.notAvailable', 'Tidak tersedia')}</Text>
@@ -105,6 +106,8 @@ const FavoriteScreen = ({ navigation }) => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
 
   const loadFavorites = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
@@ -147,6 +150,22 @@ const FavoriteScreen = ({ navigation }) => {
     );
   }
 
+  const sortedFavorites = [...favorites].sort((a, b) => {
+    if (sortBy.startsWith('name')) {
+      const nameA = a.properties?.name?.toLowerCase() || '';
+      const nameB = b.properties?.name?.toLowerCase() || '';
+      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    } else {
+      const getMinPrice = (prop) => {
+        const availableRooms = prop?.rooms?.filter((r) => r.status === 'available') || [];
+        return availableRooms.length > 0 ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0))) : Infinity;
+      };
+      const priceA = getMinPrice(a.properties);
+      const priceB = getMinPrice(b.properties);
+      return sortBy === 'priceAsc' ? priceA - priceB : priceB - priceA;
+    }
+  });
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -160,8 +179,26 @@ const FavoriteScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Menus */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[4], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
+              {t('common.sort.title', 'Urutkan')}
+            </Button>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Kos ${t('common.sort.asc', 'A-Z')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Kos ${t('common.sort.desc', 'Z-A')}`} />
+          <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
+          <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
+        </Menu>
+      </View>
+
       <FlatList
-        data={favorites}
+        data={sortedFavorites}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
@@ -229,7 +266,7 @@ const styles = StyleSheet.create({
     color: COLORS.primaryLight,
     marginTop: 2,
   },
-  listContent: { padding: SPACING[4], gap: SPACING[4], paddingBottom: SPACING[10] },
+  listContent: { padding: SPACING[4], paddingTop: SPACING[2], gap: SPACING[4], paddingBottom: SPACING[10] },
   card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,

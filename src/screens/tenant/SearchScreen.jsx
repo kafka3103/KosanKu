@@ -24,6 +24,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 import * as Location from 'expo-location';
 import MapboxGL from '@rnmapbox/maps';
 import { DrawerActions } from '@react-navigation/native';
@@ -196,7 +197,7 @@ const PropertyCard = ({ property, onPress }) => {
 
         {minPrice != null ? (
           <Text style={styles.priceText}>
-            {t('searchScreen.priceStart', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('searchScreen.perMonth', '/bln')}
+            {t('searchScreen.priceStart', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('common.perMonth')}
           </Text>
         ) : (
           <Text style={[styles.priceText, { color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium }]}>
@@ -218,6 +219,8 @@ const SearchScreen = ({ navigation }) => {
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('priceAsc');
 
   // View Mode: 'map' (default) | 'list'
   const [viewMode, setViewMode] = useState('map'); 
@@ -661,10 +664,23 @@ const SearchScreen = ({ navigation }) => {
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-          <View style={{ paddingHorizontal: SPACING[5], paddingTop: SPACING[4], paddingBottom: SPACING[2] }}>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING[5], paddingTop: SPACING[4], paddingBottom: SPACING[2] }}>
             <Text style={{ fontSize: FONT_SIZE.md, color: COLORS.textSecondary }}>
               {t('searchScreen.propertiesFound', '{{count}} kosan ditemukan', { count: properties.length })}
             </Text>
+            <Menu
+              visible={sortVisible}
+              onDismiss={() => setSortVisible(false)}
+              anchor={
+                <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
+                  {t('common.sort.title', 'Urutkan')}
+                </Button>
+              }
+            >
+              <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
+              <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
+            </Menu>
           </View>
           {isLoading ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -672,7 +688,15 @@ const SearchScreen = ({ navigation }) => {
             </View>
           ) : (
             <FlatList
-              data={properties}
+              data={[...properties].sort((a, b) => {
+                const getMinPrice = (prop) => {
+                  const availableRooms = prop.rooms?.filter((r) => r.status === 'available') || [];
+                  return availableRooms.length > 0 ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0))) : Infinity;
+                };
+                const priceA = getMinPrice(a);
+                const priceB = getMinPrice(b);
+                return sortBy === 'priceAsc' ? priceA - priceB : priceB - priceA;
+              })}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={[styles.listContent, { paddingHorizontal: SPACING[5], paddingBottom: (insets?.bottom || 0) + 100 }]}
               refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); loadProperties(true); }} colors={[COLORS.primary]} />}

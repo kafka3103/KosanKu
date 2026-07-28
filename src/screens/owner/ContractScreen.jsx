@@ -263,7 +263,7 @@ const ContractScreen = ({ navigation }) => {
     const name = cf.custom_facility_name || (cf.facility_master ? getLocalizedField(cf.facility_master, 'name') : null) || t('contractScreen.thisFacility', 'Fasilitas ini');
     Alert.alert(
       t('contractScreen.stopFacilityTitle', 'Hentikan Fasilitas'),
-      t('contractScreen.stopFacilityMsg', 'Yakin ingin menghentikan langganan {{name}} (Rp {{price}}/bln)?\n\nPenghuni tidak akan dikenakan biaya fasilitas ini pada periode tagihan berikutnya.', { name, price: cf.price_per_month.toLocaleString('id-ID') }),
+      t('contractScreen.stopFacilityMsg', 'Yakin ingin menghentikan langganan {{name}} (Rp {{price}}{{perMonth}})?\n\nPenghuni tidak akan dikenakan biaya fasilitas ini pada periode tagihan berikutnya.', { name, price: cf.price_per_month.toLocaleString('id-ID'), perMonth: t('common.perMonth') }),
       [
         { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {

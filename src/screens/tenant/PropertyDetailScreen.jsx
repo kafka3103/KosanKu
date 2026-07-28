@@ -175,7 +175,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 </View>
               )}
               <View style={styles.roomPriceRow}>
-                <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}{t('propertyDetail.perMonth', '/bln')}</Text>
+                <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}{t('common.perMonth')}</Text>
                 <View style={[styles.detailBtn, { backgroundColor: COLORS.accent }]}>
                   <Text style={styles.detailBtnText}>{t('propertyDetail.btnDetail', 'Detail')}</Text>
                   <Ionicons name="arrow-forward" size={14} color={COLORS.white} style={{ marginLeft: 4 }} />

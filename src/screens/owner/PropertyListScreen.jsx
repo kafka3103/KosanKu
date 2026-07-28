@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
@@ -116,6 +117,8 @@ const PropertyListScreen = ({ navigation }) => {
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
 
   const loadProperties = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
@@ -192,6 +195,12 @@ const PropertyListScreen = ({ navigation }) => {
     );
   }
 
+  const sortedProperties = [...properties].sort((a, b) => {
+    const nameA = getLocalizedField(a, 'name')?.toLowerCase() || '';
+    const nameB = getLocalizedField(b, 'name')?.toLowerCase() || '';
+    return sortBy === 'nameAsc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+  });
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -207,8 +216,24 @@ const PropertyListScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Menus */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
+              {t('common.sort.title', 'Urutkan')}
+            </Button>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Properti ${t('common.sort.asc', 'A-Z')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Properti ${t('common.sort.desc', 'Z-A')}`} />
+        </Menu>
+      </View>
+
       <FlatList
-        data={properties}
+        data={sortedProperties}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
@@ -284,6 +309,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: SPACING[5],
+    paddingTop: SPACING[2],
     paddingBottom: SPACING[20],
     gap: SPACING[4],
   },

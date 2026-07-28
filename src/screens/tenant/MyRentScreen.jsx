@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 import DrawerButton from '../../components/navigation/DrawerButton';
 import DynamicText from '../../components/shared/DynamicText';
 
@@ -109,6 +110,8 @@ const MyRentScreen = ({ navigation }) => {
   const [rentalRequests, setRentalRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
 
   // States for Requesting Facility
   const [showFacilityModal, setShowFacilityModal] = useState(false);
@@ -253,6 +256,22 @@ const MyRentScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Menus */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+          <Menu
+            visible={sortVisible}
+            onDismiss={() => setSortVisible(false)}
+            anchor={
+              <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
+                {t('common.sort.title', 'Urutkan')}
+              </Button>
+            }
+          >
+            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Kos/Kamar ${t('common.sort.asc', 'A-Z')}`} />
+            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Kos/Kamar ${t('common.sort.desc', 'Z-A')}`} />
+          </Menu>
+        </View>
+
         {/* Pengajuan Pending (jika belum punya kontrak) */}
         {contracts.length === 0 && rentalRequests.length > 0 && (
           <View style={styles.section}>
@@ -292,7 +311,11 @@ const MyRentScreen = ({ navigation }) => {
         {contracts.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('myRent.myRoom', 'Kamar Saya')}</Text>
-            {contracts.map((contract) => {
+            {[...contracts].sort((a, b) => {
+              const strA = `${a.rooms?.properties?.name || ''} ${a.rooms?.room_number || ''}`.toLowerCase();
+              const strB = `${b.rooms?.properties?.name || ''} ${b.rooms?.room_number || ''}`.toLowerCase();
+              return sortBy === 'nameAsc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+            }).map((contract) => {
               const room = contract?.rooms;
               const property = room?.properties;
               return (

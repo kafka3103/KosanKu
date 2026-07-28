@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { getLocalizedField } from '../../utils/useLocalizedField';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -65,7 +66,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
 
       {/* Price & Size */}
       <View style={styles.roomMeta}>
-        <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
+        <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}{t('common.perMonth')}</Text>
         {!!room.size_sqm && (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="expand" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
@@ -122,17 +123,7 @@ const RoomCard = ({ room, onEdit, onDelete, onViewRequest, t }) => {
   );
 };
 
-const FilterTab = ({ label, isActive, onPress }) => (
-  <TouchableOpacity
-    style={[styles.filterTab, isActive && styles.filterTabActive]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <Text style={[styles.filterTabText, isActive && styles.filterTabTextActive]}>
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
+
 
 const RoomListScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -141,6 +132,9 @@ const RoomListScreen = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
   const insets = useSafeAreaInsets();
 
   const loadRooms = useCallback(async (silent = false) => {
@@ -188,8 +182,19 @@ const RoomListScreen = ({ navigation, route }) => {
     { key: 'maintenance', label: t('ownerRoomList.status.maintenance', 'Perawatan') },
   ];
 
-  const filteredRooms =
-    activeFilter === 'all' ? rooms : rooms.filter((r) => r.status === activeFilter);
+  let result = activeFilter === 'all' ? rooms : rooms.filter((r) => r.status === activeFilter);
+  result = result.sort((a, b) => {
+    if (sortBy.startsWith('name')) {
+      const nameA = a.room_number?.toLowerCase() || '';
+      const nameB = b.room_number?.toLowerCase() || '';
+      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    } else {
+      const priceA = a.base_price || 0;
+      const priceB = b.base_price || 0;
+      return sortBy === 'priceAsc' ? priceA - priceB : priceB - priceA;
+    }
+  });
+  const filteredRooms = result;
 
   if (isLoading) {
     return (
@@ -202,33 +207,46 @@ const RoomListScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-            
-          </View>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{property?.name ?? t('ownerRoomList.room', 'Kamar')}</Text>
-        <Text style={styles.headerSubtitle}>{t('ownerRoomList.headerSubtitle', '{{count}} kamar', { count: rooms.length })} · {t('room.list.title')}</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.primaryLight} style={{ marginRight: 12 }} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{property?.name ?? t('ownerRoomList.room', 'Kamar')}</Text>
+        </View>
+        <Text style={[styles.headerSubtitle, { marginLeft: 36 }]}>{t('ownerRoomList.headerSubtitle', '{{count}} kamar', { count: rooms.length })} · {t('room.list.title')}</Text>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        <FlatList
-          data={filters}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.filterList}
-          renderItem={({ item }) => (
-            <FilterTab
-              label={item.label}
-              isActive={activeFilter === item.key}
-              onPress={() => setActiveFilter(item.key)}
-            />
-          )}
-        />
+      {/* Menus */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[4], paddingVertical: SPACING[3], gap: SPACING[3], backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border, zIndex: 10 }}>
+        <Menu
+          visible={filterVisible}
+          onDismiss={() => setFilterVisible(false)}
+          anchor={
+            <Button mode="outlined" onPress={() => setFilterVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
+              {t('room.list.filterBtn', 'Filter')}: {filters.find(f => f.key === activeFilter)?.label}
+            </Button>
+          }
+        >
+          {filters.map(f => (
+            <Menu.Item key={f.key} onPress={() => { setActiveFilter(f.key); setFilterVisible(false); }} title={f.label} />
+          ))}
+        </Menu>
+
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
+              {t('common.sort.title', 'Urutkan')}
+            </Button>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Kamar ${t('common.sort.asc', 'A-Z')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Kamar ${t('common.sort.desc', 'Z-A')}`} />
+          <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
+          <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
+        </Menu>
       </View>
 
       {/* Room List */}
@@ -301,11 +319,10 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3] },
+  backBtn: {},
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
