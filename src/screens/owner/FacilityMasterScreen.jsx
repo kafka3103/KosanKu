@@ -34,33 +34,16 @@ import {
   updateFacilityMaster,
   deleteFacilityMaster,
 } from '../../services/propertyService';
-
-// Ikon bawaan yang umum dipakai untuk fasilitas kos
-const ICON_OPTIONS = [
-  { label: 'WiFi', value: 'wifi' },
-  { label: 'AC', value: 'snow' },
-  { label: 'Parkir', value: 'car' },
-  { label: 'Dapur', value: 'restaurant' },
-  { label: 'Kulkas', value: 'cube' },
-  { label: 'TV', value: 'tv' },
-  { label: 'Laundri', value: 'water' },
-  { label: 'Gym', value: 'barbell' },
-  { label: 'CCTV', value: 'eye' },
-  { label: 'Listrik', value: 'flash' },
-  { label: 'Air', value: 'water-outline' },
-  { label: 'Kasur', value: 'bed' },
-  { label: 'Lemari', value: 'archive' },
-  { label: 'Meja', value: 'desktop' },
-  { label: 'Lainnya', value: 'apps' },
-];
+import { useTranslation } from 'react-i18next';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
 const INITIAL_FORM = {
   name: '',
-  icon_name: 'apps',
   category: 'general',
 };
 
 const FacilityMasterScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [facilities, setFacilities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +52,7 @@ const FacilityMasterScreen = ({ navigation }) => {
   const [editingFacility, setEditingFacility] = useState(null); // null = add mode
   const [form, setForm] = useState(INITIAL_FORM);
   const [isSaving, setIsSaving] = useState(false);
-  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -91,7 +74,6 @@ const FacilityMasterScreen = ({ navigation }) => {
     setEditingFacility(facility);
     setForm({
       name: facility.name ?? '',
-      icon_name: facility.icon_name ?? 'apps',
       category: facility.category ?? 'general',
     });
     setIsModalVisible(true);
@@ -99,7 +81,7 @@ const FacilityMasterScreen = ({ navigation }) => {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      Alert.alert('Perhatian', 'Nama fasilitas wajib diisi.');
+      Alert.alert('Error', t('facilityMaster.validationNameReq', 'Nama fasilitas wajib diisi.'));
       return;
     }
 
@@ -108,40 +90,45 @@ const FacilityMasterScreen = ({ navigation }) => {
     if (editingFacility) {
       result = await updateFacilityMaster(editingFacility.id, {
         name: form.name.trim(),
-        icon_name: form.icon_name,
         category: form.category || 'general',
       });
     } else {
       result = await createFacilityMaster({
         name: form.name.trim(),
-        icon_name: form.icon_name,
         category: form.category || 'general',
       });
     }
     setIsSaving(false);
 
     if (result.error) {
-      Alert.alert('Gagal', result.error.message || 'Terjadi kesalahan.');
+      Alert.alert('Error', result.error.message || t('facilityMaster.errorGeneric', 'Terjadi kesalahan.'));
     } else {
       setIsModalVisible(false);
+      Alert.alert(
+        t('common.success', 'Sukses'),
+        editingFacility
+          ? t('facilityMaster.editSuccess', 'Fasilitas berhasil diperbarui.')
+          : t('facilityMaster.addSuccess', 'Fasilitas baru berhasil ditambahkan.')
+      );
       load(true);
     }
   };
 
   const handleDelete = (facility) => {
     Alert.alert(
-      'Hapus Fasilitas',
-      `Yakin ingin menghapus "${facility.name}" dari master fasilitas?\n\nFasilitas yang sedang digunakan di kamar atau kontrak tidak akan terpengaruh.`,
+      t('facilityMaster.deleteTitle', 'Hapus Fasilitas'),
+      t('facilityMaster.deleteMsg', 'Yakin ingin menghapus "{{name}}" dari master fasilitas?\n\nFasilitas yang sedang digunakan di kamar atau kontrak tidak akan terpengaruh.', { name: facility.name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('common.buttons.delete', 'Hapus'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await deleteFacilityMaster(facility.id);
             if (error) {
-              Alert.alert('Gagal', error.message || 'Tidak bisa menghapus fasilitas yang masih digunakan.');
+              Alert.alert('Error', error.message || t('facilityMaster.deleteErrorInUse', 'Tidak bisa menghapus fasilitas yang masih digunakan.'));
             } else {
+              Alert.alert(t('common.success', 'Sukses'), t('facilityMaster.deleteSuccess', 'Fasilitas berhasil dihapus.'));
               setFacilities((prev) => prev.filter((f) => f.id !== facility.id));
             }
           },
@@ -161,28 +148,44 @@ const FacilityMasterScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={22} color={COLORS.primaryLight} />
-          <Text style={styles.backBtnText}>Kembali</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Master Fasilitas</Text>
-        <Text style={styles.headerSubtitle}>{facilities.length} fasilitas terdaftar</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('facilityMaster.headerTitle', 'Master Fasilitas')}</Text>
+        </View>
+        <Text style={styles.headerSubtitle}>{t('facilityMaster.headerSubtitle', '{{count}} fasilitas terdaftar', { count: facilities.length })}</Text>
       </View>
 
       {/* Info Banner */}
       <View style={styles.infoBanner}>
         <Ionicons name="information-circle-outline" size={18} color={COLORS.info} style={{ marginRight: 8 }} />
         <Text style={styles.infoText}>
-          Fasilitas di sini digunakan sebagai pilihan saat menambahkan fasilitas opsional ke kontrak sewa penghuni.
+          {t('facilityMaster.infoBanner', 'Fasilitas di sini digunakan sebagai pilihan saat menambahkan fasilitas ke properti atau kamar.')}
         </Text>
+      </View>
+
+      {/* Filters */}
+      <View style={styles.filterRow}>
+        {['all', 'general', 'room'].map((filter) => (
+          <TouchableOpacity
+            key={filter}
+            style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
+            onPress={() => setActiveFilter(filter)}
+          >
+            <Text style={[styles.filterChipText, activeFilter === filter && styles.filterChipTextActive]}>
+              {filter === 'all' ? t('facilityMaster.filterAll', 'Semua Kategori') : filter === 'general' ? t('facilityMaster.catGeneral', 'Umum') : t('facilityMaster.catRoom', 'Kamar')}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Fab + Add */}
       <FlatList
-        data={facilities}
+        data={facilities.filter(f => activeFilter === 'all' ? true : f.category === activeFilter)}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: (insets?.bottom || 0) + 140 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -193,21 +196,20 @@ const FacilityMasterScreen = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="apps-outline" size={56} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>Belum Ada Master Fasilitas</Text>
-            <Text style={styles.emptySubtitle}>Tambahkan fasilitas seperti WiFi, AC, Parkir untuk ditawarkan ke penghuni</Text>
+            <Text style={styles.emptyTitle}>{t('facilityMaster.emptyTitle', 'Belum Ada Master Fasilitas')}</Text>
+            <Text style={styles.emptySubtitle}>{t('facilityMaster.emptySubtitle', 'Tambahkan fasilitas seperti WiFi, AC, Parkir untuk ditawarkan ke penghuni')}</Text>
           </View>
         )}
         renderItem={({ item }) => {
-          const iconName = ICON_OPTIONS.find((i) => i.value === item.icon_name)?.value ?? 'apps';
           return (
             <View style={styles.facilityCard}>
-              <View style={styles.facilityIconBox}>
-                <Ionicons name={iconName} size={24} color={COLORS.primary} />
-              </View>
               <View style={styles.facilityInfo}>
-                <Text style={styles.facilityName}>{item.name}</Text>
+                <Text style={styles.facilityName}>{getLocalizedField(item, 'name')}</Text>
                 <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{item.category ?? 'general'}</Text>
+                  <Text style={styles.categoryText}>
+                    {item.category === 'general' ? t('facilityMaster.catGeneral', 'Umum') : 
+                     item.category === 'room' ? t('facilityMaster.catRoom', 'Kamar') : item.category}
+                  </Text>
                 </View>
               </View>
               <View style={styles.facilityActions}>
@@ -224,7 +226,7 @@ const FacilityMasterScreen = ({ navigation }) => {
       />
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={openAdd} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { bottom: (insets?.bottom || 0) + 32 }]} onPress={openAdd} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={COLORS.white} />
       </TouchableOpacity>
 
@@ -232,17 +234,17 @@ const FacilityMasterScreen = ({ navigation }) => {
       <Modal
         visible={isModalVisible}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setIsModalVisible(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { paddingBottom: (insets?.bottom || 0) + 32 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingFacility ? 'Edit Fasilitas' : 'Tambah Fasilitas Baru'}
+                {editingFacility ? t('facilityMaster.editTitle', 'Edit Fasilitas') : t('facilityMaster.addTitle', 'Tambah Fasilitas Baru')}
               </Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={22} color={COLORS.textSecondary} />
@@ -250,60 +252,30 @@ const FacilityMasterScreen = ({ navigation }) => {
             </View>
 
             {/* Nama */}
-            <Text style={styles.fieldLabel}>Nama Fasilitas *</Text>
+            <Text style={styles.fieldLabel}>{t('facilityMaster.nameLabel', 'Nama Fasilitas *')}</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Misal: WiFi 100 Mbps, AC 1 PK, dll"
+              placeholder={t('facilityMaster.namePlaceholder', 'Misal: WiFi 100 Mbps, AC 1 PK, dll')}
               placeholderTextColor={COLORS.textTertiary}
               value={form.name}
               onChangeText={(v) => setForm((p) => ({ ...p, name: v }))}
             />
 
-            {/* Deskripsi (Removed to match DB schema) */}
-
             {/* Kategori */}
-            <Text style={styles.fieldLabel}>Kategori</Text>
+            <Text style={styles.fieldLabel}>{t('facilityMaster.categoryLabel', 'Kategori')}</Text>
             <View style={styles.categoryRow}>
-              {['general', 'optional', 'room'].map((cat) => (
+              {['general', 'room'].map((cat) => (
                 <TouchableOpacity
                   key={cat}
                   style={[styles.categoryChip, form.category === cat && styles.categoryChipActive]}
                   onPress={() => setForm((p) => ({ ...p, category: cat }))}
                 >
                   <Text style={[styles.categoryChipText, form.category === cat && styles.categoryChipTextActive]}>
-                    {cat === 'general' ? 'Umum' : cat === 'optional' ? 'Opsional' : 'Kamar'}
+                    {cat === 'general' ? t('facilityMaster.catGeneral', 'Umum') : t('facilityMaster.catRoom', 'Kamar')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-
-            {/* Ikon */}
-            <Text style={styles.fieldLabel}>Ikon</Text>
-            <TouchableOpacity
-              style={styles.iconPickerBtn}
-              onPress={() => setShowIconPicker((p) => !p)}
-            >
-              <Ionicons name={form.icon_name ?? 'apps'} size={22} color={COLORS.primary} />
-              <Text style={styles.iconPickerLabel}>
-                {ICON_OPTIONS.find((i) => i.value === form.icon_name)?.label ?? 'Lainnya'}
-              </Text>
-              <Ionicons name={showIconPicker ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-
-            {showIconPicker && (
-              <View style={styles.iconGrid}>
-                {ICON_OPTIONS.map((icon) => (
-                  <TouchableOpacity
-                    key={icon.value}
-                    style={[styles.iconGridItem, form.icon_name === icon.value && styles.iconGridItemActive]}
-                    onPress={() => { setForm((p) => ({ ...p, icon_name: icon.value })); setShowIconPicker(false); }}
-                  >
-                    <Ionicons name={icon.value} size={22} color={form.icon_name === icon.value ? COLORS.primary : COLORS.textSecondary} />
-                    <Text style={[styles.iconGridLabel, form.icon_name === icon.value && { color: COLORS.primary }]}>{icon.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
 
             {/* Actions */}
             <View style={styles.modalActions}>
@@ -312,7 +284,7 @@ const FacilityMasterScreen = ({ navigation }) => {
                 onPress={() => setIsModalVisible(false)}
                 disabled={isSaving}
               >
-                <Text style={styles.cancelBtnText}>Batal</Text>
+                <Text style={styles.cancelBtnText}>{t('common.buttons.cancel', 'Batal')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.saveBtn}
@@ -322,7 +294,7 @@ const FacilityMasterScreen = ({ navigation }) => {
                 {isSaving ? (
                   <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
-                  <Text style={styles.saveBtnText}>{editingFacility ? 'Simpan Perubahan' : 'Tambahkan'}</Text>
+                  <Text style={styles.saveBtnText}>{editingFacility ? t('facilityMaster.saveEditBtn', 'Simpan Perubahan') : t('facilityMaster.saveAddBtn', 'Tambahkan')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -342,10 +314,10 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base, marginLeft: 2 },
   headerTitle: { fontSize: FONT_SIZE['2xl'], fontWeight: FONT_WEIGHT.bold, color: COLORS.white },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2, marginLeft: 32 },
 
   infoBanner: {
     flexDirection: 'row',
@@ -357,6 +329,12 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   infoText: { flex: 1, fontSize: FONT_SIZE.xs, color: COLORS.info ?? '#1D4ED8', lineHeight: 18 },
+
+  filterRow: { flexDirection: 'row', paddingHorizontal: SPACING[4], paddingTop: SPACING[3], paddingBottom: SPACING[2], gap: SPACING[2] },
+  filterChip: { paddingHorizontal: SPACING[4], paddingVertical: SPACING[2], borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
+  filterChipActive: { backgroundColor: '#F3E8FF', borderColor: '#9333EA' },
+  filterChipText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
+  filterChipTextActive: { color: '#9333EA', fontWeight: FONT_WEIGHT.semiBold },
 
   list: { padding: SPACING[4], gap: SPACING[3], paddingBottom: 120 },
   facilityCard: {
@@ -386,6 +364,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING[2],
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.full,
+    marginTop: SPACING[1],
+    marginLeft: -2,
   },
   categoryText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary },
   facilityActions: { flexDirection: 'row', gap: SPACING[1] },
@@ -393,7 +373,6 @@ const styles = StyleSheet.create({
 
   fab: {
     position: 'absolute',
-    bottom: 30,
     right: 24,
     width: 58,
     height: 58,

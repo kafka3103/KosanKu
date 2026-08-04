@@ -7,12 +7,13 @@
  * 3. Setup gesture handler dan safe area
  * 4. Render AppNavigator sebagai root
  */
+import 'react-native-gesture-handler';
 
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { PaperProvider } from 'react-native-paper';
+import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { View, ActivityIndicator, StyleSheet, LogBox } from 'react-native';
 
 // Abaikan warning bawaan yang tidak berbahaya dari React Native / Library pihak ketiga
@@ -30,7 +31,9 @@ MapboxGL.setTelemetryEnabled(false);
 
 // Paper Theme — kustom sesuai brand KosanKu
 const paperTheme = {
+  ...MD3LightTheme,
   colors: {
+    ...MD3LightTheme.colors,
     primary: COLORS.primary,
     secondary: COLORS.secondary,
     background: COLORS.background,

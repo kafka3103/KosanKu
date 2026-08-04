@@ -3,7 +3,7 @@
  * Detail properti untuk tenant: foto galeri, info, kamar available, fasilitas
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,17 +15,21 @@ import {
   FlatList,
   Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Menu } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { useFocusEffect } from '@react-navigation/native';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY);
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
+import DynamicText from '../../components/shared/DynamicText';
 import useAuthStore from '../../store/authStore';
 import {
   getPropertyDetailForTenant,
@@ -42,17 +46,27 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const STATUS_CONFIG = {
-  available: { color: COLORS.success, bg: COLORS.successLight, label: 'Tersedia' },
-  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: 'Diproses' },
-  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: 'Terisi' },
-  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: 'Perawatan' },
+const getStatusConfig = (t) => ({
+  available: { color: COLORS.success, bg: COLORS.successLight, label: t('propertyDetail.status.available', 'Tersedia') },
+  pending: { color: COLORS.warning, bg: COLORS.warningLight, label: t('propertyDetail.status.pending', 'Diproses') },
+  occupied: { color: COLORS.error, bg: COLORS.errorLight, label: t('propertyDetail.status.occupied', 'Terisi') },
+  maintenance: { color: COLORS.grey500, bg: COLORS.grey100, label: t('propertyDetail.status.maintenance', 'Perawatan') },
+});
+
+const TAB_KEYS = ['room', 'info', 'facility', 'review'];
+
+const getTabLabel = (t, key) => {
+  const labels = {
+    room: t('propertyDetail.tabs.room', 'Kamar'),
+    info: t('propertyDetail.tabs.info', 'Informasi'),
+    facility: t('propertyDetail.tabs.facility', 'Fasilitas'),
+    review: t('propertyDetail.tabs.review', 'Ulasan'),
+  };
+  return labels[key] ?? key;
 };
 
-const TABS = ['Kamar', 'Informasi', 'Fasilitas', 'Ulasan'];
-
 const PropertyDetailScreen = ({ navigation, route }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useAuthStore();
   const insets = useSafeAreaInsets();
 
@@ -60,11 +74,15 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const [property, setProperty] = useState(propertyParam);
   const [isLoading, setIsLoading] = useState(!propertyParam);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [activeTab, setActiveTab] = useState('Kamar');
+  const [activeTab, setActiveTab] = useState('room');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
+
   const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 });
   const [reviews, setReviews] = useState([]);
+
+
 
   const photos = [
     ...(property?.cover_photo_url ? [property.cover_photo_url] : []),
@@ -73,14 +91,16 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
   const availableRooms = (property?.rooms ?? []).filter((r) => r.status === 'available');
 
-  useEffect(() => {
-    if (propertyParam?.id) {
-      // Load full detail
-      loadDetail();
-      checkFavorite();
-      loadReviews();
-    }
-  }, [propertyParam?.id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (propertyParam?.id) {
+        // Load full detail
+        loadDetail();
+        checkFavorite();
+        loadReviews();
+      }
+    }, [propertyParam?.id])
+  );
 
   const loadReviews = async () => {
     const summary = await getPropertyRatingSummary(propertyParam.id);
@@ -114,18 +134,62 @@ const PropertyDetailScreen = ({ navigation, route }) => {
     );
   }
 
-  const renderRooms = () => (
+  const renderRooms = () => {
+    const sortedRooms = [...availableRooms].sort((a, b) => {
+      const strA = `${a.room_number || ''}`.toLowerCase();
+      const strB = `${b.room_number || ''}`.toLowerCase();
+      return sortBy === 'nameAsc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    });
+
+    return (
     <View style={styles.tabContent}>
-      {availableRooms.length === 0 ? (
+      {availableRooms.length > 0 && (
+        <View style={{ flexDirection: 'row', paddingBottom: SPACING[3], zIndex: 10 }}>
+          <Menu
+            visible={sortVisible}
+            onDismiss={() => setSortVisible(false)}
+            anchor={
+              <TouchableOpacity
+                onPress={() => setSortVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primarySurface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: COLORS.primaryLight + '50',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                  {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                   sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                   t('common.sort.title', 'Urutkan')}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            }
+          >
+            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`${t('common.sort.asc', 'A-Z')}`} />
+            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`${t('common.sort.desc', 'Z-A')}`} />
+          </Menu>
+        </View>
+      )}
+
+      {sortedRooms.length === 0 ? (
         <View style={styles.noRoomsContainer}>
           <Ionicons name="sad-outline" size={32} color={COLORS.textTertiary} style={{ marginBottom: 8 }} />
-          <Text style={styles.noRoomsText}>Tidak ada kamar tersedia saat ini</Text>
+          <Text style={styles.noRoomsText}>{t('propertyDetail.noRooms', 'Tidak ada kamar tersedia saat ini')}</Text>
         </View>
       ) : (
-        availableRooms.map((room) => {
+        sortedRooms.map((room, index) => {
           const facilities = room.room_facilities
-            ?.map((rf) => rf.facility_master?.name)
-            .filter(Boolean)
+            ?.filter((rf) => rf.facility_master)
+            ?.map((rf) => getLocalizedField(rf.facility_master, 'name'))
+            ?.filter(Boolean)
             .slice(0, 5);
           return (
             <TouchableOpacity
@@ -138,12 +202,12 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             >
               <View style={styles.roomCardHeader}>
                 <View>
-                  <Text style={styles.roomNumber}>Kamar {room.room_number}</Text>
-                  <Text style={styles.roomType}>{room.room_type} · {room.size_sqm ? `${room.size_sqm} m²` : ''}</Text>
+                  <Text style={styles.roomNumber}>{t('propertyDetail.roomNumber', 'Kamar {{number}}', { number: room.room_number })}</Text>
+                  <Text style={styles.roomType}>{room.size_sqm ? `${room.size_sqm} m²` : ''}</Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: STATUS_CONFIG[room.status]?.bg }]}>
-                  <Text style={[styles.statusText, { color: STATUS_CONFIG[room.status]?.color }]}>
-                    {STATUS_CONFIG[room.status]?.label}
+                <View style={[styles.statusBadge, { backgroundColor: getStatusConfig(t)[room.status]?.bg }]}>
+                  <Text style={[styles.statusText, { color: getStatusConfig(t)[room.status]?.color }]}>
+                    {getStatusConfig(t)[room.status]?.label}
                   </Text>
                 </View>
               </View>
@@ -151,15 +215,15 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <View style={styles.roomFacilities}>
                   {facilities.map((f, i) => (
                     <View key={i} style={styles.facilityTag}>
-                      <Text style={styles.facilityTagText}>{f}</Text>
+                      <DynamicText style={styles.facilityTagText}>{f}</DynamicText>
                     </View>
                   ))}
                 </View>
               )}
               <View style={styles.roomPriceRow}>
-                <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}/bln</Text>
+                <Text style={styles.roomPrice}>{formatCurrency(room.base_price)}{t('common.perMonth')}</Text>
                 <View style={[styles.detailBtn, { backgroundColor: COLORS.accent }]}>
-                  <Text style={styles.detailBtnText}>Detail</Text>
+                  <Text style={styles.detailBtnText}>{t('propertyDetail.btnDetail', 'Detail')}</Text>
                   <Ionicons name="arrow-forward" size={14} color={COLORS.white} style={{ marginLeft: 4 }} />
                 </View>
               </View>
@@ -168,18 +232,19 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         })
       )}
     </View>
-  );
+    );
+  };
 
   const renderInfo = () => (
     <View style={styles.tabContent}>
       <View style={styles.infoCard}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
-          <Ionicons name="location" size={20} color={COLORS.accent} style={{ marginRight: 6 }} />
-          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Lokasi</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+          <Ionicons name="location-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.locationTitle', 'Lokasi')}</Text>
         </View>
         <Text style={styles.infoText}>{property?.address_line}</Text>
         <Text style={styles.infoText}>{property?.district ? `${property.district}, ` : ''}{property?.city}</Text>
-        {property?.postal_code && <Text style={styles.infoText}>Kode Pos: {property.postal_code}</Text>}
+        {!!property?.postal_code && <Text style={styles.infoText}>{t('propertyDetail.postalCode', 'Kode Pos: ')}{property.postal_code}</Text>}
 
         {property?.latitude != null && property?.longitude != null && (
           <View style={{ borderRadius: BORDER_RADIUS.md, overflow: 'hidden', marginTop: SPACING[3], borderWidth: 1, borderColor: COLORS.border, height: 200 }}>
@@ -207,9 +272,12 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               </MapboxGL.MarkerView>
             </MapboxGL.MapView>
             <View style={{ position: 'absolute', bottom: 6, left: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.7)', padding: 6, borderRadius: 6 }}>
-              <Text style={{ color: COLORS.white, fontSize: 10, textAlign: 'center' }}>
-                📍 Lat: {parseFloat(property.latitude).toFixed(5)}, Long: {parseFloat(property.longitude).toFixed(5)}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="location-outline" size={10} color={COLORS.white} style={{ marginRight: 2 }} />
+                <Text style={{ color: COLORS.white, fontSize: 10, textAlign: 'center' }}>
+                  Lat: {parseFloat(property.latitude).toFixed(5)}, Long: {parseFloat(property.longitude).toFixed(5)}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -228,14 +296,14 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             onPress={() => {
               const url = `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`;
               Linking.openURL(url).catch(() => {
-                Alert.alert('Error', 'Tidak dapat membuka aplikasi Google Maps.');
+                Alert.alert(t('common.error', 'Error'), t('propertyDetail.openMapError', 'Tidak dapat membuka aplikasi Google Maps.'));
               });
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="map" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+            <Ionicons name="map-outline" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
             <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
-              🗺️ Buka Rute di Google Maps (Peta Bawaan HP)
+              {t('propertyDetail.openMap', 'Buka Peta')}
             </Text>
           </TouchableOpacity>
         )}
@@ -243,35 +311,46 @@ const PropertyDetailScreen = ({ navigation, route }) => {
       <View style={styles.infoCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
           <Ionicons name="people" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Kebijakan Penghuni</Text>
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.policyTitle', 'Kebijakan Penghuni')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons 
-            name={property?.gender_policy === 'male' ? 'man' : property?.gender_policy === 'female' ? 'woman' : 'male-female'} 
-            size={16} 
-            color={COLORS.textSecondary} 
-            style={{ marginRight: 6 }} 
+          <Ionicons
+            name={property?.gender_policy === 'male' ? 'man' : property?.gender_policy === 'female' ? 'woman' : 'male-female'}
+            size={16}
+            color={COLORS.textSecondary}
+            style={{ marginRight: 6 }}
           />
           <Text style={styles.infoText}>
-            {property?.gender_policy === 'male' ? 'Khusus Putra'
-              : property?.gender_policy === 'female' ? 'Khusus Putri'
-              : 'Campur (Putra & Putri)'}
+            {property?.gender_policy === 'male' ? t('propertyDetail.policyMale', 'Khusus Putra')
+              : property?.gender_policy === 'female' ? t('propertyDetail.policyFemale', 'Khusus Putri')
+                : t('propertyDetail.policyMixed', 'Campur (Putra & Putri)')}
           </Text>
         </View>
       </View>
-      {property?.description && (
+      {!!(getLocalizedField(property, 'rules') || property?.rules) && (
+        <View style={styles.rulesCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
+          </View>
+          {(getLocalizedField(property, 'rules') || property.rules).split('\n').map((rule, idx) => (
+            <Text key={idx} style={styles.rulesText}>{rule.replace(/^\d+\.\s*/, '').trim()}</Text>
+          ))}
+        </View>
+      )}
+      {!!property?.description && (
         <View style={styles.infoCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="information-circle" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Tentang Kosan</Text>
+            <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.aboutTitle', 'Tentang Kosan')}</Text>
           </View>
-          <Text style={styles.infoText}>{property.description}</Text>
+          <Text style={styles.infoText}>{getLocalizedField(property, 'description')}</Text>
         </View>
       )}
       <View style={styles.infoCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
           <Ionicons name="person" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>Pemilik</Text>
+          <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.ownerTitle', 'Pemilik')}</Text>
         </View>
         <View style={styles.ownerRow}>
           <View style={styles.ownerAvatar}>
@@ -283,18 +362,18 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             <Text style={styles.ownerName}>{property?.users?.full_name ?? '—'}</Text>
             <Text style={styles.ownerPhone}>{property?.users?.phone_number ?? '—'}</Text>
           </View>
-          {property?.users?.phone_number && (
-            <TouchableOpacity 
+          {!!property?.users?.phone_number && (
+            <TouchableOpacity
               style={{ backgroundColor: '#25D366', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
               onPress={() => {
                 let phone = property.users.phone_number.replace(/\D/g, '');
                 if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-                Linking.openURL(`whatsapp://send?phone=${phone}&text=Halo, saya tertarik dengan kosan ${property.name} yang ada di aplikasi KosanKu.`);
+                Linking.openURL(`whatsapp://send?phone=${phone}&text=Halo, saya tertarik dengan kosan ${getLocalizedField(property, 'name')} yang ada di aplikasi KosanKu.`);
               }}
               activeOpacity={0.8}
             >
               <Ionicons name="logo-whatsapp" size={16} color="#FFF" style={{ marginRight: 4 }} />
-              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>Chat WA</Text>
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>{t('propertyDetail.chatWA', 'Chat WA')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -305,23 +384,25 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const renderFacilities = () => (
     <View style={styles.tabContent}>
       {(property?.general_facilities?.length ?? 0) === 0 ? (
-        <Text style={styles.noDataText}>Tidak ada fasilitas umum yang tersedia</Text>
+        <Text style={styles.noDataText}>{t('propertyDetail.noFacilities', 'Tidak ada fasilitas umum yang tersedia')}</Text>
       ) : (
         <View style={styles.facilitiesGrid}>
           {(property?.general_facilities ?? []).map((fac, i) => (
             <View key={i} style={styles.facilityGridItem}>
-              <Text style={styles.facilityGridText}>{fac.replace(/_/g, ' ')}</Text>
+              <DynamicText style={styles.facilityGridText}>{t(`property.form.fac${fac.charAt(0).toUpperCase() + fac.slice(1).replace(/_([a-z])/g, (g) => g[1].toUpperCase())}`, fac.replace(/_/g, ' '))}</DynamicText>
             </View>
           ))}
         </View>
       )}
-      {property?.rules && (
+      {!!(getLocalizedField(property, 'rules') || property?.rules) && (
         <View style={styles.rulesCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
             <Ionicons name="document-text" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>Peraturan Kosan</Text>
+            <Text style={[styles.rulesTitle, { marginBottom: 0 }]}>{t('propertyDetail.rulesTitle', 'Peraturan Kosan')}</Text>
           </View>
-          <Text style={styles.rulesText}>{property.rules}</Text>
+          {(getLocalizedField(property, 'rules') || property.rules).split('\n').map((rule, idx) => (
+            <Text key={idx} style={styles.rulesText}>{rule.replace(/^\d+\.\s*/, '').trim()}</Text>
+          ))}
         </View>
       )}
     </View>
@@ -334,19 +415,19 @@ const PropertyDetailScreen = ({ navigation, route }) => {
           <Text style={styles.ratingBigNumber}>{ratingSummary.average}</Text>
           <View style={styles.ratingStars}>
             <Ionicons name="star" size={24} color={COLORS.warning} />
-            <Text style={styles.ratingTotalText}>dari {ratingSummary.count} Ulasan</Text>
+            <Text style={styles.ratingTotalText}>{t('propertyDetail.fromReviews', 'dari {{count}} Ulasan', { count: ratingSummary.count })}</Text>
           </View>
         </View>
       </View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.addReviewBtn}
         onPress={() => navigation.navigate('AddReviewScreen', { propertyId: property.id })}
       >
         <Ionicons name="pencil" size={20} color={COLORS.white} />
-        <Text style={styles.addReviewBtnText}>Tulis Ulasan</Text>
+        <Text style={styles.addReviewBtnText}>{t('propertyDetail.writeReview', 'Tulis Ulasan')}</Text>
       </TouchableOpacity>
       {reviews.length === 0 ? (
-        <Text style={styles.noDataText}>Belum ada ulasan untuk kosan ini.</Text>
+        <Text style={styles.noDataText}>{t('propertyDetail.noReviews', 'Belum ada ulasan untuk kosan ini.')}</Text>
       ) : (
         reviews.map((rev) => (
           <View key={rev.id} style={styles.reviewCard}>
@@ -355,15 +436,15 @@ const PropertyDetailScreen = ({ navigation, route }) => {
                 <Text style={styles.ownerAvatarText}>{rev.users?.full_name?.[0]?.toUpperCase() ?? 'U'}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.reviewName}>{rev.users?.full_name ?? 'Anonim'}</Text>
-                <Text style={styles.reviewDate}>{new Date(rev.created_at).toLocaleDateString('id-ID')}</Text>
+                <Text style={styles.reviewName}>{rev.users?.full_name ?? t('common.anonymous', 'Anonim')}</Text>
+                <Text style={styles.reviewDate}>{new Date(rev.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID')}</Text>
               </View>
               <View style={styles.reviewStarBadge}>
                 <Ionicons name="star" size={14} color={COLORS.warning} style={{ marginRight: 4 }} />
                 <Text style={styles.reviewStarText}>{Number(rev.average_rating).toFixed(1)}</Text>
               </View>
             </View>
-            {rev.comment && <Text style={styles.reviewComment}>{rev.comment}</Text>}
+            {!!(getLocalizedField(rev, 'comment') || rev.comment) && <Text style={styles.reviewComment}>{getLocalizedField(rev, 'comment')}</Text>}
           </View>
         ))
       )}
@@ -419,40 +500,47 @@ const PropertyDetailScreen = ({ navigation, route }) => {
 
           {/* Available Count */}
           <View style={styles.availableBadge}>
-            <Text style={styles.availableBadgeText}>{availableRooms.length} kamar tersedia</Text>
+            <Text style={styles.availableBadgeText}>{t('propertyDetail.roomsAvailable', '{{count}} kamar tersedia', { count: availableRooms.length })}</Text>
           </View>
+
+          {property?.owner_id === currentUser?.id && (
+            <View style={{ position: 'absolute', top: insets.top + 16, left: 16, backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="key" size={14} color={COLORS.white} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 12, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+            </View>
+          )}
         </View>
 
         {/* Property Name & Address */}
         <View style={styles.propertyHeader}>
-          <Text style={styles.propertyName}>{property?.name}</Text>
+          <Text style={styles.propertyName}>{getLocalizedField(property, 'name')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="location" size={16} color={COLORS.accent} style={{ marginRight: 4 }} />
-            <Text style={styles.propertyAddress}>{property?.address_line}, {property?.city}</Text>
+            <Ionicons name="location-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+            <Text style={styles.propertyAddress}>{getLocalizedField(property, 'address_line')}, {property?.city}</Text>
           </View>
         </View>
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          {TABS.map((tab) => (
+          {TAB_KEYS.map((tabKey) => (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}
+              key={tabKey}
+              style={[styles.tab, activeTab === tabKey && styles.tabActive]}
+              onPress={() => setActiveTab(tabKey)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab}
+              <Text style={[styles.tabText, activeTab === tabKey && styles.tabTextActive]}>
+                {getTabLabel(t, tabKey)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Tab Content */}
-        {activeTab === 'Kamar' && renderRooms()}
-        {activeTab === 'Informasi' && renderInfo()}
-        {activeTab === 'Fasilitas' && renderFacilities()}
-        {activeTab === 'Ulasan' && renderReviews()}
+        {activeTab === 'room' && renderRooms()}
+        {activeTab === 'info' && renderInfo()}
+        {activeTab === 'facility' && renderFacilities()}
+        {activeTab === 'review' && renderReviews()}
       </ScrollView>
     </View>
   );
@@ -686,7 +774,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING[2],
   },
   rulesText: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, lineHeight: 22 },
-  
+
   // Reviews Tab
   ratingSummaryCard: {
     backgroundColor: COLORS.white,

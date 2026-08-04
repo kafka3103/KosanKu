@@ -7,13 +7,15 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+
 
 import COLORS from '../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../constants/typography';
@@ -32,8 +34,12 @@ import RoomDetailScreen from '../screens/tenant/RoomDetailScreen';
 import FavoriteScreen from '../screens/tenant/FavoriteScreen';
 import RentalRequestFormScreen from '../screens/tenant/RentalRequestFormScreen';
 import MyRentScreen from '../screens/tenant/MyRentScreen';
+import ContractDetailScreen from '../screens/tenant/ContractDetailScreen';
 import InvoiceDetailScreen from '../screens/tenant/InvoiceDetailScreen';
 import PaymentScreen from '../screens/tenant/PaymentScreen';
+import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
+import PrivacyPolicyScreen from '../screens/shared/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
 
 // Shared Screens
 import NotificationScreen from '../screens/shared/NotificationScreen';
@@ -68,13 +74,16 @@ const SearchStackNavigator = () => (
   </SearchStack.Navigator>
 );
 
+
+
 /**
  * Stack Navigator untuk alur hunian aktif:
- * MyRent → InvoiceDetail → Payment
+ * MyRent → ContractDetail → InvoiceDetail → Payment
  */
 const MyRentStackNavigator = () => (
   <MyRentStack.Navigator screenOptions={{ headerShown: false }}>
     <MyRentStack.Screen name={TENANT_SCREENS.MY_RENT} component={MyRentScreen} />
+    <MyRentStack.Screen name="ContractDetailScreen" component={ContractDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.INVOICE_DETAIL} component={InvoiceDetailScreen} />
     <MyRentStack.Screen name={TENANT_SCREENS.PAYMENT} component={PaymentScreen} />
   </MyRentStack.Navigator>
@@ -145,9 +154,9 @@ const TenantDrawerContent = ({ navigation }) => {
   };
 
   const drawerItems = [
-    { label: t('navigation.tenant.profile'), screen: TENANT_SCREENS.PROFILE, icon: '👤' },
-    { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: '⚙️' },
+    { label: t('navigation.tenant.settings'), screen: TENANT_SCREENS.SETTINGS, icon: 'settings-outline' },
   ];
+
   const [hasOwnerProfile, setHasOwnerProfile] = React.useState(false);
 
   React.useEffect(() => {
@@ -159,34 +168,30 @@ const TenantDrawerContent = ({ navigation }) => {
     if (currentUser?.id) {
       checkProfile();
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     if (!hasOwnerProfile) {
       navigation.navigate('RoleRegistrationScreen', { targetRole: USER_ROLE.OWNER });
       return;
     }
 
+    const { checkOwnerVerification } = require('../services/userService');
+    const isVerified = await checkOwnerVerification(currentUser.id);
+    if (!isVerified) {
+      Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+      return;
+    }
+
     Alert.alert(
-      'Beralih Peran',
-      'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?',
+      t('navigation.switchRole.title', 'Beralih Peran'),
+      t('navigation.switchRole.toOwnerMsg', 'Apakah Anda ingin beralih mode aplikasi menjadi Pemilik Kosan?'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('navigation.switchRole.btnCancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Beralih',
-          onPress: async () => {
-            const { updateUserProfile } = require('../services/userService');
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: USER_ROLE.OWNER,
-            });
-            if (error) {
-              Alert.alert('Gagal', error.message);
-            } else if (data) {
-              useAuthStore.getState().setAuthenticatedUser(
-                useAuthStore.getState().currentSession,
-                data
-              );
-            }
+          text: t('navigation.switchRole.btnSwitch', 'Beralih'),
+          onPress: () => {
+            switchRole();
           },
         },
       ]
@@ -197,9 +202,13 @@ const TenantDrawerContent = ({ navigation }) => {
     <View style={[styles.drawerContainer, { paddingBottom: Math.max(insets.bottom, SPACING[5]) }]}>
       <View style={styles.drawerHeader}>
         <View style={styles.drawerAvatar}>
-          <Text style={styles.drawerAvatarText}>
-            {currentUser?.full_name?.[0]?.toUpperCase() ?? 'T'}
-          </Text>
+          {currentUser?.avatar_url ? (
+            <Image source={{ uri: currentUser.avatar_url }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+          ) : (
+            <Text style={styles.drawerAvatarText}>
+              {currentUser?.full_name?.[0]?.toUpperCase() ?? 'T'}
+            </Text>
+          )}
         </View>
         <Text style={styles.drawerUserName}>{currentUser?.full_name ?? 'Tenant'}</Text>
         <Text style={styles.drawerUserRole}>{t('auth.register.roleTenant')}</Text>
@@ -212,7 +221,7 @@ const TenantDrawerContent = ({ navigation }) => {
             style={styles.drawerMenuItem}
             onPress={() => navigation.navigate(item.screen)}
           >
-            <Text style={styles.drawerMenuIcon}>{item.icon}</Text>
+            <Ionicons name={item.icon} size={24} color={COLORS.textSecondary} style={styles.drawerMenuIcon} />
             <Text style={styles.drawerMenuLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -220,7 +229,7 @@ const TenantDrawerContent = ({ navigation }) => {
 
       <TouchableOpacity style={[styles.logoutButton, { backgroundColor: COLORS.primary, marginBottom: SPACING[3] }]} onPress={handleSwitchRole}>
         <Text style={[styles.logoutText, { color: COLORS.white }]}>
-          {hasOwnerProfile ? 'Beralih ke Mode Pemilik' : 'Daftar sebagai Pemilik'}
+          {hasOwnerProfile ? t('navigation.switchRole.switchToOwnerBtn', 'Beralih ke Mode Pemilik') : t('navigation.switchRole.registerOwnerBtn', 'Daftar sebagai Pemilik')}
         </Text>
       </TouchableOpacity>
 
@@ -230,8 +239,6 @@ const TenantDrawerContent = ({ navigation }) => {
     </View>
   );
 };
-
-import RoleRegistrationScreen from '../screens/shared/RoleRegistrationScreen';
 
 /**
  * Tenant Root Navigator — Drawer + Bottom Tab
@@ -251,11 +258,7 @@ const TenantNavigator = () => {
         component={TenantBottomTabNavigator}
         options={{ drawerItemStyle: { display: 'none' } }}
       />
-      <TenantDrawer.Screen
-        name={TENANT_SCREENS.PROFILE}
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
+
       <TenantDrawer.Screen
         name={TENANT_SCREENS.SETTINGS}
         component={SettingsScreen}
@@ -264,6 +267,16 @@ const TenantNavigator = () => {
       <TenantDrawer.Screen
         name="RoleRegistrationScreen"
         component={RoleRegistrationScreen}
+        options={{ headerShown: false }}
+      />
+      <TenantDrawer.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: false }}
+      />
+      <TenantDrawer.Screen
+        name="TermsOfService"
+        component={TermsOfServiceScreen}
         options={{ headerShown: false }}
       />
     </TenantDrawer.Navigator>
@@ -277,7 +290,7 @@ const styles = StyleSheet.create({
   },
   drawerContainer: { flex: 1 },
   drawerHeader: {
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.primary,
     padding: SPACING[6],
     paddingTop: SPACING[12],
     alignItems: 'flex-start',
@@ -294,7 +307,7 @@ const styles = StyleSheet.create({
   drawerAvatarText: {
     fontSize: FONT_SIZE.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.secondary,
+    color: COLORS.primary,
   },
   drawerUserName: {
     fontSize: FONT_SIZE.lg,
@@ -303,7 +316,7 @@ const styles = StyleSheet.create({
   },
   drawerUserRole: {
     fontSize: FONT_SIZE.sm,
-    color: 'rgba(255,255,255,0.8)',
+    color: COLORS.primaryLight,
     marginTop: 2,
   },
   drawerMenuContainer: {

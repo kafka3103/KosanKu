@@ -24,8 +24,9 @@
     "android": {
       "package": "com.kosanku.app",
       "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
+        "foregroundImage": "./assets/icon-adaptive-foreground.png",
         "backgroundColor": "#FFFFFF"
       },
       "permissions": [
@@ -50,12 +51,11 @@
     "plugins": [
       "expo-location",
       "expo-image-picker",
-      "expo-camera",
       [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#1A7F6E",
+          "color": "#1D447D",
           "sounds": []
         }
       ],
@@ -65,7 +65,8 @@
         {
           "RNMapboxMapsImpl": "mapbox"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {
