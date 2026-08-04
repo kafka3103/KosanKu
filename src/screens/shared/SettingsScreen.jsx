@@ -347,7 +347,7 @@ const SettingsScreen = ({ navigation }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('supportModal.title', 'Hubungi Support')}</Text>
+            <Text style={[styles.modalTitle, { marginBottom: SPACING[5] }]}>{t('supportModal.title', 'Hubungi Support')}</Text>
 
             <TouchableOpacity style={styles.supportOption} onPress={handleSupportWhatsApp}>
               <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
@@ -360,10 +360,10 @@ const SettingsScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.modalDeleteBtn, { backgroundColor: COLORS.grey300, marginTop: SPACING[4] }]}
+              style={[styles.modalDeleteBtn, { backgroundColor: COLORS.primaryLight + '20', marginTop: SPACING[3] }]}
               onPress={() => setShowSupportModal(false)}
             >
-              <Text style={styles.modalDeleteBtnText}>{t('common.buttons.cancel', 'Batal')}</Text>
+              <Text style={[styles.modalDeleteBtnText, { color: COLORS.primary }]}>{t('common.buttons.cancel', 'Batal')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1073,7 +1073,11 @@
       "asc": "A-Z",
       "desc": "Z-A",
       "priceAsc": "Lowest Price",
-      "priceDesc": "Highest Price"
+      "priceDesc": "Highest Price",
+      "contractAsc": "Nearest Contract End",
+      "contractDesc": "Furthest Contract End",
+      "contractAscShort": "Nearest",
+      "contractDescShort": "Furthest"
     },
     "buttons": {
       "save": "Save",

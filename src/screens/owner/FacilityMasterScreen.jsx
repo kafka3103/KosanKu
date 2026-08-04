@@ -185,7 +185,7 @@ const FacilityMasterScreen = ({ navigation }) => {
       <FlatList
         data={facilities.filter(f => activeFilter === 'all' ? true : f.category === activeFilter)}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: (insets?.bottom || 0) + 140 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -226,7 +226,7 @@ const FacilityMasterScreen = ({ navigation }) => {
       />
 
       {/* FAB */}
-      <TouchableOpacity style={[styles.fab, { bottom: insets.bottom > 0 ? insets.bottom + 16 : (Platform.OS === 'android' ? 48 : 30) }]} onPress={openAdd} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { bottom: (insets?.bottom || 0) + 32 }]} onPress={openAdd} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={COLORS.white} />
       </TouchableOpacity>
 
@@ -234,14 +234,14 @@ const FacilityMasterScreen = ({ navigation }) => {
       <Modal
         visible={isModalVisible}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setIsModalVisible(false)}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { paddingBottom: (insets?.bottom || 0) + 32 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {editingFacility ? t('facilityMaster.editTitle', 'Edit Fasilitas') : t('facilityMaster.addTitle', 'Tambah Fasilitas Baru')}
@@ -332,9 +332,9 @@ const styles = StyleSheet.create({
 
   filterRow: { flexDirection: 'row', paddingHorizontal: SPACING[4], paddingTop: SPACING[3], paddingBottom: SPACING[2], gap: SPACING[2] },
   filterChip: { paddingHorizontal: SPACING[4], paddingVertical: SPACING[2], borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
-  filterChipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  filterChipActive: { backgroundColor: '#F3E8FF', borderColor: '#9333EA' },
   filterChipText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium },
-  filterChipTextActive: { color: COLORS.primary, fontWeight: FONT_WEIGHT.semiBold },
+  filterChipTextActive: { color: '#9333EA', fontWeight: FONT_WEIGHT.semiBold },
 
   list: { padding: SPACING[4], gap: SPACING[3], paddingBottom: 120 },
   facilityCard: {
@@ -364,6 +364,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING[2],
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.full,
+    marginTop: SPACING[1],
+    marginLeft: -2,
   },
   categoryText: { fontSize: FONT_SIZE.xs, color: COLORS.textSecondary },
   facilityActions: { flexDirection: 'row', gap: SPACING[1] },

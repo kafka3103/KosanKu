@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, BackHandler } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,13 +16,22 @@ const PrivacyPolicyScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const userRole = useAuthStore(state => state.userRole);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (userRole === USER_ROLE.OWNER) {
       navigation.navigate(OWNER_SCREENS.SETTINGS);
     } else {
       navigation.navigate(TENANT_SCREENS.SETTINGS);
     }
-  };
+    return true; // prevent default behavior
+  }, [navigation, userRole]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => handleBack();
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack])
+  );
 
   return (
     <View style={styles.container}>

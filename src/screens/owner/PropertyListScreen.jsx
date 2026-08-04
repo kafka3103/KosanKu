@@ -198,7 +198,7 @@ const PropertyListScreen = ({ navigation }) => {
   const sortedProperties = [...properties].sort((a, b) => {
     const nameA = getLocalizedField(a, 'name')?.toLowerCase() || '';
     const nameB = getLocalizedField(b, 'name')?.toLowerCase() || '';
-    return sortBy === 'nameAsc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    return sortBy === 'nameAsc' ? nameA.localeCompare(nameB, undefined, { numeric: true }) : nameB.localeCompare(nameA, undefined, { numeric: true });
   });
 
   return (
@@ -217,20 +217,39 @@ const PropertyListScreen = ({ navigation }) => {
       </View>
 
       {/* Menus */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
-        <Menu
-          visible={sortVisible}
-          onDismiss={() => setSortVisible(false)}
-          anchor={
-            <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
-              {t('common.sort.title', 'Urutkan')}
-            </Button>
-          }
-        >
-          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Properti ${t('common.sort.asc', 'A-Z')}`} />
-          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Properti ${t('common.sort.desc', 'Z-A')}`} />
-        </Menu>
-      </View>
+        <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+          <Menu
+            visible={sortVisible}
+            onDismiss={() => setSortVisible(false)}
+            anchor={
+              <TouchableOpacity 
+                onPress={() => setSortVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primarySurface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: COLORS.primaryLight + '50',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                  {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                   sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                   t('common.sort.title', 'Urutkan')}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            }
+          >
+            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={t('common.sort.asc', 'A-Z')} />
+            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={t('common.sort.desc', 'Z-A')} />
+          </Menu>
+        </View>
 
       <FlatList
         data={sortedProperties}
@@ -291,11 +310,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
-    borderBottomLeftRadius: BORDER_RADIUS['2xl'],
-    borderBottomRightRadius: BORDER_RADIUS['2xl'],
   },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
@@ -354,7 +370,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semiBold,
   },
   badgeTextActive: {
-    color: COLORS.success,
+    color: '#047857',
   },
   badgeTextInactive: {
     color: COLORS.grey500,

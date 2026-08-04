@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu } from 'react-native-paper';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -148,6 +149,8 @@ const TenantListScreen = ({ navigation }) => {
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
   const insets = useSafeAreaInsets();
 
   const loadTenants = useCallback(async (silent = false) => {
@@ -189,6 +192,18 @@ const TenantListScreen = ({ navigation }) => {
     });
   };
 
+  const sortedContracts = [...contracts].sort((a, b) => {
+    if (sortBy === 'nameAsc' || sortBy === 'nameDesc') {
+      const nameA = a.users?.full_name || '';
+      const nameB = b.users?.full_name || '';
+      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB, undefined, { numeric: true }) : nameB.localeCompare(nameA, undefined, { numeric: true });
+    } else {
+      const dateA = new Date(a.end_date || 0).getTime();
+      const dateB = new Date(b.end_date || 0).getTime();
+      return sortBy === 'contractAsc' ? dateA - dateB : dateB - dateA;
+    }
+  });
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -212,8 +227,47 @@ const TenantListScreen = ({ navigation }) => {
         </Text>
       </View>
 
+      {/* Sorting Menu */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <TouchableOpacity 
+              onPress={() => setSortVisible(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: COLORS.primarySurface,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: COLORS.primaryLight + '50',
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                 sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                 sortBy === 'contractAsc' ? t('common.sort.contractAscShort', 'Terdekat') :
+                 sortBy === 'contractDesc' ? t('common.sort.contractDescShort', 'Terjauh') : 
+                 t('common.sort.title', 'Urutkan')}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={t('common.sort.asc', 'A-Z')} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={t('common.sort.desc', 'Z-A')} />
+          <Menu.Item onPress={() => { setSortBy('contractAsc'); setSortVisible(false); }} title={t('common.sort.contractAsc', 'Akhir Kontrak Terdekat')} />
+          <Menu.Item onPress={() => { setSortBy('contractDesc'); setSortVisible(false); }} title={t('common.sort.contractDesc', 'Akhir Kontrak Terjauh')} />
+        </Menu>
+      </View>
+
       <FlatList
-        data={contracts}
+        data={sortedContracts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}

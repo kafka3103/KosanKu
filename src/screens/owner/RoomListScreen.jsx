@@ -187,7 +187,7 @@ const RoomListScreen = ({ navigation, route }) => {
     if (sortBy.startsWith('name')) {
       const nameA = a.room_number?.toLowerCase() || '';
       const nameB = b.room_number?.toLowerCase() || '';
-      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB, undefined, { numeric: true }) : nameB.localeCompare(nameA, undefined, { numeric: true });
     } else {
       const priceA = a.base_price || 0;
       const priceB = b.base_price || 0;
@@ -217,37 +217,75 @@ const RoomListScreen = ({ navigation, route }) => {
         <Text style={[styles.headerSubtitle, { marginLeft: 36 }]}>{t('ownerRoomList.headerSubtitle', '{{count}} kamar', { count: rooms.length })} · {t('room.list.title')}</Text>
       </View>
 
-      {/* Menus */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[4], paddingVertical: SPACING[3], gap: SPACING[3], backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border, zIndex: 10 }}>
-        <Menu
-          visible={filterVisible}
-          onDismiss={() => setFilterVisible(false)}
-          anchor={
-            <Button mode="outlined" onPress={() => setFilterVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
-              {t('room.list.filterBtn', 'Filter')}: {filters.find(f => f.key === activeFilter)?.label}
-            </Button>
-          }
-        >
-          {filters.map(f => (
-            <Menu.Item key={f.key} onPress={() => { setActiveFilter(f.key); setFilterVisible(false); }} title={f.label} />
-          ))}
-        </Menu>
-
-        <Menu
-          visible={sortVisible}
-          onDismiss={() => setSortVisible(false)}
-          anchor={
-            <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
-              {t('common.sort.title', 'Urutkan')}
-            </Button>
-          }
-        >
-          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Kamar ${t('common.sort.asc', 'A-Z')}`} />
-          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Kamar ${t('common.sort.desc', 'Z-A')}`} />
-          <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
-          <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
-        </Menu>
-      </View>
+        {/* Menus */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[4], paddingVertical: SPACING[3], gap: SPACING[2], backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border, zIndex: 10 }}>
+          <Menu
+            visible={filterVisible}
+            onDismiss={() => setFilterVisible(false)}
+            anchor={
+              <TouchableOpacity 
+                onPress={() => setFilterVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primarySurface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: COLORS.primaryLight + '50',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="filter" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                  {t('room.list.filterBtn', 'Filter')}: {filters.find(f => f.key === activeFilter)?.label}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            }
+          >
+            {filters.map(f => (
+              <Menu.Item key={f.key} onPress={() => { setActiveFilter(f.key); setFilterVisible(false); }} title={f.label} />
+            ))}
+          </Menu>
+  
+          <Menu
+            visible={sortVisible}
+            onDismiss={() => setSortVisible(false)}
+            anchor={
+              <TouchableOpacity 
+                onPress={() => setSortVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primarySurface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: COLORS.primaryLight + '50',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                  {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                   sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                   sortBy === 'priceAsc' ? t('common.sort.priceAsc', 'Termurah') :
+                   sortBy === 'priceDesc' ? t('common.sort.priceDesc', 'Termahal') : 
+                   t('common.sort.title', 'Urutkan')}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            }
+          >
+            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={t('common.sort.asc', 'A-Z')} />
+            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={t('common.sort.desc', 'Z-A')} />
+            <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={t('common.sort.priceAsc', 'Termurah')} />
+            <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={t('common.sort.priceDesc', 'Termahal')} />
+          </Menu>
+        </View>
 
       {/* Room List */}
       <FlatList
@@ -294,7 +332,7 @@ const RoomListScreen = ({ navigation, route }) => {
 
       {/* FAB */}
       <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + 110 }]}
+        style={[styles.fab, { bottom: (insets?.bottom || 0) + 32 }]}
         onPress={() =>
           navigation.navigate(OWNER_SCREENS.ROOM_FORM, {
             room: null,

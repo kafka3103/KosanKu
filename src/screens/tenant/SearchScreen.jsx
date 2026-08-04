@@ -715,9 +715,9 @@ const SearchScreen = ({ navigation }) => {
             <FlatList
               data={[...properties].sort((a, b) => {
                 if (sortBy === 'nameAsc') {
-                  return (a.name || '').localeCompare(b.name || '');
+                  return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true });
                 } else if (sortBy === 'nameDesc') {
-                  return (b.name || '').localeCompare(a.name || '');
+                  return (b.name || '').localeCompare(a.name || '', undefined, { numeric: true });
                 }
                 const getMinPrice = (prop) => {
                   const availableRooms = prop.rooms?.filter((r) => r.status === 'available') || [];

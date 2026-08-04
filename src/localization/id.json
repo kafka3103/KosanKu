@@ -1064,7 +1064,11 @@
       "asc": "A-Z",
       "desc": "Z-A",
       "priceAsc": "Termurah",
-      "priceDesc": "Termahal"
+      "priceDesc": "Termahal",
+      "contractAsc": "Akhir Kontrak Terdekat",
+      "contractDesc": "Akhir Kontrak Terjauh",
+      "contractAscShort": "Terdekat",
+      "contractDescShort": "Terjauh"
     },
     "buttons": {
       "save": "Simpan",

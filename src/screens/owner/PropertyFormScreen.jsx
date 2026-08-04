@@ -561,7 +561,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Koordinat GPS / Peta */}
         <View style={styles.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
             <Ionicons name="location-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
             <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.gpsTitle', 'Titik Koordinat GPS Peta')}</Text>
           </View>
@@ -768,7 +768,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Fasilitas Umum */}
         <View style={styles.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
             <Ionicons name="business-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
             <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.genFacTitle', 'Fasilitas Umum')}</Text>
           </View>

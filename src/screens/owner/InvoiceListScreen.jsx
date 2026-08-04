@@ -171,18 +171,18 @@ const InvoiceListScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
           <DrawerButton />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t('ownerInvoiceList.title', 'Daftar Tagihan')}</Text>
-            {totalUnpaid > 0 && (
-              <View style={styles.summaryBanner}>
-                <Text style={styles.summaryLabel}>{t('ownerInvoiceList.totalUnpaid', 'Total Belum Terbayar')}</Text>
-                <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
-              </View>
-            )}
+            <Text style={[styles.headerTitle, { marginBottom: 0 }]}>{t('ownerInvoiceList.title', 'Daftar Tagihan')}</Text>
           </View>
         </View>
+        {totalUnpaid > 0 && (
+          <View style={styles.summaryBanner}>
+            <Text style={styles.summaryLabel}>{t('ownerInvoiceList.totalUnpaid', 'Total Belum Terbayar')}</Text>
+            <Text style={styles.summaryAmount}>{formatCurrency(totalUnpaid)}</Text>
+          </View>
+        )}
       </View>
 
       {/* Filter Tabs */}
