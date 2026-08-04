@@ -182,17 +182,7 @@ const MyRentScreen = ({ navigation }) => {
   // Belum punya hunian aktif
   if (contracts.length === 0 && rentalRequests.length === 0) {
     return (
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.emptyContent, { paddingBottom: insets.bottom + 100 }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={() => { setIsRefreshing(true); loadData(true); }}
-            colors={[COLORS.primary]}
-          />
-        }
-      >
+      <View style={styles.container}>
         <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <DrawerButton />
@@ -201,6 +191,17 @@ const MyRentScreen = ({ navigation }) => {
             </View>
           </View>
         </View>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.emptyContent, { paddingBottom: insets.bottom + 100 }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => { setIsRefreshing(true); loadData(true); }}
+              colors={[COLORS.primary]}
+            />
+          }
+        >
         <View style={styles.emptyContainer}>
           <Ionicons name="home-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>{t('myRent.noActiveRent', 'Belum Ada Hunian Aktif')}</Text>
@@ -218,6 +219,7 @@ const MyRentScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </View>
     );
   }
 
@@ -229,9 +231,57 @@ const MyRentScreen = ({ navigation }) => {
   });
 
   return (
-    <>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
+            <Text style={styles.headerSubtitle}>
+              {contracts.length > 0 ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Menus */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <TouchableOpacity
+              onPress={() => setSortVisible(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: COLORS.primarySurface,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: COLORS.primaryLight + '50',
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                 sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                 t('common.sort.title', 'Urutkan')}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`${t('common.sort.asc', 'A-Z')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`${t('common.sort.desc', 'Z-A')}`} />
+        </Menu>
+      </View>
+
       <ScrollView
-        style={styles.container}
+        style={{ flex: 1 }}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -243,34 +293,6 @@ const MyRentScreen = ({ navigation }) => {
           />
         }
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            <DrawerButton />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.headerTitle}>{t('myRent.myRent', 'Hunian Saya')}</Text>
-              <Text style={styles.headerSubtitle}>
-                {contracts.length > 0 ? t('myRent.activeContract', 'Kontrak aktif') : t('myRent.yourRequest', 'Pengajuan sewa Anda')}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Menus */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
-          <Menu
-            visible={sortVisible}
-            onDismiss={() => setSortVisible(false)}
-            anchor={
-              <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
-                {t('common.sort.title', 'Urutkan')}
-              </Button>
-            }
-          >
-            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Kos/Kamar ${t('common.sort.asc', 'A-Z')}`} />
-            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Kos/Kamar ${t('common.sort.desc', 'Z-A')}`} />
-          </Menu>
-        </View>
 
         {/* Pengajuan Pending (jika belum punya kontrak) */}
         {contracts.length === 0 && rentalRequests.length > 0 && (
@@ -345,12 +367,12 @@ const MyRentScreen = ({ navigation }) => {
                     <Text style={styles.roomPropertyName}>{property?.name}</Text>
                     <Text style={styles.roomNumber}>{t('roomDetail.roomNumber', 'Kamar {{number}}', { number: room?.room_number })}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <Ionicons name="location" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
+                      <Ionicons name="location-outline" size={12} color={COLORS.textTertiary} style={{ marginRight: 4 }} />
                       <Text style={[styles.roomAddress, { marginTop: 0 }]}>
                         {property?.address_line}, {property?.city}
                       </Text>
                     </View>
-                    <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)}{t('myRent.perMonth', '/month')}</Text>
+                    <Text style={styles.roomPrice}>{formatCurrency(contract.monthly_rate)}{t('myRent.perMonth', '/mo')}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -427,9 +449,9 @@ const MyRentScreen = ({ navigation }) => {
           )}
         </View>
       </ScrollView>
-    </>
-  );
-};
+    </View>
+    );
+  };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },

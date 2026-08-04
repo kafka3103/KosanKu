@@ -17,6 +17,7 @@ import {
   Linking,
   TextInput,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -337,8 +338,9 @@ const PaymentScreen = ({ navigation, route }) => {
         )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Header */}
         {/* (Amount Banner moved up) */}
 
         {/* Jika Sudah Lunas */}
@@ -379,7 +381,7 @@ const PaymentScreen = ({ navigation, route }) => {
                       </Text>
                       {method.isAuto && (
                         <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.success, fontWeight: FONT_WEIGHT.semiBold }}>
-                          {t('paymentScreen.autoVerification', '⚡ Verifikasi Otomatis 24 Jam')}
+                          {t('paymentScreen.autoVerification', 'Verifikasi Otomatis 24 Jam')}
                         </Text>
                       )}
                     </View>
@@ -520,13 +522,14 @@ const PaymentScreen = ({ navigation, route }) => {
             {isLoading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
-              <Text style={styles.payBtnText}>
+            <Text style={styles.payBtnText}>
                 {t('paymentScreen.payAmount', 'Bayar {{amount}}', { amount: formatCurrency(unpaidAmount) })}
               </Text>
             )}
           </TouchableOpacity>
         </View>
       )}
+      </KeyboardAvoidingView>
 
       {/* Xendit Payment Modal */}
       <Modal
@@ -536,7 +539,7 @@ const PaymentScreen = ({ navigation, route }) => {
         onRequestClose={() => setXenditResult(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { paddingBottom: Math.max((insets?.bottom || 0), 16) }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="lock-closed" size={16} color={COLORS.success} style={{ marginRight: 6 }} />
@@ -569,7 +572,7 @@ const PaymentScreen = ({ navigation, route }) => {
                       // Cek status real dari DB, jangan langsung set paid
                       await checkStatusNow();
                       Alert.alert(
-                        t('paymentScreen.paymentProcessed', '✅ Pembayaran Diproses!'),
+                        t('paymentScreen.paymentProcessed', 'Pembayaran Diproses!'),
                         t('paymentScreen.paymentProcessedDesc', 'Pembayaran Anda telah diterima. Status tagihan akan diperbarui secara otomatis.'),
                         [{ text: 'OK', onPress: () => navigation.popToTop() }]
                       );
@@ -628,7 +631,7 @@ const PaymentScreen = ({ navigation, route }) => {
                         // Cek status real dari DB, jangan langsung set paid
                         await checkStatusNow();
                         Alert.alert(
-                          t('paymentScreen.paymentProcessed', '✅ Pembayaran Diproses!'),
+                          t('paymentScreen.paymentProcessed', 'Pembayaran Diproses!'),
                           t('paymentScreen.paymentProcessedDesc', 'Pembayaran Anda telah diterima. Status tagihan akan diperbarui secara otomatis.'),
                           [{ text: 'OK', onPress: () => navigation.popToTop() }]
                         );

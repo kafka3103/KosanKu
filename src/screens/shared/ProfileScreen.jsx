@@ -49,7 +49,7 @@ const InfoRow = ({ label, value, icon, iconColor = COLORS.textSecondary }) => (
   </View>
 );
 
-const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default' }) => (
+const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default', maxLength }) => (
   <View style={styles.infoRow}>
     <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.infoIcon} />
     <View style={styles.infoContent}>
@@ -60,6 +60,7 @@ const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboa
         onChangeText={onChangeText}
         placeholder={placeholder}
         keyboardType={keyboardType}
+        maxLength={maxLength}
         placeholderTextColor={COLORS.textTertiary}
       />
     </View>
@@ -101,7 +102,6 @@ const ProfileScreen = ({ navigation }) => {
 
   // Owner Specific States
   const [ownerKtpNumber, setOwnerKtpNumber] = useState('');
-  const [ownerNpwpNumber, setOwnerNpwpNumber] = useState('');
   const [bankName, setBankName] = useState('');
   const [bankAccountName, setBankAccountName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
@@ -136,7 +136,6 @@ const ProfileScreen = ({ navigation }) => {
       const { data: ownerData } = await getOwnerProfile(currentUser.id);
       if (ownerData) {
         setOwnerKtpNumber(ownerData.ktp_number || '');
-        setOwnerNpwpNumber(ownerData.npwp_number || '');
         setBankName(ownerData.bank_name || '');
         setBankAccountName(ownerData.bank_account_name || '');
         setBankAccountNumber(ownerData.bank_account_number || '');
@@ -279,7 +278,6 @@ const ProfileScreen = ({ navigation }) => {
     } else {
       const { error: oError } = await upsertOwnerProfile(currentUser.id, {
         ktp_number: ownerKtpNumber.trim() || null,
-        npwp_number: ownerNpwpNumber.trim() || null,
         bank_name: bankName.trim() || null,
         bank_account_name: bankAccountName.trim() || null,
         bank_account_number: bankAccountNumber.trim() || null,
@@ -491,14 +489,7 @@ const ProfileScreen = ({ navigation }) => {
               icon="card-outline"
               placeholder="Contoh: 3201234567890123"
               keyboardType="numeric"
-            />
-            <EditableInfoRow
-              label={t('profile.ownerNpwp', 'NPWP (Opsional)')}
-              value={ownerNpwpNumber}
-              onChangeText={setOwnerNpwpNumber}
-              icon="document-text-outline"
-              placeholder="Contoh: 12.345.678.9-012.000"
-              keyboardType="numeric"
+              maxLength={16}
             />
             <EditableInfoRow
               label={t('profile.bankName', 'Nama Bank')}

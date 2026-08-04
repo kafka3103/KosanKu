@@ -158,6 +158,7 @@ export const getTenantFavorites = async (tenantId) => {
         city,
         cover_photo_url,
         gender_policy,
+        general_facilities,
         rooms(base_price, status)
       )
     `)

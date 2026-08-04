@@ -5,11 +5,11 @@
  */
 
 export const COLORS = {
-  // ── Brand Primary (Teal — keberhasilan, profesional) ──
-  primary: '#14B8A6',
-  primaryLight: '#5EEAD4',
-  primaryDark: '#0F766E',
-  primarySurface: '#F0FDFA',
+  // ── Brand Primary ──
+  primary: '#1d447d',
+  primaryLight: '#a6c5f7',
+  primaryDark: '#112c54',
+  primarySurface: '#f0f5fc',
 
   // ── Brand Secondary (Navy — profesionalisme, keamanan) ──
   secondary: '#1E293B',
@@ -38,8 +38,8 @@ export const COLORS = {
   grey900: '#111827',
 
   // ── Semantic ──
-  success: '#14B8A6',
-  successLight: '#CCFBF1',
+  success: '#10B981',
+  successLight: '#D1FAE5',
   warning: '#EA580C',
   warningLight: '#FFEDD5',
   error: '#DC2626',
@@ -48,7 +48,7 @@ export const COLORS = {
   infoLight: '#DBEAFE',
 
   // ── Room Status ──
-  statusAvailable: '#14B8A6', // Teal
+  statusAvailable: '#10B981', // Emerald
   statusPending: '#EA580C', // Vibrant Orange
   statusOccupied: '#DC2626',
   statusMaintenance: '#6B7280',

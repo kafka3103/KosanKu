@@ -548,7 +548,7 @@ const SearchScreen = ({ navigation }) => {
           <TouchableOpacity
             style={{
               position: 'absolute',
-              bottom: selectedMapProperty ? 220 : 145, // move up if card is shown, and keep above bottom tab
+              bottom: selectedMapProperty ? (insets.bottom || 0) + 265 : (insets.bottom || 0) + 105, // Dinamis mengikuti navigasi bawaan
               right: 20,
               backgroundColor: COLORS.white,
               width: 54,
@@ -626,9 +626,12 @@ const SearchScreen = ({ navigation }) => {
                     )}
                     <Text style={styles.mapPreviewAddress} numberOfLines={1}>{selectedMapProperty.address_line}, {selectedMapProperty.city}</Text>
                     {selectedMapProperty.distanceKm != null && (
-                      <Text style={styles.mapPreviewDistance}>
-                        📍 {formatDistance(selectedMapProperty.distanceKm)} {t('searchScreen.distance', 'dari lokasi Anda')}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                        <Ionicons name="location-outline" size={12} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+                        <Text style={[styles.mapPreviewDistance, { marginTop: 0 }]}>
+                          {formatDistance(selectedMapProperty.distanceKm)} {t('searchScreen.distance', 'dari lokasi Anda')}
+                        </Text>
+                      </View>
                     )}
                   </View>
                 </View>
@@ -664,7 +667,6 @@ const SearchScreen = ({ navigation }) => {
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING[5], paddingTop: SPACING[4], paddingBottom: SPACING[2] }}>
             <Text style={{ fontSize: FONT_SIZE.md, color: COLORS.textSecondary }}>
               {t('searchScreen.propertiesFound', '{{count}} kosan ditemukan', { count: properties.length })}
@@ -673,11 +675,34 @@ const SearchScreen = ({ navigation }) => {
               visible={sortVisible}
               onDismiss={() => setSortVisible(false)}
               anchor={
-                <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
-                  {t('common.sort.title', 'Urutkan')}
-                </Button>
+                <TouchableOpacity 
+                  onPress={() => setSortVisible(true)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: COLORS.primarySurface,
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: COLORS.primaryLight + '50',
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                    {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                     sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                     sortBy === 'priceAsc' ? t('common.sort.priceAsc', 'Termurah') :
+                     sortBy === 'priceDesc' ? t('common.sort.priceDesc', 'Termahal') : 
+                     t('common.sort.title', 'Urutkan')}
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
               }
             >
+              <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`${t('common.sort.asc', 'A-Z')}`} />
+              <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`${t('common.sort.desc', 'Z-A')}`} />
               <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
               <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
             </Menu>
@@ -689,6 +714,11 @@ const SearchScreen = ({ navigation }) => {
           ) : (
             <FlatList
               data={[...properties].sort((a, b) => {
+                if (sortBy === 'nameAsc') {
+                  return (a.name || '').localeCompare(b.name || '');
+                } else if (sortBy === 'nameDesc') {
+                  return (b.name || '').localeCompare(a.name || '');
+                }
                 const getMinPrice = (prop) => {
                   const availableRooms = prop.rooms?.filter((r) => r.status === 'available') || [];
                   return availableRooms.length > 0 ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0))) : Infinity;

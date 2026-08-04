@@ -213,7 +213,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
             <Text style={styles.roomSummaryName}>{property?.name}</Text>
             <Text style={styles.roomSummaryRoom}>Kamar {room?.room_number}</Text>
             <Text style={styles.roomSummaryPrice}>
-              {formatCurrency(room?.base_price)}/bulan
+              {formatCurrency(room?.base_price)}{t('myRent.perMonth', '/bln')}
             </Text>
           </View>
         </View>

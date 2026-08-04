@@ -77,18 +77,54 @@ const FavoriteCard = ({ favorite, onPress, onRemove, t, currentUser }) => {
       {/* Info */}
       <View style={styles.cardBody}>
         <Text style={styles.propertyName} numberOfLines={1}>{property?.name}</Text>
-        <Text style={styles.propertyAddress} numberOfLines={1}>
-          📍 {property?.address_line}, {property?.city}
-        </Text>
-        <View style={styles.cardFooter}>
-          <Text style={styles.genderBadge}>
-            {property?.gender_policy === 'male' ? t('favorites.maleOnly', '👨 Putra')
-              : property?.gender_policy === 'female' ? t('favorites.femaleOnly', '👩 Putri')
-              : t('favorites.mixed', '👫 Campur')}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+          <Text style={[styles.propertyAddress, { marginBottom: 0, flex: 1 }]} numberOfLines={1}>
+            {property?.address_line}, {property?.city}
           </Text>
+        </View>
+
+        {Array.isArray(property?.general_facilities) && property.general_facilities.length > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3], flexWrap: 'wrap', gap: 4 }}>
+            {property.general_facilities.slice(0, 3).map((fac, idx) => (
+              <View key={idx} style={styles.facilityBadge}>
+                <Text style={styles.facilityBadgeText} numberOfLines={1}>{typeof fac === 'string' ? fac : fac.name}</Text>
+              </View>
+            ))}
+            {property.general_facilities.length > 3 && (
+              <Text style={{ fontSize: 10, color: COLORS.textTertiary, marginLeft: 2, alignSelf: 'center' }}>+{property.general_facilities.length - 3}</Text>
+            )}
+          </View>
+        )}
+
+        <View style={styles.cardFooter}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, overflow: 'hidden', marginRight: 8 }}>
+            <View style={styles.genderBadge}>
+              <Ionicons
+                name={
+                  property?.gender_policy === 'male' ? 'man'
+                    : property?.gender_policy === 'female' ? 'woman'
+                      : 'male-female'
+                }
+                size={12}
+                color={
+                  property?.gender_policy === 'male' ? COLORS.info
+                    : property?.gender_policy === 'female' ? COLORS.error
+                      : COLORS.primary
+                }
+                style={{ marginRight: 4 }}
+              />
+              <Text style={styles.genderBadgeText}>
+                {property?.gender_policy === 'male' ? t('favorites.maleOnly', 'Putra')
+                  : property?.gender_policy === 'female' ? t('favorites.femaleOnly', 'Putri')
+                  : t('favorites.mixed', 'Campur')}
+              </Text>
+            </View>
+          </View>
+
           {minPrice != null ? (
             <Text style={styles.price}>
-              {t('favorites.startFrom', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>{t('common.perMonth')}
+              {t('favorites.startFrom', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text><Text style={{fontSize:11, color: COLORS.textSecondary}}>{t('common.perMonth', '/bln')}</Text>
             </Text>
           ) : (
             <Text style={styles.noRoomText}>{t('favorites.notAvailable', 'Tidak tersedia')}</Text>
@@ -185,13 +221,34 @@ const FavoriteScreen = ({ navigation }) => {
           visible={sortVisible}
           onDismiss={() => setSortVisible(false)}
           anchor={
-            <Button mode="outlined" onPress={() => setSortVisible(true)} textColor={COLORS.textPrimary} style={{ borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md }} labelStyle={{ fontSize: 13, marginHorizontal: 12, marginVertical: 6 }}>
-              {t('common.sort.title', 'Urutkan')}
-            </Button>
+            <TouchableOpacity
+              onPress={() => setSortVisible(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: COLORS.primarySurface,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: COLORS.primaryLight + '50',
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                 sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                 sortBy === 'priceAsc' ? t('common.sort.priceAsc', 'Termurah') :
+                 sortBy === 'priceDesc' ? t('common.sort.priceDesc', 'Termahal') : 
+                 t('common.sort.title', 'Urutkan')}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
           }
         >
-          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`Kos ${t('common.sort.asc', 'A-Z')}`} />
-          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`Kos ${t('common.sort.desc', 'Z-A')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`${t('common.sort.asc', 'A-Z')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`${t('common.sort.desc', 'Z-A')}`} />
           <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
           <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
         </Menu>
@@ -323,12 +380,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   genderBadge: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.grey100,
     paddingHorizontal: SPACING[2],
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
+  },
+  genderBadgeText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  facilityBadge: {
+    backgroundColor: COLORS.primarySurface,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.sm,
+    marginRight: 4,
+  },
+  facilityBadgeText: {
+    fontSize: 9,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
   },
   price: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   priceValue: {

@@ -18,6 +18,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Menu } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,6 +76,8 @@ const PropertyDetailScreen = ({ navigation, route }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState('room');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
 
   const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 });
   const [reviews, setReviews] = useState([]);
@@ -131,15 +134,58 @@ const PropertyDetailScreen = ({ navigation, route }) => {
     );
   }
 
-  const renderRooms = () => (
+  const renderRooms = () => {
+    const sortedRooms = [...availableRooms].sort((a, b) => {
+      const strA = `${a.room_number || ''}`.toLowerCase();
+      const strB = `${b.room_number || ''}`.toLowerCase();
+      return sortBy === 'nameAsc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    });
+
+    return (
     <View style={styles.tabContent}>
-      {availableRooms.length === 0 ? (
+      {availableRooms.length > 0 && (
+        <View style={{ flexDirection: 'row', paddingBottom: SPACING[3], zIndex: 10 }}>
+          <Menu
+            visible={sortVisible}
+            onDismiss={() => setSortVisible(false)}
+            anchor={
+              <TouchableOpacity
+                onPress={() => setSortVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primarySurface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: COLORS.primaryLight + '50',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                  {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                   sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                   t('common.sort.title', 'Urutkan')}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            }
+          >
+            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`${t('common.sort.asc', 'A-Z')}`} />
+            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`${t('common.sort.desc', 'Z-A')}`} />
+          </Menu>
+        </View>
+      )}
+
+      {sortedRooms.length === 0 ? (
         <View style={styles.noRoomsContainer}>
           <Ionicons name="sad-outline" size={32} color={COLORS.textTertiary} style={{ marginBottom: 8 }} />
           <Text style={styles.noRoomsText}>{t('propertyDetail.noRooms', 'Tidak ada kamar tersedia saat ini')}</Text>
         </View>
       ) : (
-        availableRooms.map((room, index) => {
+        sortedRooms.map((room, index) => {
           const facilities = room.room_facilities
             ?.filter((rf) => rf.facility_master)
             ?.map((rf) => getLocalizedField(rf.facility_master, 'name'))
@@ -186,13 +232,14 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         })
       )}
     </View>
-  );
+    );
+  };
 
   const renderInfo = () => (
     <View style={styles.tabContent}>
       <View style={styles.infoCard}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
-          <Ionicons name="location" size={20} color={COLORS.accent} style={{ marginRight: 6 }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
+          <Ionicons name="location-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
           <Text style={[styles.infoCardTitle, { marginBottom: 0 }]}>{t('propertyDetail.locationTitle', 'Lokasi')}</Text>
         </View>
         <Text style={styles.infoText}>{property?.address_line}</Text>
@@ -225,9 +272,12 @@ const PropertyDetailScreen = ({ navigation, route }) => {
               </MapboxGL.MarkerView>
             </MapboxGL.MapView>
             <View style={{ position: 'absolute', bottom: 6, left: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.7)', padding: 6, borderRadius: 6 }}>
-              <Text style={{ color: COLORS.white, fontSize: 10, textAlign: 'center' }}>
-                📍 Lat: {parseFloat(property.latitude).toFixed(5)}, Long: {parseFloat(property.longitude).toFixed(5)}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="location-outline" size={10} color={COLORS.white} style={{ marginRight: 2 }} />
+                <Text style={{ color: COLORS.white, fontSize: 10, textAlign: 'center' }}>
+                  Lat: {parseFloat(property.latitude).toFixed(5)}, Long: {parseFloat(property.longitude).toFixed(5)}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -251,9 +301,9 @@ const PropertyDetailScreen = ({ navigation, route }) => {
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="map" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+            <Ionicons name="map-outline" size={18} color={COLORS.white} style={{ marginRight: 8 }} />
             <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
-              {t('propertyDetail.openMap', 'Buka Rute di Google Maps')}
+              {t('propertyDetail.openMap', 'Buka Peta')}
             </Text>
           </TouchableOpacity>
         )}
@@ -465,7 +515,7 @@ const PropertyDetailScreen = ({ navigation, route }) => {
         <View style={styles.propertyHeader}>
           <Text style={styles.propertyName}>{getLocalizedField(property, 'name')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="location" size={16} color={COLORS.accent} style={{ marginRight: 4 }} />
+            <Ionicons name="location-outline" size={16} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
             <Text style={styles.propertyAddress}>{getLocalizedField(property, 'address_line')}, {property?.city}</Text>
           </View>
         </View>
