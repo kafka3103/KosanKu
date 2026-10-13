@@ -1,0 +1,26 @@
+# Kosanku 🏢 - Property Management SaaS Mobile App
+
+**Kosanku** adalah aplikasi seluler yang dirancang untuk mendigitalisasi dan mengotomatisasi alur bisnis (*business flow*) manajemen kos-kosan, baik dari sisi pemilik properti maupun pencari/penyewa kamar.
+
+### 💡 The Business Problem
+Banyak pengelola kos-kosan independen yang masih menggunakan pencatatan manual berbasis buku atau spreadsheet dasar. Hal ini sering menimbulkan masalah seperti:
+- Riwayat transaksi (cash flow) yang rentan hilang atau tidak akurat.
+- Sulitnya memvalidasi data dan memantau status penyewa aktif.
+- Proses pencarian lokasi kos yang tidak terintegrasi secara digital.
+
+### 🎯 The Solution
+Aplikasi ini hadir sebagai ekosistem digital *all-in-one* yang menyelesaikan inefisiensi administratif dengan menyediakan fitur:
+- **Tenant Management:** Validasi penyewa dan pemantauan masa sewa secara *real-time*.
+- **Financial Tracking:** Pencatatan otomatis pembayaran tagihan dan pemantauan pendapatan (revenue).
+- **Location Discovery:** Memudahkan calon penyewa mencari lokasi dan mengajukan pengajuan sewa dalam satu ketukan.
+
+### 🛠️ System Architecture & Tech Stack
+Proyek ini dibangun dengan fokus pada arsitektur yang ringan, aman, dan *scalable*.
+- **Frontend / Mobile:** React Native (Menghasilkan UI/UX interaktif lintas *platform*).
+- **Backend & Database:** Supabase (Menyediakan skalabilitas relasional dan *BaaS* yang aman).
+
+### 👨‍💻 My Role
+Sebagai **Fullstack Developer & System Analyst** dalam tim pengembangan aplikasi ini, saya berfokus pada:
+1. Merancang logika bisnis dan struktur relasi *database*.
+2. Membangun integrasi *frontend* dan *backend*.
+3. Memastikan alur transaksi dan pengelolaan kamar berjalan tanpa *bug* operasional.
