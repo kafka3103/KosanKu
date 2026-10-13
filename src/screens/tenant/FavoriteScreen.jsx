@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
@@ -36,7 +37,7 @@ const formatCurrency = (amount) =>
     maximumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const FavoriteCard = ({ favorite, onPress, onRemove }) => {
+const FavoriteCard = ({ favorite, onPress, onRemove, t, currentUser }) => {
   const property = favorite.properties;
   const rooms = property?.rooms ?? [];
   const availableRooms = rooms.filter((r) => r.status === 'available');
@@ -44,8 +45,10 @@ const FavoriteCard = ({ favorite, onPress, onRemove }) => {
     ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0)))
     : null;
 
+  const isOwnProperty = property?.owner_id === currentUser?.id;
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.card, isOwnProperty && { borderColor: COLORS.primary, borderWidth: 2 }]} onPress={onPress} activeOpacity={0.85}>
       {/* Photo */}
       <View style={styles.photoContainer}>
         {property?.cover_photo_url ? (
@@ -56,11 +59,17 @@ const FavoriteCard = ({ favorite, onPress, onRemove }) => {
           </View>
         )}
         <TouchableOpacity style={styles.heartBtn} onPress={onRemove} activeOpacity={0.7}>
-          <Text style={styles.heartText}>❤️</Text>
+          <Ionicons name="heart" size={20} color={COLORS.error} />
         </TouchableOpacity>
+        {isOwnProperty && (
+          <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="key" size={12} color={COLORS.white} style={{ marginRight: 4 }} />
+            <Text style={{ fontSize: 10, color: COLORS.white, fontWeight: 'bold' }}>{t('search.myProperty', 'Kos Milik Anda')}</Text>
+          </View>
+        )}
         {availableRooms.length > 0 && (
           <View style={styles.availableBadge}>
-            <Text style={styles.availableBadgeText}>{availableRooms.length} tersedia</Text>
+            <Text style={styles.availableBadgeText}>{t('favorites.available', '{{count}} tersedia', { count: availableRooms.length })}</Text>
           </View>
         )}
       </View>
@@ -68,21 +77,57 @@ const FavoriteCard = ({ favorite, onPress, onRemove }) => {
       {/* Info */}
       <View style={styles.cardBody}>
         <Text style={styles.propertyName} numberOfLines={1}>{property?.name}</Text>
-        <Text style={styles.propertyAddress} numberOfLines={1}>
-          📍 {property?.address_line}, {property?.city}
-        </Text>
-        <View style={styles.cardFooter}>
-          <Text style={styles.genderBadge}>
-            {property?.gender_policy === 'male' ? '👨 Putra'
-              : property?.gender_policy === 'female' ? '👩 Putri'
-              : '👫 Campur'}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+          <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+          <Text style={[styles.propertyAddress, { marginBottom: 0, flex: 1 }]} numberOfLines={1}>
+            {property?.address_line}, {property?.city}
           </Text>
+        </View>
+
+        {Array.isArray(property?.general_facilities) && property.general_facilities.length > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3], flexWrap: 'wrap', gap: 4 }}>
+            {property.general_facilities.slice(0, 3).map((fac, idx) => (
+              <View key={idx} style={styles.facilityBadge}>
+                <Text style={styles.facilityBadgeText} numberOfLines={1}>{typeof fac === 'string' ? fac : fac.name}</Text>
+              </View>
+            ))}
+            {property.general_facilities.length > 3 && (
+              <Text style={{ fontSize: 10, color: COLORS.textTertiary, marginLeft: 2, alignSelf: 'center' }}>+{property.general_facilities.length - 3}</Text>
+            )}
+          </View>
+        )}
+
+        <View style={styles.cardFooter}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, overflow: 'hidden', marginRight: 8 }}>
+            <View style={styles.genderBadge}>
+              <Ionicons
+                name={
+                  property?.gender_policy === 'male' ? 'man'
+                    : property?.gender_policy === 'female' ? 'woman'
+                      : 'male-female'
+                }
+                size={12}
+                color={
+                  property?.gender_policy === 'male' ? COLORS.info
+                    : property?.gender_policy === 'female' ? COLORS.error
+                      : COLORS.primary
+                }
+                style={{ marginRight: 4 }}
+              />
+              <Text style={styles.genderBadgeText}>
+                {property?.gender_policy === 'male' ? t('favorites.maleOnly', 'Putra')
+                  : property?.gender_policy === 'female' ? t('favorites.femaleOnly', 'Putri')
+                  : t('favorites.mixed', 'Campur')}
+              </Text>
+            </View>
+          </View>
+
           {minPrice != null ? (
             <Text style={styles.price}>
-              Mulai <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text>/bln
+              {t('favorites.startFrom', 'Mulai')} <Text style={styles.priceValue}>{formatCurrency(minPrice)}</Text><Text style={{fontSize:11, color: COLORS.textSecondary}}>{t('common.perMonth', '/bln')}</Text>
             </Text>
           ) : (
-            <Text style={styles.noRoomText}>Tidak tersedia</Text>
+            <Text style={styles.noRoomText}>{t('favorites.notAvailable', 'Tidak tersedia')}</Text>
           )}
         </View>
       </View>
@@ -97,6 +142,8 @@ const FavoriteScreen = ({ navigation }) => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
 
   const loadFavorites = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
@@ -115,12 +162,12 @@ const FavoriteScreen = ({ navigation }) => {
 
   const handleRemoveFavorite = (favorite) => {
     Alert.alert(
-      'Hapus Favorit',
-      `Hapus "${favorite.properties?.name}" dari daftar favorit?`,
+      t('favorites.removeTitle', 'Hapus Favorit'),
+      t('favorites.removeMsg', `Hapus "${favorite.properties?.name}" dari daftar favorit?`, { name: favorite.properties?.name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('favorites.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('favorites.remove', 'Hapus'),
           style: 'destructive',
           onPress: async () => {
             await toggleFavorite(currentUser.id, favorite.properties?.id);
@@ -139,6 +186,22 @@ const FavoriteScreen = ({ navigation }) => {
     );
   }
 
+  const sortedFavorites = [...favorites].sort((a, b) => {
+    if (sortBy.startsWith('name')) {
+      const nameA = a.properties?.name?.toLowerCase() || '';
+      const nameB = b.properties?.name?.toLowerCase() || '';
+      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    } else {
+      const getMinPrice = (prop) => {
+        const availableRooms = prop?.rooms?.filter((r) => r.status === 'available') || [];
+        return availableRooms.length > 0 ? Math.min(...availableRooms.map((r) => parseFloat(r.base_price ?? 0))) : Infinity;
+      };
+      const priceA = getMinPrice(a.properties);
+      const priceB = getMinPrice(b.properties);
+      return sortBy === 'priceAsc' ? priceA - priceB : priceB - priceA;
+    }
+  });
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -146,14 +209,53 @@ const FavoriteScreen = ({ navigation }) => {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <DrawerButton />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Favorit Saya</Text>
-            <Text style={styles.headerSubtitle}>{favorites.length} kosan disimpan</Text>
+            <Text style={styles.headerTitle}>{t('favorites.title', 'Favorit Saya')}</Text>
+            <Text style={styles.headerSubtitle}>{t('favorites.savedCount', '{{count}} kosan disimpan', { count: favorites.length })}</Text>
           </View>
         </View>
       </View>
 
+      {/* Menus */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[4], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <TouchableOpacity
+              onPress={() => setSortVisible(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: COLORS.primarySurface,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: COLORS.primaryLight + '50',
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                 sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                 sortBy === 'priceAsc' ? t('common.sort.priceAsc', 'Termurah') :
+                 sortBy === 'priceDesc' ? t('common.sort.priceDesc', 'Termahal') : 
+                 t('common.sort.title', 'Urutkan')}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={`${t('common.sort.asc', 'A-Z')}`} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={`${t('common.sort.desc', 'Z-A')}`} />
+          <Menu.Item onPress={() => { setSortBy('priceAsc'); setSortVisible(false); }} title={`${t('common.sort.priceAsc', 'Termurah')}`} />
+          <Menu.Item onPress={() => { setSortBy('priceDesc'); setSortVisible(false); }} title={`${t('common.sort.priceDesc', 'Termahal')}`} />
+        </Menu>
+      </View>
+
       <FlatList
-        data={favorites}
+        data={sortedFavorites}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
@@ -174,13 +276,15 @@ const FavoriteScreen = ({ navigation }) => {
               style={styles.browseBtn}
               onPress={() => navigation.navigate(TENANT_SCREENS.SEARCH_STACK)}
             >
-              <Text style={styles.browseBtnText}>🔍 Jelajahi Kosan</Text>
+              <Text style={styles.browseBtnText}>{t('favorites.browse', '🔍 Jelajahi Kosan')}</Text>
             </TouchableOpacity>
           </View>
         )}
         renderItem={({ item }) => (
           <FavoriteCard
             favorite={item}
+            t={t}
+            currentUser={currentUser}
             onPress={() =>
               navigation.navigate(TENANT_SCREENS.SEARCH_STACK, {
                 screen: TENANT_SCREENS.PROPERTY_DETAIL,
@@ -219,7 +323,7 @@ const styles = StyleSheet.create({
     color: COLORS.primaryLight,
     marginTop: 2,
   },
-  listContent: { padding: SPACING[4], gap: SPACING[4], paddingBottom: SPACING[10] },
+  listContent: { padding: SPACING[4], paddingTop: SPACING[2], gap: SPACING[4], paddingBottom: SPACING[10] },
   card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
@@ -276,12 +380,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   genderBadge: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textTertiary,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.grey100,
     paddingHorizontal: SPACING[2],
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.sm,
+  },
+  genderBadgeText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  facilityBadge: {
+    backgroundColor: COLORS.primarySurface,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.sm,
+    marginRight: 4,
+  },
+  facilityBadgeText: {
+    fontSize: 9,
+    color: COLORS.primary,
+    fontWeight: FONT_WEIGHT.medium,
   },
   price: { fontSize: FONT_SIZE.sm, color: COLORS.textSecondary },
   priceValue: {

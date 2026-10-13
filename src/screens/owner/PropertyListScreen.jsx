@@ -19,24 +19,28 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, Button } from 'react-native-paper';
 import DrawerButton from '../../components/navigation/DrawerButton';
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerProperties, deleteProperty } from '../../services/propertyService';
+import { checkOwnerProfileExists } from '../../services/userService';
 import { OWNER_SCREENS } from '../../constants/screenNames';
+import USER_ROLE from '../../constants/userRole';
 
-const StatusBadge = ({ isActive }) => (
+const StatusBadge = ({ isActive, t }) => (
   <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>
     <Text style={[styles.badgeText, isActive ? styles.badgeTextActive : styles.badgeTextInactive]}>
-      {isActive ? 'Aktif' : 'Tidak Aktif'}
+      {isActive ? t('ownerPropertyList.active', 'Aktif') : t('ownerPropertyList.inactive', 'Tidak Aktif')}
     </Text>
   </View>
 );
 
-const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
+const PropertyCard = ({ property, onPress, onEdit, onDelete, t }) => {
   const coverPhoto = property.cover_photo_url;
 
   return (
@@ -50,18 +54,18 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
             <Ionicons name="business-outline" size={48} color={COLORS.textTertiary} />
           </View>
         )}
-        <StatusBadge isActive={property.is_active} />
+        <StatusBadge isActive={property.is_active} t={t} />
       </View>
 
       {/* Info */}
       <View style={styles.cardBody}>
         <Text style={styles.propertyName} numberOfLines={1}>
-          {property.name}
+          {getLocalizedField(property, 'name')}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
           <Ionicons name="location-outline" size={12} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
           <Text style={[styles.propertyAddress, { marginBottom: 0 }]} numberOfLines={1}>
-            {property.address_line}, {property.city}
+            {getLocalizedField(property, 'address_line')}, {property.city}
           </Text>
         </View>
 
@@ -69,21 +73,21 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statItemValue}>{property.total_rooms}</Text>
-            <Text style={styles.statItemLabel}>Total</Text>
+            <Text style={styles.statItemLabel}>{t('ownerPropertyList.total', 'Total')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={[styles.statItemValue, { color: COLORS.success }]}>
               {property.available_rooms}
             </Text>
-            <Text style={styles.statItemLabel}>Tersedia</Text>
+            <Text style={styles.statItemLabel}>{t('ownerPropertyList.available', 'Tersedia')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={[styles.statItemValue, { color: COLORS.statusOccupied }]}>
               {property.occupied_rooms}
             </Text>
-            <Text style={styles.statItemLabel}>Terisi</Text>
+            <Text style={styles.statItemLabel}>{t('ownerPropertyList.occupied', 'Terisi')}</Text>
           </View>
         </View>
 
@@ -91,13 +95,13 @@ const PropertyCard = ({ property, onPress, onEdit, onDelete }) => {
           <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="pencil" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
-              <Text style={styles.actionBtnText}>Edit</Text>
+              <Text style={styles.actionBtnText}>{t('ownerPropertyList.edit', 'Edit')}</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDanger]} onPress={onDelete}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="trash" size={14} color={COLORS.error} style={{ marginRight: 6 }} />
-              <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>Hapus</Text>
+              <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>{t('ownerPropertyList.delete', 'Hapus')}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -113,6 +117,8 @@ const PropertyListScreen = ({ navigation }) => {
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
 
   const loadProperties = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
@@ -134,17 +140,17 @@ const PropertyListScreen = ({ navigation }) => {
 
   const handleDelete = (property) => {
     Alert.alert(
-      'Hapus Properti',
-      `Yakin ingin menghapus "${property.name}"? Semua kamar dalam properti ini juga akan dihapus.`,
+      t('ownerPropertyList.deleteTitle', 'Hapus Properti'),
+      t('ownerPropertyList.deleteMessage', 'Yakin ingin menghapus "{{name}}"? Semua kamar dalam properti ini juga akan dihapus.', { name: getLocalizedField(property, 'name') }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('ownerPropertyList.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('ownerPropertyList.delete', 'Hapus'),
           style: 'destructive',
           onPress: async () => {
             const { error } = await deleteProperty(property.id);
             if (error) {
-              Alert.alert('Gagal', error.message);
+              Alert.alert(t('ownerPropertyList.failed', 'Gagal'), error.message);
             } else {
               setProperties((prev) => prev.filter((p) => p.id !== property.id));
             }
@@ -158,7 +164,26 @@ const PropertyListScreen = ({ navigation }) => {
     navigation.navigate(OWNER_SCREENS.ROOM_LIST, { property });
   };
 
-  const handleAddProperty = () => {
+  const handleAddProperty = async () => {
+    const hasProfile = await checkOwnerProfileExists(currentUser?.id);
+    if (!hasProfile) {
+      Alert.alert(
+        'Profil Belum Lengkap',
+        'Anda harus mengunggah foto kartu identitas (KTP/SIM) sebelum dapat menambahkan properti baru.',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Lengkapi Profil', 
+            onPress: () => navigation.navigate('RoleRegistrationScreen', { 
+              targetRole: USER_ROLE.OWNER, 
+              isCompletingProfile: true 
+            }) 
+          }
+        ]
+      );
+      return;
+    }
+
     navigation.navigate(OWNER_SCREENS.PROPERTY_FORM, { property: null });
   };
 
@@ -170,6 +195,12 @@ const PropertyListScreen = ({ navigation }) => {
     );
   }
 
+  const sortedProperties = [...properties].sort((a, b) => {
+    const nameA = getLocalizedField(a, 'name')?.toLowerCase() || '';
+    const nameB = getLocalizedField(b, 'name')?.toLowerCase() || '';
+    return sortBy === 'nameAsc' ? nameA.localeCompare(nameB, undefined, { numeric: true }) : nameB.localeCompare(nameA, undefined, { numeric: true });
+  });
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -179,14 +210,49 @@ const PropertyListScreen = ({ navigation }) => {
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>{t('property.list.title')}</Text>
             <Text style={styles.headerSubtitle}>
-              {properties.length} properti terdaftar
+              {t('ownerPropertyList.propertiesCount', '{{count}} properti terdaftar', { count: properties.length })}
             </Text>
           </View>
         </View>
       </View>
 
+      {/* Menus */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+          <Menu
+            visible={sortVisible}
+            onDismiss={() => setSortVisible(false)}
+            anchor={
+              <TouchableOpacity 
+                onPress={() => setSortVisible(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primarySurface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: COLORS.primaryLight + '50',
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                  {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                   sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                   t('common.sort.title', 'Urutkan')}
+                </Text>
+                <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            }
+          >
+            <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={t('common.sort.asc', 'A-Z')} />
+            <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={t('common.sort.desc', 'Z-A')} />
+          </Menu>
+        </View>
+
       <FlatList
-        data={properties}
+        data={sortedProperties}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
@@ -211,6 +277,7 @@ const PropertyListScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <PropertyCard
             property={item}
+            t={t}
             onPress={() => handlePressProperty(item)}
             onEdit={() => navigation.navigate(OWNER_SCREENS.PROPERTY_FORM, { property: item })}
             onDelete={() => handleDelete(item)}
@@ -243,11 +310,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
-    borderBottomLeftRadius: BORDER_RADIUS['2xl'],
-    borderBottomRightRadius: BORDER_RADIUS['2xl'],
   },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
@@ -261,6 +325,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: SPACING[5],
+    paddingTop: SPACING[2],
     paddingBottom: SPACING[20],
     gap: SPACING[4],
   },
@@ -305,7 +370,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semiBold,
   },
   badgeTextActive: {
-    color: COLORS.success,
+    color: '#047857',
   },
   badgeTextInactive: {
     color: COLORS.grey500,

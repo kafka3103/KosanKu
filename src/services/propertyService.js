@@ -11,6 +11,7 @@ import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { translateMultipleFields } from './translationService';
 
 const PROPERTY_PHOTOS_BUCKET = 'property-photos';
 const ROOM_PHOTOS_BUCKET = 'room-photos';
@@ -79,9 +80,23 @@ export const getPropertyById = async (propertyId) => {
  * @param {Object} propertyData
  */
 export const createProperty = async (ownerId, propertyData) => {
+  // Translate fields
+  const fieldsToTranslate = {
+    name: propertyData.name,
+    description: propertyData.description,
+    address_line: propertyData.address_line,
+    rules: propertyData.rules,
+  };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...propertyData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .insert({ owner_id: ownerId, is_active: true, ...propertyData })
+    .insert({ owner_id: ownerId, is_active: true, ...finalData })
     .select()
     .single();
 
@@ -95,9 +110,24 @@ export const createProperty = async (ownerId, propertyData) => {
  * @param {Object} propertyData
  */
 export const updateProperty = async (propertyId, propertyData) => {
+  // Translate fields
+  const fieldsToTranslate = {
+    name: propertyData.name,
+    description: propertyData.description,
+    address_line: propertyData.address_line,
+    rules: propertyData.rules,
+  };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...propertyData,
+    ...translated,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabaseClient
     .from('properties')
-    .update({ ...propertyData, updated_at: new Date().toISOString() })
+    .update(finalData)
     .eq('id', propertyId)
     .select()
     .single();
@@ -147,7 +177,8 @@ export const uploadPropertyPhoto = async (propertyId, localUri, fileName) => {
       .from(PROPERTY_PHOTOS_BUCKET)
       .getPublicUrl(path);
 
-    return { url: data.publicUrl, error: null };
+    const urlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+    return { url: urlWithTimestamp, error: null };
   } catch (err) {
     return { url: null, error: err };
   }
@@ -189,7 +220,7 @@ export const getPropertyRooms = async (propertyId) => {
       *,
       room_facilities(
         *,
-        facility_master(name, icon_name, category)
+        facility_master(*)
       )
     `)
     .eq('property_id', propertyId)
@@ -228,9 +259,17 @@ export const getRoomById = async (roomId) => {
  * @param {Object} roomData
  */
 export const createRoom = async (propertyId, roomData) => {
+  const fieldsToTranslate = { description: roomData.description };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+  
+  const finalData = {
+    ...roomData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('rooms')
-    .insert({ property_id: propertyId, ...roomData })
+    .insert({ property_id: propertyId, ...finalData })
     .select()
     .single();
 
@@ -244,9 +283,18 @@ export const createRoom = async (propertyId, roomData) => {
  * @param {Object} roomData
  */
 export const updateRoom = async (roomId, roomData) => {
+  const fieldsToTranslate = { description: roomData.description };
+  const translated = await translateMultipleFields(fieldsToTranslate);
+
+  const finalData = {
+    ...roomData,
+    ...translated,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabaseClient
     .from('rooms')
-    .update({ ...roomData, updated_at: new Date().toISOString() })
+    .update(finalData)
     .eq('id', roomId)
     .select()
     .single();
@@ -296,7 +344,8 @@ export const uploadRoomPhoto = async (roomId, localUri, fileName) => {
       .from(ROOM_PHOTOS_BUCKET)
       .getPublicUrl(path);
 
-    return { url: data.publicUrl, error: null };
+    const urlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+    return { url: urlWithTimestamp, error: null };
   } catch (err) {
     return { url: null, error: err };
   }
@@ -330,9 +379,17 @@ export const uploadMultipleRoomPhotos = async (roomId, localUris) => {
  * @param {Object[]} roomDataArray
  */
 export const createBulkRooms = async (propertyId, roomDataArray) => {
+  // Translate template description (assuming all rooms have the same template description)
+  let translated = {};
+  if (roomDataArray.length > 0 && roomDataArray[0].description) {
+     const fieldsToTranslate = { description: roomDataArray[0].description };
+     translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const inserts = roomDataArray.map(roomData => ({
     property_id: propertyId,
-    ...roomData
+    ...roomData,
+    ...translated
   }));
 
   const { data, error } = await supabaseClient
@@ -433,7 +490,7 @@ export const getOwnerDashboardStats = async (ownerId) => {
     // Total properti & kamar
     supabaseClient
       .from('properties')
-      .select('id, rooms(id, status)')
+      .select('id, rooms(id, status, is_deleted, contracts(status))')
       .eq('owner_id', ownerId)
       .eq('is_deleted', false),
 
@@ -457,23 +514,30 @@ export const getOwnerDashboardStats = async (ownerId) => {
   const invoices = invoicesResult.data ?? [];
   const pendingRequests = requestsResult.data ?? [];
 
-  const allRooms = properties.flatMap((p) => p.rooms ?? []);
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const allRooms = properties
+    .flatMap((p) => p.rooms ?? [])
+    .filter((r) => r.is_deleted === false);
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM local time
 
   const monthlyInvoices = invoices.filter(
     (inv) => inv.billing_period?.startsWith(currentMonth)
   );
   const monthlyRevenue = monthlyInvoices
     .filter((inv) => inv.status === 'paid')
-    .reduce((sum, inv) => sum + parseFloat(inv.total_amount ?? 0), 0);
+    .reduce((sum, inv) => sum + parseFloat(inv.paid_amount ?? 0), 0);
   const unpaidCount = invoices.filter((inv) => ['unpaid', 'overdue'].includes(inv.status)).length;
 
   return {
     data: {
       totalProperties: properties.length,
       totalRooms: allRooms.length,
-      occupiedRooms: allRooms.filter((r) => r.status === 'occupied').length,
-      availableRooms: allRooms.filter((r) => r.status === 'available').length,
+      occupiedRooms: allRooms.filter(
+        (r) => r.status === 'occupied' || (r.contracts && r.contracts.some(c => c.status === 'active'))
+      ).length,
+      availableRooms: allRooms.filter(
+        (r) => r.status === 'available' && (!r.contracts || !r.contracts.some(c => c.status === 'active'))
+      ).length,
       monthlyRevenue,
       unpaidInvoicesCount: unpaidCount,
       pendingRequests,
@@ -496,7 +560,10 @@ export const getOwnerRentalRequests = async (ownerId, statusFilter = 'all') => {
     .select(`
       *,
       rooms(room_number, base_price, properties(name, address_line, city)),
-      users!rental_requests_tenant_id_fkey(id, full_name, phone_number, email, avatar_url)
+      users!rental_requests_tenant_id_fkey(
+        id, full_name, phone_number, email, avatar_url,
+        tenant_profiles(ktp_number, is_verified)
+      )
     `)
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
@@ -549,7 +616,20 @@ export const approveRentalRequest = async (requestId) => {
       .eq('rental_request_id', request.id)
       .maybeSingle();
 
-    if (!newContract) {
+    if (newContract) {
+      // FIX: Terkadang trigger database memasukkan status default 'ended' secara tidak sengaja.
+      // Jika statusnya bukan 'active', kita paksa ubah menjadi 'active'.
+      if (newContract.status !== 'active') {
+        const { error: fixError } = await supabaseClient
+          .from('contracts')
+          .update({ status: 'active' })
+          .eq('id', newContract.id);
+        
+        if (!fixError) {
+          newContract.status = 'active';
+        }
+      }
+    } else {
       const startDate = new Date(request.requested_start_date);
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + (request.duration_months || 1));
@@ -583,6 +663,19 @@ export const approveRentalRequest = async (requestId) => {
       .update({ status: 'pending', updated_at: new Date().toISOString() })
       .eq('id', request.room_id);
 
+    // 4.b Update tenant_profiles (termasuk sinkronisasi NIK jika ada) dan set is_verified menjadi true
+    // Kita gunakan RPC (Remote Procedure Call) karena operasi ini dijalankan oleh Owner,
+    // sedangkan RLS tabel tenant_profiles mencegah Owner mengubah profil Tenant.
+    const tenantNikToSave = request.tenant_nik;
+    const { error: rpcError } = await supabaseClient.rpc('verify_tenant_profile_nik', {
+      p_tenant_id: request.tenant_id,
+      p_tenant_nik: tenantNikToSave
+    });
+
+    if (rpcError) {
+      console.warn('Gagal memverifikasi profil tenant:', rpcError.message);
+    }
+
     // 5. Buat invoice pertama agar tenant bisa langsung melakukan pembayaran ("dilanjutkan kedalam tahap pembayaran")
     if (newContract) {
       const now = new Date();
@@ -601,21 +694,40 @@ export const approveRentalRequest = async (requestId) => {
           invoice_number: invoiceNumber,
           billing_period: request.requested_start_date,
           due_date: dueDate.toISOString().split('T')[0],
-          total_amount: request.monthly_rate,
+          total_amount: request.monthly_rate * (request.duration_months || 1),
           status: 'unpaid',
         })
         .select()
         .single();
 
       // 6. Kirim notifikasi ke penghuni (Tenant)
+      // a. Notifikasi persetujuan pengajuan sewa
       await sendNotification({
         userId: request.tenant_id,
-        title: 'Pengajuan Sewa Disetujui! 🎉',
-        body: `Selamat! Pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`,
+        title: 'rental_approved_title',
+        body: JSON.stringify({ key: 'rental_approved_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
         type: 'rental_request_approved',
-        referenceId: newInvoice?.id ?? request.id,
-        referenceType: newInvoice ? 'invoice' : 'rental_request',
+        referenceId: request.id,
+        referenceType: 'rental_request',
       });
+
+      // b. Notifikasi tagihan pertama (jika berhasil dibuat)
+      if (newInvoice) {
+        await sendNotification({
+          userId: request.tenant_id,
+          title: 'invoice_generated_title',
+          body: JSON.stringify({ 
+            key: 'invoice_generated_body', 
+            params: { 
+              amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(newInvoice.total_amount || 0), 
+              dueDate: newInvoice.due_date 
+            } 
+          }),
+          type: 'invoice_generated',
+          referenceId: newInvoice.id,
+          referenceType: 'invoice',
+        });
+      }
     }
   } catch (err) {
     console.warn('Error saat membuat kontrak/invoice otomatis:', err.message);
@@ -642,11 +754,18 @@ export const rejectRentalRequest = async (requestId, reason) => {
     .eq('id', requestId)
     .single();
 
+  let translated = {};
+  if (reason) {
+    const fieldsToTranslate = { owner_rejection_reason: reason };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('rental_requests')
     .update({
       status: 'rejected',
       owner_rejection_reason: reason,
+      owner_rejection_reason_en: translated.owner_rejection_reason_en ?? null,
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', requestId)
@@ -663,10 +782,10 @@ export const rejectRentalRequest = async (requestId, reason) => {
     // Kirim notifikasi penolakan ke tenant
     await sendNotification({
       userId: request.tenant_id,
-      title: 'Pengajuan Sewa Ditolak ❌',
+      title: 'rental_rejected_title',
       body: reason
-        ? `Mohon maaf, pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} belum dapat disetujui. Alasan: ${reason}`
-        : `Mohon maaf, pengajuan sewa kamar ${request.rooms?.room_number ?? ''} di ${request.rooms?.properties?.name ?? 'kos'} belum dapat disetujui oleh pemilik kos.`,
+        ? JSON.stringify({ key: 'rental_rejected_body', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos', reason: reason } })
+        : JSON.stringify({ key: 'rental_rejected_body_no_reason', params: { room: request.rooms?.room_number ?? '', property: request.rooms?.properties?.name ?? 'kos' } }),
       type: 'rental_request_rejected',
       referenceId: requestId,
       referenceType: 'rental_request',
@@ -704,12 +823,19 @@ export const getOwnerActiveTenants = async (ownerId) => {
 /**
  * Tambahkan fasilitas baru ke master fasilitas
  *
- * @param {Object} facilityData - { name, icon_name, description, category }
+ * @param {Object} facilityData - { name, category }
  */
 export const createFacilityMaster = async (facilityData) => {
+  const translated = await translateMultipleFields({ name: facilityData.name });
+
+  const finalData = {
+    ...facilityData,
+    ...translated
+  };
+
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .insert(facilityData)
+    .insert(finalData)
     .select()
     .single();
 
@@ -720,12 +846,19 @@ export const createFacilityMaster = async (facilityData) => {
  * Perbarui data fasilitas master
  *
  * @param {string} facilityId
- * @param {Object} updates - { name, icon_name, description, category }
+ * @param {Object} updates - { name, category }
  */
 export const updateFacilityMaster = async (facilityId, updates) => {
+  let finalData = { ...updates };
+  
+  if (updates.name) {
+    const translated = await translateMultipleFields({ name: updates.name });
+    finalData = { ...finalData, ...translated };
+  }
+
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .update(updates)
+    .update(finalData)
     .eq('id', facilityId)
     .select()
     .single();
@@ -741,8 +874,10 @@ export const updateFacilityMaster = async (facilityId, updates) => {
 export const deleteFacilityMaster = async (facilityId) => {
   const { data, error } = await supabaseClient
     .from('facility_master')
-    .delete()
-    .eq('id', facilityId);
+    .update({ is_active: false })
+    .eq('id', facilityId)
+    .select()
+    .single();
 
   return { data, error };
 };

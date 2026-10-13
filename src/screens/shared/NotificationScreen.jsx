@@ -17,7 +17,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 import DrawerButton from '../../components/navigation/DrawerButton';
 import COLORS from '../../constants/colors';
@@ -25,9 +26,10 @@ import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import useNotificationStore from '../../store/notificationStore';
+import { TENANT_SCREENS } from '../../constants/screenNames';
 import supabaseClient from '../../services/supabaseClient';
 
-const formatRelativeTime = (dateStr) => {
+const formatRelativeTime = (dateStr, i18n) => {
   if (!dateStr) return '';
   try {
     const now = new Date();
@@ -37,11 +39,14 @@ const formatRelativeTime = (dateStr) => {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Baru saja';
-    if (diffMins < 60) return `${diffMins} menit lalu`;
-    if (diffHours < 24) return `${diffHours} jam lalu`;
-    if (diffDays < 7) return `${diffDays} hari lalu`;
-    return format(date, 'd MMM yyyy', { locale: idLocale });
+    const isEn = i18n?.language === 'en';
+    const locale = isEn ? enLocale : idLocale;
+
+    if (diffMins < 1) return isEn ? 'Just now' : 'Baru saja';
+    if (diffMins < 60) return isEn ? `${diffMins} mins ago` : `${diffMins} menit lalu`;
+    if (diffHours < 24) return isEn ? `${diffHours} hours ago` : `${diffHours} jam lalu`;
+    if (diffDays < 7) return isEn ? `${diffDays} days ago` : `${diffDays} hari lalu`;
+    return format(date, 'd MMM yyyy', { locale });
   } catch {
     return dateStr;
   }
@@ -51,15 +56,41 @@ const NOTIF_TYPE_CONFIG = {
   rental_request_new: { icon: 'document-text', color: COLORS.info },
   rental_request_approved: { icon: 'checkmark-circle', color: COLORS.success },
   rental_request_rejected: { icon: 'close-circle', color: COLORS.error },
+  rental_request_expired: { icon: 'time', color: COLORS.grey500 },
   invoice_generated: { icon: 'receipt', color: COLORS.warning },
+  invoice_paid: { icon: 'checkmark-done-circle', color: COLORS.success },
   invoice_overdue: { icon: 'alert-circle', color: COLORS.error },
   payment_received: { icon: 'wallet', color: COLORS.success },
   contract_ending: { icon: 'calendar', color: COLORS.warning },
   system: { icon: 'notifications', color: COLORS.grey500 },
 };
 
-const NotifCard = ({ notif, onRead }) => {
+/**
+ * Attempt to translate a notification body.
+ * New format: JSON string { key: "...", params: {...} }
+ * Old format: plain text string (fallback — displayed as-is)
+ */
+const translateBody = (body, t) => {
+  if (!body) return '';
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed && parsed.key) {
+      return t('dbNotification.' + parsed.key, parsed.params || {});
+    }
+  } catch {
+    // Not JSON — old plain-text notification, return as-is
+  }
+  return body;
+};
+
+const NotifCard = ({ notif, onRead, i18n, t }) => {
   const config = NOTIF_TYPE_CONFIG[notif.type] ?? NOTIF_TYPE_CONFIG.system;
+
+  // For virtual notifs (already translated via t()), use body directly.
+  // For DB notifs, try JSON parse + translate.
+  const displayBody = notif.is_virtual_request
+    ? notif.body
+    : translateBody(notif.body, t);
 
   return (
     <TouchableOpacity
@@ -72,10 +103,10 @@ const NotifCard = ({ notif, onRead }) => {
       </View>
       <View style={styles.notifContent}>
         <Text style={[styles.notifTitle, !notif.is_read && styles.notifTitleUnread]}>
-          {notif.title}
+          {t('dbNotification.' + notif.title, notif.title)}
         </Text>
-        <Text style={styles.notifBody} numberOfLines={2}>{notif.body}</Text>
-        <Text style={styles.notifTime}>{formatRelativeTime(notif.created_at)}</Text>
+        <Text style={styles.notifBody}>{displayBody}</Text>
+        <Text style={styles.notifTime}>{formatRelativeTime(notif.created_at, i18n)}</Text>
       </View>
       {!notif.is_read && <View style={[styles.unreadDot, { backgroundColor: config.color }]} />}
     </TouchableOpacity>
@@ -83,9 +114,10 @@ const NotifCard = ({ notif, onRead }) => {
 };
 
 const NotificationScreen = () => {
+  const { currentUser, userRole } = useAuthStore();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { currentUser } = useAuthStore();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -104,8 +136,17 @@ const NotificationScreen = () => {
 
     let mergedList = dbNotifs ?? [];
 
+    const TENANT_NOTIF_TYPES = ['invoice_generated', 'rental_request_approved', 'rental_request_rejected', 'invoice_due_soon', 'invoice_overdue'];
+    const OWNER_NOTIF_TYPES = ['rental_request_new', 'tenant_runaway'];
+
+    if (userRole === 'owner') {
+      mergedList = mergedList.filter(n => !TENANT_NOTIF_TYPES.includes(n.type));
+    } else if (userRole === 'tenant') {
+      mergedList = mergedList.filter(n => !OWNER_NOTIF_TYPES.includes(n.type));
+    }
+
     // Jika Owner, ambil langsung pengajuan sewa pending
-    if (currentUser.role === 'owner') {
+    if (userRole === 'owner') {
       const { data: pendingReqs } = await supabaseClient
         .from('rental_requests')
         .select('*')
@@ -149,8 +190,8 @@ const NotificationScreen = () => {
               virtualNotifs.push({
                 id: virtualId,
                 user_id: currentUser.id,
-                title: 'Pengajuan Sewa Disetujui ✅',
-                body: `Anda telah menyetujui pengajuan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} dari ${uInfo.full_name ?? 'Penghuni'}.`,
+                title: t('notification.reqApproveOwnerTitle', 'Pengajuan Sewa Disetujui ✅'),
+                body: t('notification.reqApproveOwnerBody', `Anda telah menyetujui pengajuan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} dari ${uInfo.full_name ?? 'Penghuni'}.`, { room: rInfo.room_number ?? '', property: rInfo.properties?.name ?? 'properti Anda', tenant: uInfo.full_name ?? 'Penghuni' }),
                 type: 'rental_request_approved',
                 reference_id: req.id,
                 reference_type: 'rental_request',
@@ -163,8 +204,8 @@ const NotificationScreen = () => {
               virtualNotifs.push({
                 id: virtualId,
                 user_id: currentUser.id,
-                title: 'Pengajuan Sewa Ditolak ❌',
-                body: `Anda telah menolak pengajuan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} dari ${uInfo.full_name ?? 'Penghuni'}.`,
+                title: t('notification.reqRejectOwnerTitle', 'Pengajuan Sewa Ditolak ❌'),
+                body: t('notification.reqRejectOwnerBody', `Anda telah menolak pengajuan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} dari ${uInfo.full_name ?? 'Penghuni'}.`, { room: rInfo.room_number ?? '', property: rInfo.properties?.name ?? 'properti Anda', tenant: uInfo.full_name ?? 'Penghuni' }),
                 type: 'rental_request_rejected',
                 reference_id: req.id,
                 reference_type: 'rental_request',
@@ -177,8 +218,8 @@ const NotificationScreen = () => {
               virtualNotifs.push({
                 id: virtualId,
                 user_id: currentUser.id,
-                title: 'Pengajuan Sewa Baru 📋',
-                body: `${uInfo.full_name ?? 'Penghuni baru'} mengajukan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} (${req.duration_months ?? 1} bulan). Tekan untuk meninjau/menyetujui.`,
+                title: t('notification.reqNewOwnerTitle', 'Pengajuan Sewa Baru 📋'),
+                body: t('notification.reqNewOwnerBody', `${uInfo.full_name ?? 'Penghuni baru'} mengajukan sewa kamar ${rInfo.room_number ?? ''} di ${rInfo.properties?.name ?? 'properti Anda'} (${req.duration_months ?? 1} bulan). Tekan untuk meninjau/menyetujui.`, { tenant: uInfo.full_name ?? 'Penghuni baru', room: rInfo.room_number ?? '', property: rInfo.properties?.name ?? 'properti Anda', months: req.duration_months ?? 1 }),
                 type: 'rental_request_new',
                 reference_id: req.id,
                 reference_type: 'rental_request',
@@ -195,7 +236,7 @@ const NotificationScreen = () => {
     }
 
     // Jika Tenant, ambil SEMUA pengajuan sewa (pending, approved, rejected) + tagihan unpaid
-    if (currentUser.role === 'tenant') {
+    if (userRole === 'tenant') {
       await useNotificationStore.getState().initVirtualReads();
       const isVirtualRead = useNotificationStore.getState().isVirtualRead;
 
@@ -240,8 +281,8 @@ const NotificationScreen = () => {
               virtualTenantNotifs.push({
                 id: virtualId,
                 user_id: currentUser.id,
-                title: 'Pengajuan Sewa Disetujui! 🎉',
-                body: `Selamat! Pengajuan sewa kamar ${roomNum} di ${propName} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`,
+                title: t('notification.reqApproveTenantTitle', 'Pengajuan Sewa Disetujui! 🎉'),
+                body: t('notification.reqApproveTenantBody', `Selamat! Pengajuan sewa kamar ${roomNum} di ${propName} telah disetujui oleh pemilik kos. Silakan lakukan pembayaran tagihan pertama Anda.`, { room: roomNum, property: propName }),
                 type: 'rental_request_approved',
                 reference_id: req.id,
                 reference_type: 'rental_request',
@@ -254,8 +295,8 @@ const NotificationScreen = () => {
               virtualTenantNotifs.push({
                 id: virtualId,
                 user_id: currentUser.id,
-                title: 'Pengajuan Sewa Ditolak ❌',
-                body: `Mohon maaf, pengajuan sewa kamar ${roomNum} di ${propName} tidak dapat disetujui. ${req.rejection_reason ? 'Alasan: ' + req.rejection_reason : ''}`,
+                title: t('notification.reqRejectTenantTitle', 'Pengajuan Sewa Ditolak ❌'),
+                body: t('notification.reqRejectTenantBody', `Mohon maaf, pengajuan sewa kamar ${roomNum} di ${propName} tidak dapat disetujui. ${req.rejection_reason ? 'Alasan: ' + req.rejection_reason : ''}`, { room: roomNum, property: propName, reason: req.rejection_reason ? 'Alasan: ' + req.rejection_reason : '' }),
                 type: 'rental_request_rejected',
                 reference_id: req.id,
                 reference_type: 'rental_request',
@@ -268,8 +309,8 @@ const NotificationScreen = () => {
               virtualTenantNotifs.push({
                 id: virtualId,
                 user_id: currentUser.id,
-                title: 'Pengajuan Sewa Dikirim ⏳',
-                body: `Pengajuan sewa kamar ${roomNum} di ${propName} telah dikirim dan sedang menunggu tinjauan dari pemilik kos.`,
+                title: t('notification.reqPendingTenantTitle', 'Pengajuan Sewa Dikirim ⏳'),
+                body: t('notification.reqPendingTenantBody', `Pengajuan sewa kamar ${roomNum} di ${propName} telah dikirim dan sedang menunggu tinjauan dari pemilik kos.`, { room: roomNum, property: propName }),
                 type: 'rental_request_pending',
                 reference_id: req.id,
                 reference_type: 'rental_request',
@@ -297,8 +338,8 @@ const NotificationScreen = () => {
             virtualInvoiceNotifs.push({
               id: virtualId,
               user_id: currentUser.id,
-              title: 'Tagihan Pembayaran Baru 📄',
-              body: `Tagihan kamar ${roomNum} di ${propName} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.total_amount || inv.amount || 0)} siap untuk dibayar.`,
+              title: t('notification.invoiceNewTitle', 'Tagihan Pembayaran Baru 📄'),
+              body: t('notification.invoiceNewBody', `Tagihan kamar ${roomNum} di ${propName} sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.total_amount || inv.amount || 0)} siap untuk dibayar.`, { room: roomNum, property: propName, amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.total_amount || inv.amount || 0) }),
               type: 'invoice_new',
               reference_id: inv.id,
               reference_type: 'invoice',
@@ -320,7 +361,7 @@ const NotificationScreen = () => {
     useNotificationStore.getState().setUnreadCount(unread);
     setIsLoading(false);
     setIsRefreshing(false);
-  }, [currentUser?.id, currentUser?.role]);
+  }, [currentUser?.id, currentUser?.role, t, i18n.language]);
 
 
   useFocusEffect(
@@ -356,23 +397,61 @@ const NotificationScreen = () => {
     if (!notif.is_read) {
       await handleMarkRead(notif.id);
     }
-    if (currentUser?.role === 'owner') {
-      if (notif.type === 'rental_request_new' || notif.reference_type === 'rental_request') {
+    
+    if (userRole === 'owner') {
+      if (notif.type === 'rental_request_new' || notif.type === 'rental_request_pending' || notif.reference_type === 'rental_request') {
         navigation.navigate('RentalRequest');
       } else if (notif.reference_type === 'invoice') {
         navigation.navigate('OwnerInvoiceList');
+      } else {
+        // Fallback for owner
+        navigation.navigate('OwnerMain');
       }
-    } else if (currentUser?.role === 'tenant') {
-      if (notif.type === 'rental_request_approved' || notif.reference_type === 'invoice') {
-        if (notif.reference_id && notif.reference_type === 'invoice') {
+    } else if (userRole === 'tenant') {
+      if (notif.reference_type === 'invoice') {
+        if (notif.reference_id) {
           navigation.navigate('MyRentStack', {
             screen: 'InvoiceDetail',
             params: { invoiceId: notif.reference_id },
           });
-        } else {
-          navigation.navigate('MyRentStack');
+          return;
         }
+      } else if (notif.type === 'rental_request_approved' || notif.reference_type === 'rental_request') {
+        if (notif.reference_id) {
+          try {
+            const { data: reqData } = await supabaseClient
+              .from('rental_requests')
+              .select(`
+                *,
+                contracts (
+                  id, start_date, end_date, status, monthly_rate,
+                  invoices (id, status, total_amount, paid_amount, due_date, billing_period)
+                ),
+                rooms(
+                  room_number, base_price, photo_urls,
+                  room_facilities(facility_master(name)),
+                  properties(name, address_line, city, cover_photo_url, general_facilities, users(full_name, phone_number))
+                )
+              `)
+              .eq('id', notif.reference_id)
+              .single();
+              
+            if (reqData) {
+              navigation.navigate('MyRentStack', {
+                screen: 'ContractDetailScreen',
+                params: { request: reqData },
+              });
+              return;
+            }
+          } catch (e) {
+            console.error('Failed to fetch request for notification', e);
+          }
+        }
+        navigation.navigate('MyRentStack');
       } else if (notif.type === 'rental_request_rejected' || notif.type === 'rental_request_pending') {
+        navigation.navigate('MyRentStack');
+      } else {
+        // Fallback for tenant
         navigation.navigate('MyRentStack');
       }
     }
@@ -415,13 +494,13 @@ const NotificationScreen = () => {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <DrawerButton />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Notifikasi</Text>
+            <Text style={styles.headerTitle}>{t('notification.title')}</Text>
             {unreadCount > 0 && (
-              <Text style={styles.headerSubtitle}>{unreadCount} belum dibaca</Text>
+              <Text style={styles.headerSubtitle}>{unreadCount} {t('notification.unread', 'belum dibaca')}</Text>
             )}
             {unreadCount > 0 && (
               <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAllRead}>
-                <Text style={styles.markAllText}>Tandai Semua Dibaca</Text>
+                <Text style={styles.markAllText}>{t('notification.markAllRead')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -444,14 +523,14 @@ const NotificationScreen = () => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="notifications-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Belum Ada Notifikasi</Text>
+            <Text style={styles.emptyTitle}>{t('notification.emptyTitle')}</Text>
             <Text style={styles.emptySubtitle}>
-              Notifikasi tentang kamar, tagihan, dan pengajuan akan muncul di sini
+              {t('notification.emptySubtitle', 'Notifikasi tentang kamar, tagihan, dan pengajuan akan muncul di sini')}
             </Text>
           </View>
         )}
         renderItem={({ item }) => (
-          <NotifCard notif={item} onRead={handleNotifPress} />
+          <NotifCard notif={item} onRead={handleNotifPress} i18n={i18n} t={t} />
         )}
       />
     </View>

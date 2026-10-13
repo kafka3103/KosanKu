@@ -31,10 +31,11 @@ import REGIONS_DATA from '../../constants/cities.json';
 const ALL_CITIES = REGIONS_DATA.reduce((acc, region) => [...acc, ...region.kota], []).sort();
 
 import COLORS from '../../constants/colors';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
-import { getUserProfile, updateUserProfile, uploadAvatar } from '../../services/userService';
+import { getUserProfile, updateUserProfile, uploadAvatar, getTenantProfile, upsertTenantProfile, getOwnerProfile, upsertOwnerProfile } from '../../services/userService';
 import { logout, deleteAccount } from '../../services/authService';
 import { USER_ROLE } from '../../constants/userRole';
 
@@ -48,7 +49,7 @@ const InfoRow = ({ label, value, icon, iconColor = COLORS.textSecondary }) => (
   </View>
 );
 
-const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default' }) => (
+const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboardType = 'default', maxLength }) => (
   <View style={styles.infoRow}>
     <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.infoIcon} />
     <View style={styles.infoContent}>
@@ -59,6 +60,7 @@ const EditableInfoRow = ({ label, value, onChangeText, icon, placeholder, keyboa
         onChangeText={onChangeText}
         placeholder={placeholder}
         keyboardType={keyboardType}
+        maxLength={maxLength}
         placeholderTextColor={COLORS.textTertiary}
       />
     </View>
@@ -79,9 +81,9 @@ const SelectableInfoRow = ({ label, value, onPress, icon, placeholder }) => (
 );
 
 const ProfileScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { currentUser, currentSession, clearAuthState, setAuthenticatedUser, userRole } = useAuthStore();
+  const { currentUser, currentSession, clearAuthState, setAuthenticatedUser, userRole, switchRole } = useAuthStore();
 
   const [profile, setProfile] = useState(currentUser);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -92,6 +94,17 @@ const ProfileScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [gender, setGender] = useState('');
   const [homeCity, setHomeCity] = useState('');
+
+  // Tenant Specific States
+  const [occupation, setOccupation] = useState('');
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+
+  // Owner Specific States
+  const [ownerKtpNumber, setOwnerKtpNumber] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [bankAccountName, setBankAccountName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
 
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
   const [isCityModalVisible, setIsCityModalVisible] = useState(false);
@@ -111,8 +124,26 @@ const ProfileScreen = ({ navigation }) => {
       setGender(data.gender || '');
       setHomeCity(data.home_city || '');
     }
+
+    if (!isOwner) {
+      const { data: tenantData } = await getTenantProfile(currentUser.id);
+      if (tenantData) {
+        setOccupation(getLocalizedField(tenantData, 'occupation', i18n.language) || '');
+        setEmergencyName(tenantData.emergency_contact_name || '');
+        setEmergencyPhone(tenantData.emergency_contact_phone || '');
+      }
+    } else {
+      const { data: ownerData } = await getOwnerProfile(currentUser.id);
+      if (ownerData) {
+        setOwnerKtpNumber(ownerData.ktp_number || '');
+        setBankName(ownerData.bank_name || '');
+        setBankAccountName(ownerData.bank_account_name || '');
+        setBankAccountNumber(ownerData.bank_account_number || '');
+      }
+    }
+
     if (!silent) setIsRefreshing(false);
-  }, [currentUser?.id, userRole]);
+  }, [currentUser?.id, userRole, isOwner]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,7 +162,7 @@ const ProfileScreen = ({ navigation }) => {
         setAuthenticatedUser(currentSession, data);
       }
     } else {
-      Alert.alert('Gagal', 'Tidak bisa upload foto profil');
+      Alert.alert(t('common.buttons.error', 'Gagal'), t('profile.uploadFail', 'Tidak bisa upload foto profil'));
     }
     setIsUploadingAvatar(false);
   };
@@ -139,49 +170,61 @@ const ProfileScreen = ({ navigation }) => {
   const pickAvatarFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto profil.');
+      Alert.alert(t('profile.permissionReq', 'Izin Diperlukan'), t('profile.cameraReq', 'Akses kamera diperlukan untuk mengambil foto profil.'));
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      await processAvatarUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          await processAvatarUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickAvatarFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan.');
+      Alert.alert(t('profile.permissionReq', 'Izin Diperlukan'), t('profile.galleryReq', 'Akses galeri foto diperlukan.'));
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      await processAvatarUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          await processAvatarUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickAvatar = () => {
     Alert.alert(
-      'Foto Profil',
-      'Pilih sumber foto profil Anda',
+      t('profile.avatarSource', 'Foto Profil'),
+      t('profile.chooseSource', 'Pilih sumber foto profil Anda'),
       [
-        { text: 'Kamera', onPress: pickAvatarFromCamera },
-        { text: 'Galeri', onPress: pickAvatarFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('profile.camera', 'Kamera'), onPress: pickAvatarFromCamera },
+        { text: t('profile.gallery', 'Galeri'), onPress: pickAvatarFromGallery },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -189,12 +232,12 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleLogout = () => {
     Alert.alert(
-      t('profile.logoutButton'),
-      'Yakin ingin keluar dari akun?',
+      t('profile.logoutButton', 'Keluar'),
+      t('profile.confirmLogout', 'Yakin ingin keluar dari akun?'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: t('profile.logoutButton'),
+          text: t('profile.logoutButton', 'Keluar'),
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -207,7 +250,11 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Nama Lengkap wajib diisi');
+      Alert.alert(t('common.buttons.error', 'Error'), t('profile.nameReq', 'Nama Lengkap wajib diisi'));
+      return;
+    }
+    if (!phoneNumber.trim()) {
+      Alert.alert(t('common.buttons.error', 'Error'), t('profile.phoneReq', 'Nomor Telepon wajib diisi'));
       return;
     }
     setIsSaving(true);
@@ -218,48 +265,97 @@ const ProfileScreen = ({ navigation }) => {
       home_city: homeCity.trim() || null,
       is_profile_complete: true,
     });
+
+    let tenantError = null;
+    let ownerError = null;
+    if (!isOwner) {
+      const { error: tError } = await upsertTenantProfile(currentUser.id, {
+        occupation: occupation.trim() || null,
+        emergency_contact_name: emergencyName.trim() || null,
+        emergency_contact_phone: emergencyPhone.trim() || null,
+      });
+      tenantError = tError;
+    } else {
+      const { error: oError } = await upsertOwnerProfile(currentUser.id, {
+        ktp_number: ownerKtpNumber.trim() || null,
+        bank_name: bankName.trim() || null,
+        bank_account_name: bankAccountName.trim() || null,
+        bank_account_number: bankAccountNumber.trim() || null,
+      });
+      ownerError = oError;
+    }
+
     setIsSaving(false);
 
-    if (error) {
-      Alert.alert('Gagal', error.message);
+    if (error || tenantError || ownerError) {
+      Alert.alert(t('common.buttons.error', 'Gagal'), error?.message || tenantError?.message || ownerError?.message || t('profile.saveFailed', 'Gagal menyimpan profil'));
     } else if (data) {
-      Alert.alert('Berhasil', 'Profil berhasil diperbarui');
+      Alert.alert(t('common.buttons.success', 'Berhasil'), t('profile.updateSuccess', 'Profil berhasil diperbarui'));
       setProfile(data);
       setAuthenticatedUser(currentSession, data);
     }
   };
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
+    if (currentUser.role !== USER_ROLE.BOTH) {
+      const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
+      navigation.navigate('RoleRegistrationScreen', { targetRole });
+      return;
+    }
+
     const targetRole = isOwner ? USER_ROLE.TENANT : USER_ROLE.OWNER;
-    const targetRoleText = isOwner ? 'Pencari Kosan' : 'Pemilik Kosan';
+    if (targetRole === USER_ROLE.OWNER) {
+      const { checkOwnerVerification } = require('../../services/userService');
+      const isVerified = await checkOwnerVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pemilik Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
+    } else {
+      const { checkTenantVerification } = require('../../services/userService');
+      const isVerified = await checkTenantVerification(currentUser.id);
+      if (!isVerified) {
+         Alert.alert('Belum Diverifikasi', 'Identitas Pencari Kosan Anda belum diverifikasi oleh admin. Silakan tunggu proses verifikasi.');
+         return;
+      }
+    }
+
+    const targetRoleText = isOwner ? t('profile.tenant', 'Pencari Kosan') : t('profile.owner', 'Pemilik Kosan');
     Alert.alert(
-      'Beralih Peran',
-      `Apakah Anda ingin beralih mode aplikasi menjadi ${targetRoleText}?`,
+      t('profile.switchRole', 'Beralih Peran'),
+      t('profile.switchPrompt', `Apakah Anda ingin beralih mode aplikasi menjadi ${targetRoleText}?`, { role: targetRoleText }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Beralih',
-          onPress: async () => {
-            setIsSaving(true);
-            const { data, error } = await updateUserProfile(currentUser.id, {
-              role: targetRole,
-            });
-            setIsSaving(false);
-            if (error) {
-              Alert.alert('Gagal', error.message);
-            } else if (data) {
-              Alert.alert('Berhasil', `Anda sekarang berada di mode ${targetRoleText}.`);
-              setProfile(data);
-              setAuthenticatedUser(currentSession, data);
-            }
+          text: t('profile.switchNow', 'Beralih'),
+          onPress: () => {
+            switchRole();
           },
         },
       ]
     );
   };
 
+  if (!currentUser) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <>
+      {/* Header (Fixed) */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <DrawerButton />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -272,15 +368,6 @@ const ProfileScreen = ({ navigation }) => {
         />
       }
     >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <DrawerButton />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
-          </View>
-        </View>
-      </View>
 
       {/* Avatar Section */}
       <View style={styles.avatarSection}>
@@ -314,7 +401,7 @@ const ProfileScreen = ({ navigation }) => {
         {/* Role Badge */}
         <View style={[styles.roleBadge, isOwner ? styles.roleBadgeOwner : styles.roleBadgeTenant]}>
           <Text style={styles.roleBadgeText}>
-            {isOwner ? 'Pemilik Kosan' : 'Pencari Kosan'}
+            {isOwner ? t('profile.owner', 'Pemilik Kosan') : t('profile.tenant', 'Pencari Kosan')}
           </Text>
         </View>
       </View>
@@ -322,49 +409,119 @@ const ProfileScreen = ({ navigation }) => {
       {/* Profile Info */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('profile.editButton') || 'Informasi Akun'}</Text>
+          <Text style={styles.sectionTitle}>{t('profile.editButton')}</Text>
         </View>
         <EditableInfoRow
-          label="Nama Lengkap"
+          label={t('profile.fullNameLabel', 'Nama Lengkap')}
           value={fullName}
           onChangeText={setFullName}
           icon="person-outline"
-          placeholder="Masukkan nama lengkap"
+          placeholder={t('profile.fullNameLabel', 'Nama Lengkap')}
         />
-        <InfoRow label="Email" value={profile?.email ?? currentUser?.email} icon="mail-outline" />
+        <InfoRow label={t('profile.emailLabel', 'Email')} value={profile?.email ?? currentUser?.email} icon="mail-outline" />
         <EditableInfoRow
-          label="Nomor Telepon"
+          label={t('profile.phoneLabel', 'Nomor Telepon') + ' *'}
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           icon="call-outline"
-          placeholder="Contoh: +628123456789"
+          placeholder="+628123456789"
           keyboardType="phone-pad"
         />
         <SelectableInfoRow
-          label="Jenis Kelamin"
-          value={gender}
+          label={t('profile.genderLabel', 'Jenis Kelamin')}
+          value={gender === 'Laki-laki' ? t('profile.genderMale', 'Laki-laki') : gender === 'Perempuan' ? t('profile.genderFemale', 'Perempuan') : gender}
           onPress={() => setIsGenderModalVisible(true)}
           icon="male-female-outline"
-          placeholder="Pilih Jenis Kelamin"
+          placeholder={t('profile.genderPlaceholder', 'Pilih Jenis Kelamin')}
         />
         <SelectableInfoRow
-          label="Kota Asal"
+          label={t('profile.cityLabel', 'Kota Asal')}
           value={homeCity}
           onPress={() => setIsCityModalVisible(true)}
           icon="location-outline"
-          placeholder="Cari Kota/Kabupaten"
+          placeholder={t('profile.cityPlaceholder', 'Cari Kota/Kabupaten')}
         />
         <InfoRow
-          label="Status Profil"
-          value={profile?.is_profile_complete ? 'Lengkap' : 'Belum Lengkap'}
+          label={t('profile.statusLabel', 'Status Profil')}
+          value={profile?.is_profile_complete ? t('profile.complete', 'Lengkap') : t('profile.incomplete', 'Belum Lengkap')}
           icon={profile?.is_profile_complete ? "checkmark-circle" : "warning"} iconColor={profile?.is_profile_complete ? COLORS.success : COLORS.warning}
         />
+
+        {!isOwner && (
+          <>
+            <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
+              <Text style={styles.sectionTitle}>{t('profile.tenantExtraData', 'Data Tambahan Pencari Kos')}</Text>
+            </View>
+            <EditableInfoRow
+              label={t('profile.occupation', 'Pekerjaan / Status')}
+              value={occupation}
+              onChangeText={setOccupation}
+              icon="briefcase-outline"
+              placeholder={t('profile.occupationPlaceholder', 'Cth: Mahasiswa, Karyawan')}
+            />
+            <EditableInfoRow
+              label={t('profile.emergencyName', 'Nama Kontak Darurat')}
+              value={emergencyName}
+              onChangeText={setEmergencyName}
+              icon="shield-checkmark-outline"
+              placeholder={t('profile.emergencyNamePlaceholder', 'Nama kerabat/keluarga')}
+            />
+            <EditableInfoRow
+              label={t('profile.emergencyPhone', 'No. Telp Darurat')}
+              value={emergencyPhone}
+              onChangeText={setEmergencyPhone}
+              icon="call-outline"
+              placeholder={t('profile.emergencyPhonePlaceholder', 'Contoh: +628123456789')}
+              keyboardType="phone-pad"
+            />
+          </>
+        )}
+
+        {isOwner && (
+          <>
+            <View style={[styles.sectionHeader, { marginTop: SPACING[4] }]}>
+              <Text style={styles.sectionTitle}>{t('profile.ownerExtraData', 'Data Tambahan Pemilik Kosan')}</Text>
+            </View>
+            <EditableInfoRow
+              label={t('profile.ownerKtp', 'Nomor Induk Kependudukan (NIK)')}
+              value={ownerKtpNumber}
+              onChangeText={setOwnerKtpNumber}
+              icon="card-outline"
+              placeholder="Contoh: 3201234567890123"
+              keyboardType="numeric"
+              maxLength={16}
+            />
+            <EditableInfoRow
+              label={t('profile.bankName', 'Nama Bank')}
+              value={bankName}
+              onChangeText={setBankName}
+              icon="business-outline"
+              placeholder="Contoh: BCA, BNI, Mandiri"
+            />
+            <EditableInfoRow
+              label={t('profile.bankAccountName', 'Nama Pemilik Rekening')}
+              value={bankAccountName}
+              onChangeText={setBankAccountName}
+              icon="person-outline"
+              placeholder="Sesuai buku tabungan"
+            />
+            <EditableInfoRow
+              label={t('profile.bankAccountNumber', 'Nomor Rekening')}
+              value={bankAccountNumber}
+              onChangeText={setBankAccountNumber}
+              icon="wallet-outline"
+              placeholder="Contoh: 1234567890"
+              keyboardType="numeric"
+            />
+          </>
+        )}
+
         <TouchableOpacity
           style={[styles.saveProfileBtn, isSaving && { opacity: 0.7 }]}
           onPress={handleSaveProfile}
           disabled={isSaving}
         >
-          {isSaving ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveProfileBtnText}>{t('profile.saveButton') || 'Simpan Perubahan'}</Text>}
+          {isSaving ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveProfileBtnText}>{t('profile.saveButton')}</Text>}
         </TouchableOpacity>
       </View>
 
@@ -372,12 +529,19 @@ const ProfileScreen = ({ navigation }) => {
       <View style={[styles.section, { backgroundColor: COLORS.primarySurface, borderColor: COLORS.primaryLight, borderWidth: 1 }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="swap-horizontal" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>Beralih Peran</Text>
+          <Text style={[styles.sectionTitle, { color: COLORS.primaryDark, marginBottom: 0 }]}>
+            {currentUser.role === USER_ROLE.BOTH ? t('profile.switchRole', 'Beralih Peran') : t('profile.registerOtherRole', 'Daftar Peran Lain')}
+          </Text>
         </View>
         <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: SPACING[4], lineHeight: 20 }}>
           {isOwner
-            ? 'Ingin mencari kosan? Anda bisa mengubah mode akun Anda ke mode Pencari Kosan sekarang.'
-            : 'Punya properti kosan? Anda bisa beralih ke mode Pemilik Kosan untuk mulai mengelola properti.'}
+            ? (currentUser.role === USER_ROLE.BOTH 
+                ? t('profile.tenantPrompt', 'Ingin mencari kosan? Anda bisa mengubah mode akun Anda ke mode Pencari Kosan sekarang.')
+                : t('profile.registerTenantPrompt', 'Ingin mencari kosan? Anda bisa mendaftar ke mode Pencari Kosan sekarang.'))
+            : (currentUser.role === USER_ROLE.BOTH
+                ? t('profile.ownerPrompt', 'Punya properti kosan? Anda bisa beralih ke mode Pemilik Kosan untuk mulai mengelola properti.')
+                : t('profile.registerOwnerPrompt', 'Punya properti kosan? Anda bisa mendaftar ke mode Pemilik Kosan untuk mulai mengelola properti.'))
+          }
         </Text>
         <TouchableOpacity
           style={[styles.saveProfileBtn, { backgroundColor: COLORS.primary }]}
@@ -385,20 +549,22 @@ const ProfileScreen = ({ navigation }) => {
           disabled={isSaving}
         >
           <Text style={styles.saveProfileBtnText}>
-            {isOwner ? 'Beralih ke Pencari Kosan' : 'Beralih ke Pemilik Kosan'}
+            {currentUser.role === USER_ROLE.BOTH
+              ? (isOwner ? t('profile.switchTenantBtn', 'Beralih ke Pencari Kosan') : t('profile.switchOwnerBtn', 'Beralih ke Pemilik Kosan'))
+              : (isOwner ? t('profile.registerTenantBtn', 'Daftar sebagai Pencari Kos') : t('profile.registerOwnerBtn', 'Daftar sebagai Pemilik'))}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* About App */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tentang Aplikasi</Text>
+        <Text style={styles.sectionTitle}>{t('profile.aboutApp', 'Tentang Aplikasi')}</Text>
         <View style={styles.aboutRow}>
-          <Text style={styles.aboutLabel}>Versi</Text>
+          <Text style={styles.aboutLabel}>{t('profile.version', 'Versi')}</Text>
           <Text style={styles.aboutValue}>1.0.0</Text>
         </View>
         <View style={styles.aboutRow}>
-          <Text style={styles.aboutLabel}>App</Text>
+          <Text style={styles.aboutLabel}>{t('profile.app', 'App')}</Text>
           <Text style={styles.aboutValue}>KosanKu</Text>
         </View>
       </View>
@@ -406,7 +572,7 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.section}>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={styles.logoutBtnText}>Keluar (Logout)</Text>
+          <Text style={styles.logoutBtnText}>{t('profile.logoutButton', 'Keluar')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -417,12 +583,12 @@ const ProfileScreen = ({ navigation }) => {
     <Modal visible={isGenderModalVisible} transparent animationType="fade">
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsGenderModalVisible(false)}>
         <View style={styles.actionSheet}>
-          <Text style={styles.actionSheetTitle}>Pilih Jenis Kelamin</Text>
+          <Text style={styles.actionSheetTitle}>{t('profile.selectGenderTitle', 'Pilih Jenis Kelamin')}</Text>
           <TouchableOpacity style={styles.actionSheetOption} onPress={() => { setGender('Laki-laki'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>Laki-laki</Text>
+            <Text style={styles.actionSheetOptionText}>{t('profile.genderMale', 'Laki-laki')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionSheetOption, { borderBottomWidth: 0 }]} onPress={() => { setGender('Perempuan'); setIsGenderModalVisible(false); }}>
-            <Text style={styles.actionSheetOptionText}>Perempuan</Text>
+            <Text style={styles.actionSheetOptionText}>{t('profile.genderFemale', 'Perempuan')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -435,23 +601,18 @@ const ProfileScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => setIsCityModalVisible(false)}>
             <Ionicons name="close" size={24} color={COLORS.text} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Pilih Kota Asal</Text>
+          <Text style={styles.modalTitle}>{t('profile.selectCityTitle', 'Pilih Kota Asal')}</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari kota atau kabupaten..."
+            placeholder={t('profile.citySearchPlaceholder', 'Cari kota atau kabupaten...')}
             value={citySearchText}
             onChangeText={setCitySearchText}
             autoFocus
           />
-          {citySearchText ? (
-            <TouchableOpacity onPress={() => setCitySearchText('')}>
-              <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
-            </TouchableOpacity>
-          ) : null}
         </View>
         <FlatList
           data={filteredCities}
@@ -480,7 +641,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     backgroundColor: COLORS.primary,
-    
+
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
@@ -489,7 +650,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
+    color: COLORS.white,
+
   },
   avatarSection: {
     alignItems: 'center',

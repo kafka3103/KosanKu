@@ -6,6 +6,7 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
+import { translateMultipleFields } from './translationService';
 
 /**
  * Cari properti & kamar yang tersedia berdasarkan filter
@@ -26,14 +27,13 @@ export const searchProperties = async (filters = {}) => {
     minPrice,
     maxPrice,
     genderPolicy,
-    roomType,
     searchQuery,
     page = 0,
     pageSize = 20,
   } = filters;
 
   // Gunakan rooms!inner HANYA jika filter spesifik kamar (minPrice, maxPrice, atau roomType) sedang aktif digunakan
-  const hasRoomFilter = minPrice != null || maxPrice != null || Boolean(roomType);
+  const hasRoomFilter = minPrice != null || maxPrice != null;
   const roomsRelation = hasRoomFilter ? 'rooms!inner' : 'rooms';
 
   let query = supabaseClient
@@ -41,8 +41,11 @@ export const searchProperties = async (filters = {}) => {
     .select(`
       id,
       name,
+      name_en,
       description,
+      description_en,
       address_line,
+      address_line_en,
       city,
       district,
       latitude,
@@ -52,19 +55,21 @@ export const searchProperties = async (filters = {}) => {
       cover_photo_url,
       photo_urls,
       rules,
+      rules_en,
+      owner_id,
       ${roomsRelation}(
         id,
         room_number,
-        room_type,
         base_price,
         status,
         size_sqm,
+        description_en,
         photo_urls,
         room_facilities(
-          facility_master(name, icon_name)
+          facility_master(*)
         )
       ),
-      users!properties_owner_id_fkey(full_name, phone_number),
+      users(full_name, phone_number),
       reviews(average_rating)
     `)
     .eq('is_active', true)
@@ -96,9 +101,7 @@ export const searchProperties = async (filters = {}) => {
     query = query.lte('rooms.base_price', maxPrice);
   }
 
-  if (roomType) {
-    query = query.eq('rooms.room_type', roomType);
-  }
+  // room_type column removed — not present in current database schema
 
   // Pagination
   const from = page * pageSize;
@@ -124,10 +127,10 @@ export const getPropertyDetailForTenant = async (propertyId) => {
         *,
         room_facilities(
           additional_cost,
-          facility_master(name, icon_name, category)
+          facility_master(*)
         )
       ),
-      users!properties_owner_id_fkey(full_name, phone_number, avatar_url)
+      users(full_name, phone_number, avatar_url)
     `)
     .eq('id', propertyId)
     .eq('is_deleted', false)
@@ -155,6 +158,7 @@ export const getTenantFavorites = async (tenantId) => {
         city,
         cover_photo_url,
         gender_policy,
+        general_facilities,
         rooms(base_price, status)
       )
     `)
@@ -230,9 +234,29 @@ export const checkIsFavorite = async (tenantId, propertyId) => {
  * @param {string} [requestData.tenantMessage]
  */
 export const submitRentalRequest = async (requestData) => {
-  // Hitung tanggal kadaluarsa pengajuan (3 hari kerja ~ 4 hari kalender)
+  // Hitung tanggal kadaluarsa pengajuan berdasarkan durasi sewa
+  // - Sewa 1 bulan: batal otomatis dalam 3 jam
+  // - Sewa 2-3 bulan: batal otomatis dalam 2 jam
+  // - Sewa 4-6 bulan: batal otomatis dalam 1 jam
+  // - Sewa >6 bulan: batal otomatis dalam 30 menit
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 4);
+  const duration = requestData.durationMonths || 1;
+
+  if (duration === 1) {
+    expiresAt.setHours(expiresAt.getHours() + 3);
+  } else if (duration >= 2 && duration <= 3) {
+    expiresAt.setHours(expiresAt.getHours() + 2);
+  } else if (duration >= 4 && duration <= 6) {
+    expiresAt.setHours(expiresAt.getHours() + 1);
+  } else {
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+  }
+
+  let translated = {};
+  if (requestData.tenantMessage) {
+    const fieldsToTranslate = { tenant_message: requestData.tenantMessage };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
 
   const { data, error } = await supabaseClient
     .from('rental_requests')
@@ -243,8 +267,10 @@ export const submitRentalRequest = async (requestData) => {
       requested_start_date: requestData.requestedStartDate,
       duration_months: requestData.durationMonths,
       monthly_rate: requestData.monthlyRate,
+      tenant_nik: requestData.tenantNik ?? null,
       ktp_photo_url: requestData.ktpPhotoUrl ?? null,
       tenant_message: requestData.tenantMessage ?? null,
+      tenant_message_en: translated.tenant_message_en ?? null,
       expires_at: expiresAt.toISOString(),
     })
     .select()
@@ -253,8 +279,8 @@ export const submitRentalRequest = async (requestData) => {
   if (!error && data && requestData.ownerId) {
     await sendNotification({
       userId: requestData.ownerId,
-      title: 'Pengajuan Sewa Baru 📋',
-      body: `Penghuni baru telah mengajukan sewa kamar untuk durasi ${requestData.durationMonths} bulan. Segera tinjau pengajuan di menu Pengajuan Sewa.`,
+      title: 'rental_new_title',
+      body: JSON.stringify({ key: 'rental_new_body', params: { months: requestData.durationMonths } }),
       type: 'rental_request_new',
       referenceId: data.id,
       referenceType: 'rental_request',
@@ -274,11 +300,40 @@ export const getTenantRentalRequests = async (tenantId) => {
     .from('rental_requests')
     .select(`
       *,
+      contracts (
+        id,
+        start_date,
+        end_date,
+        status,
+        monthly_rate,
+        contract_facilities (
+          *,
+          facility_master(name)
+        ),
+        invoices (
+          id,
+          status,
+          total_amount,
+          paid_amount,
+          due_date,
+          billing_period
+        )
+      ),
       rooms(
         room_number,
         base_price,
         photo_urls,
-        properties(name, address_line, city, cover_photo_url)
+        room_facilities(
+          facility_master(*)
+        ),
+        properties(
+          name, 
+          address_line, 
+          city, 
+          cover_photo_url,
+          general_facilities,
+          users(full_name, phone_number)
+        )
       )
     `)
     .eq('tenant_id', tenantId)

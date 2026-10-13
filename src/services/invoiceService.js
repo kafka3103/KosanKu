@@ -6,6 +6,7 @@
 
 import supabaseClient from './supabaseClient';
 import { sendNotification } from './notificationService';
+import { translateMultipleFields } from './translationService';
 
 // ─── Invoices ─────────────────────────────────────────────────
 
@@ -92,16 +93,12 @@ export const getTenantActiveContract = async (tenantId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(
         room_number,
         base_price,
         photo_urls,
         room_facilities(
-          facility_master(name, icon_name)
+          facility_master(*)
         ),
         properties(
           name,
@@ -109,20 +106,17 @@ export const getTenantActiveContract = async (tenantId) => {
           city,
           cover_photo_url,
           general_facilities,
-          users!properties_owner_id_fkey(full_name, phone_number)
+          users(full_name, phone_number)
         )
       )
     `)
     .eq('tenant_id', tenantId)
     .eq('status', 'active')
-    .order('start_date', { ascending: false })
-    .limit(1)
-    .single();
+    .order('start_date', { ascending: false });
 
-  // PGRST116 = no rows found — bukan error kritis untuk tenant baru
-  if (error?.code === 'PGRST116') return { data: null, error: null };
+  if (error) return { data: null, error };
 
-  return { data, error };
+  return { data: data || [], error: null };
 };
 
 /**
@@ -135,10 +129,6 @@ export const getOwnerContracts = async (ownerId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(room_number, properties(name)),
       users!contracts_tenant_id_fkey(full_name, phone_number)
     `)
@@ -158,13 +148,9 @@ export const getContractById = async (contractId) => {
     .from('contracts')
     .select(`
       *,
-      contract_facilities(
-        *,
-        facility_master(name, icon_name)
-      ),
       rooms(
         *,
-        room_facilities(facility_master(name, icon_name)),
+        room_facilities(facility_master(*)),
         properties(*)
       ),
       users!contracts_tenant_id_fkey(full_name, phone_number, email, avatar_url),
@@ -184,12 +170,19 @@ export const getContractById = async (contractId) => {
  * @param {string} reason
  */
 export const endContract = async (contractId, endStatus, reason) => {
+  let translated = {};
+  if (reason) {
+    const fieldsToTranslate = { end_reason_note: reason };
+    translated = await translateMultipleFields(fieldsToTranslate);
+  }
+
   const { data, error } = await supabaseClient
     .from('contracts')
     .update({
       status: endStatus,
       end_reason: endStatus === 'terminated' ? 'terminated_by_owner' : 'early_exit_approved',
       end_reason_note: reason,
+      end_reason_note_en: translated.end_reason_note_en ?? null,
       actual_end_date: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString(),
     })
@@ -210,7 +203,7 @@ export const getContractFacilities = async (contractId) => {
     .from('contract_facilities')
     .select(`
       *,
-      facility_master(name, icon_name)
+      facility_master(*)
     `)
     .eq('contract_id', contractId)
     .order('created_at', { ascending: true });
@@ -247,8 +240,8 @@ export const addContractFacility = async ({
   if (!error && data?.billing_action === 'invoice_created' && data?.tenant_id) {
     await sendNotification({
       userId: data.tenant_id,
-      title: 'Tagihan Fasilitas Tambahan Baru ❄️',
-      body: `Tagihan sebesar Rp ${pricePerMonth.toLocaleString('id-ID')} untuk pemasangan ${data.facility_name ?? customName ?? 'fasilitas tambahan'} telah tersedia. Silakan lakukan pembayaran.`,
+      title: 'facility_invoice_title',
+      body: JSON.stringify({ key: 'facility_invoice_body', params: { amount: `Rp ${pricePerMonth.toLocaleString('id-ID')}`, facilityName: data.facility_name ?? customName ?? 'fasilitas tambahan' } }),
       type: 'invoice_generated',
       referenceId: data.invoice_id,
       referenceType: 'invoice',

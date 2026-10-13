@@ -30,7 +30,6 @@ const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState(USER_ROLE.TENANT);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +49,7 @@ const RegisterScreen = ({ navigation }) => {
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', t('auth.errors.passwordMismatch') || 'Password mismatch');
+      Alert.alert(t('common.error', 'Error'), t('auth.errors.passwordMismatch', 'Password mismatch'));
       return false;
     }
     return true;
@@ -63,7 +62,7 @@ const RegisterScreen = ({ navigation }) => {
     const { data, error } = await registerWithEmail({
       email: email.trim().toLowerCase(),
       password,
-      role: selectedRole,
+      role: USER_ROLE.TENANT,
       fullName: fullName.trim(),
       phoneNumber: phoneNumber.trim(),
     });
@@ -73,15 +72,15 @@ const RegisterScreen = ({ navigation }) => {
       const isAlreadyRegistered = error.message?.toLowerCase().includes('already registered') || error.code === 'user_already_exists';
       if (isAlreadyRegistered) {
         Alert.alert(
-          'Akun Sudah Terdaftar',
-          t('auth.errors.emailAlreadyUsed') || 'Email ini sudah terdaftar. Silakan gunakan menu Login.',
+          t('auth.notRegisteredTitle', 'Akun Sudah Terdaftar'),
+          t('auth.errors.emailAlreadyUsed', 'Email ini sudah terdaftar. Silakan gunakan menu Login.'),
           [
-            { text: 'Batal', style: 'cancel' },
-            { text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
+            { text: t('auth.loginNow', 'Masuk (Login)'), onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }
           ]
         );
       } else {
-        Alert.alert('Registrasi Gagal', error.message);
+        Alert.alert(t('auth.registerFailedTitle', 'Registrasi Gagal'), error.message);
       }
       return;
     }
@@ -89,61 +88,56 @@ const RegisterScreen = ({ navigation }) => {
     // Jika Supabase mengaktifkan "Confirm Email", session akan null
     if (!data?.session) {
       Alert.alert(
-        'Registrasi Berhasil!',
-        'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.',
+        t('auth.registerSuccessTitle', 'Registrasi Berhasil!'),
+        t('auth.registerSuccessEmailMsg', 'Silakan periksa kotak masuk email Anda untuk memverifikasi akun Anda sebelum login.'),
         [{ text: 'OK', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
       );
     } else {
+      // User registered successfully with email and got a session (confirm email is OFF).
+      // We manually sign them out to force them to login as per requirements.
+      const { logout } = require('../../services/authService');
+      await logout();
+      
       Alert.alert(
-        'Registrasi Berhasil! 🎉',
-        'Akun Anda berhasil dibuat. Anda sekarang masuk.',
-        [{ text: 'Lanjutkan', onPress: () => { } }] // AppNavigator will auto route
+        t('auth.registerSuccessTitle2', 'Registrasi Berhasil! 🎉'),
+        'Akun Anda berhasil dibuat. Silakan masuk (Login) menggunakan email dan kata sandi Anda.',
+        [{ text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
       );
     }
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await signInWithGoogle(selectedRole);
+    const { data, error } = await signInWithGoogle(USER_ROLE.TENANT);
     setIsLoading(false);
 
     if (error) {
       if (error.code === 'ALREADY_REGISTERED') {
         Alert.alert(
-          'Akun Sudah Terdaftar',
+          t('auth.notRegisteredTitle', 'Akun Sudah Terdaftar'),
           error.message,
           [
-            { text: 'Batal', style: 'cancel' },
+            { text: t('common.buttons.cancel', 'Batal'), style: 'cancel' },
             {
-              text: 'Masuk (Login)',
+              text: t('auth.loginNow', 'Masuk (Login)'),
               onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN)
             }
           ]
         );
       } else {
-        Alert.alert(t('common.errors.error') || 'Error', error.message);
+        Alert.alert(t('common.error', 'Error'), error.message);
       }
+    } else if (data?.registrationSuccess) {
+      // Registration successful! Direct user to login.
+      Alert.alert(
+        t('auth.registerSuccessTitle2', 'Registrasi Berhasil! 🎉'),
+        'Akun Anda berhasil didaftarkan. Silakan login menggunakan opsi Sign In dengan Google.',
+        [{ text: 'Masuk (Login)', onPress: () => navigation.navigate(AUTH_SCREENS.LOGIN) }]
+      );
     }
   };
 
-  const RoleCard = ({ role, label, description, style }) => {
-    const isSelected = selectedRole === role;
-    return (
-      <TouchableOpacity
-        style={[styles.roleCard, style, isSelected && styles.roleCardSelected]}
-        onPress={() => setSelectedRole(role)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.roleLabel, isSelected && styles.roleLabelSelected]}>{label}</Text>
-        <Text style={[styles.roleDescription, isSelected && styles.roleDescriptionSelected]}>{description}</Text>
-        {isSelected && (
-          <View style={styles.roleCheckBadge}>
-            <Ionicons name="checkmark" size={12} color={COLORS.white} />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
+
 
   return (
     <KeyboardAvoidingView 
@@ -167,22 +161,6 @@ const RegisterScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.formContainer}>
-          {/* Role Selector */}
-          <View style={[styles.roleRow, { flexWrap: 'wrap' }]}>
-            <RoleCard
-              role={USER_ROLE.TENANT}
-              label={t('auth.register.roleTenant') || 'Pencari Kosan'}
-              description="Cari & sewa kos"
-              style={{ minWidth: '47%' }}
-            />
-            <RoleCard
-              role={USER_ROLE.OWNER}
-              label={t('auth.register.roleOwner') || 'Pemilik Kosan'}
-              description="Kelola properti"
-              style={{ minWidth: '47%' }}
-            />
-          </View>
-
           {/* Nama Lengkap */}
           <Text style={styles.label}>{t('auth.register.fullNameLabel') || 'Nama Lengkap'}</Text>
           <View style={styles.inputWrapper}>
@@ -197,7 +175,7 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           {/* Nomor Handphone */}
-          <Text style={styles.label}>Nomor Handphone</Text>
+            <Text style={styles.label}>{t('auth.register.phoneLabel', 'Nomor Handphone')}</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
@@ -287,14 +265,14 @@ const RegisterScreen = ({ navigation }) => {
                 source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
                 style={styles.socialIcon}
               />
-              <Text style={styles.socialButtonText}>Sign up with Google</Text>
+              <Text style={styles.socialButtonText}>{t('auth.register.signUpGoogle', 'Sign up with Google')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={styles.footerText}>{t('auth.register.alreadyHaveAccount', 'Already have an account?')} </Text>
+            <Text style={styles.footerText}>{t('auth.register.alreadyHaveAccount', 'Sudah punya akun?')} </Text>
             <TouchableOpacity onPress={() => navigation.navigate(AUTH_SCREENS.LOGIN)}>
-              <Text style={styles.footerLink}>Login</Text>
+              <Text style={styles.footerLink}>{t('auth.login.loginButton', 'Masuk')}</Text>
             </TouchableOpacity>
           </View>
 

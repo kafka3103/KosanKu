@@ -6,7 +6,7 @@ import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING } from '../../constants/spacing';
 import { AUTH_SCREENS } from '../../constants/screenNames';
-import { sendPasswordResetEmail } from '../../services/authService';
+import { sendPasswordResetEmail, verifyPasswordResetOtp } from '../../services/authService';
 
 const OtpVerificationScreen = ({ route, navigation }) => {
   const { email } = route.params || {};
@@ -14,6 +14,7 @@ const OtpVerificationScreen = ({ route, navigation }) => {
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(30);
   const [isResending, setIsResending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     let timer;
@@ -40,12 +41,19 @@ const OtpVerificationScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleConfirm = () => {
-    if (otp.length < 6) {
-      // Let's assume it's 6 digit. We just validate length.
+  const handleConfirm = async () => {
+    if (otp.length < 6) return;
+    
+    setIsVerifying(true);
+    const { error } = await verifyPasswordResetOtp({ email, otpCode: otp });
+    setIsVerifying(false);
+
+    if (error) {
+      Alert.alert('Error', error.message || 'Kode OTP tidak valid atau sudah kadaluarsa.');
       return;
     }
-    // Pass the OTP to the next screen to avoid premature session creation
+    
+    // Jika valid, navigasi ke halaman Reset Password
     navigation.navigate(AUTH_SCREENS.RESET_PASSWORD, { email, otp });
   };
 
@@ -54,14 +62,20 @@ const OtpVerificationScreen = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <TouchableOpacity 
           style={styles.backButton} 
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('AuthRoot');
+            }
+          }}
         >
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>{t('auth.login.forgotPassword.otpTitle') || 'Enter OTP to Verify Your Identity'}</Text>
-          <Text style={styles.subtitle}>{t('auth.login.forgotPassword.otpSubtitle') || 'A one-time password (OTP) has been sent to your registered email address.'}</Text>
+          <Text style={styles.title}>{t('auth.forgotPassword.otpTitle') || 'Enter OTP to Verify Your Identity'}</Text>
+          <Text style={styles.subtitle}>{t('auth.forgotPassword.otpSubtitle') || 'A one-time password (OTP) has been sent to your registered email address.'}</Text>
 
           <View style={styles.otpInputContainer}>
             <TextInput
@@ -69,8 +83,8 @@ const OtpVerificationScreen = ({ route, navigation }) => {
               value={otp}
               onChangeText={setOtp}
               keyboardType="number-pad"
-              maxLength={6}
-              placeholder="• • • • • •"
+              maxLength={8}
+              placeholder="• • • • • • • •"
               placeholderTextColor={COLORS.textTertiary}
             />
           </View>
@@ -78,7 +92,7 @@ const OtpVerificationScreen = ({ route, navigation }) => {
           <View style={styles.resendContainer}>
             {countdown > 0 ? (
               <Text style={styles.resendText}>
-                {t('auth.login.forgotPassword.resendCode') || 'Resend code in'} 00:{countdown.toString().padStart(2, '0')}
+                {t('auth.forgotPassword.resendCode') || 'Resend code in'} 00:{countdown.toString().padStart(2, '0')}
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResendOtp} disabled={isResending}>
@@ -94,11 +108,15 @@ const OtpVerificationScreen = ({ route, navigation }) => {
           </View>
 
           <TouchableOpacity
-            style={[styles.button, otp.length < 6 && styles.buttonDisabled]}
+            style={[styles.button, (otp.length < 6 || isVerifying) && styles.buttonDisabled]}
             onPress={handleConfirm}
-            disabled={otp.length < 6}
+            disabled={otp.length < 6 || isVerifying}
           >
-            <Text style={styles.buttonText}>{t('auth.login.forgotPassword.confirmButton') || 'Confirm'}</Text>
+            {isVerifying ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.buttonText}>{t('auth.forgotPassword.confirmButton') || 'Confirm'}</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

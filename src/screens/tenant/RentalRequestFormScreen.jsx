@@ -19,18 +19,23 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { format, addMonths } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../../localization/i18n';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { submitRentalRequest } from '../../services/searchService';
-import { uploadKtpPhoto } from '../../services/userService';
+import { getTenantProfile, upsertTenantProfile, checkNikUnique } from '../../services/userService';
+import { scheduleLocalNotification } from '../../utils/notificationUtils';
+
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('id-ID', {
@@ -39,7 +44,7 @@ const formatCurrency = (amount) =>
     minimumFractionDigits: 0,
   }).format(amount ?? 0);
 
-const formatDate = (date) => format(date, 'd MMMM yyyy', { locale: idLocale });
+const formatDate = (date, i18n) => format(date, 'd MMMM yyyy', { locale: i18n?.language === 'en' ? enLocale : idLocale });
 
 const DURATION_OPTIONS = [1, 3, 6, 12];
 
@@ -50,82 +55,74 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
   const room = route.params?.room;
   const property = route.params?.property;
 
-  const [startDate] = useState(new Date()); // Selalu mulai dari hari ini
+  const [startDate, setStartDate] = useState(new Date()); // Default hari ini
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [durationMonths, setDurationMonths] = useState(1);
   const [tenantMessage, setTenantMessage] = useState('');
-  const [ktpUri, setKtpUri] = useState(null);
+  const [tenantNIK, setTenantNIK] = useState('');
+  const [isNiksLocked, setIsNiksLocked] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      const { data } = await getTenantProfile(currentUser.id);
+      if (data && data.ktp_number) {
+        setTenantNIK(data.ktp_number);
+        setIsNiksLocked(true);
+      }
+    };
+    if (currentUser?.id) {
+      loadProfile();
+    }
+  }, [currentUser]);
 
   const endDate = addMonths(startDate, durationMonths);
   const totalCost = (room?.base_price ?? 0) * durationMonths;
+  const maxStartDate = addMonths(new Date(), 2);
 
-  const pickFromCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto KTP.');
-      return;
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(Platform.OS === 'ios'); // On iOS we might want it to stay, but usually we hide it. Better just hide it on both unless inline.
+    if (selectedDate) {
+      setStartDate(selectedDate);
     }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 0.9,
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setKtpUri(result.assets[0].uri);
+    if (Platform.OS === 'android') {
+        setShowDatePicker(false);
     }
   };
 
-  const pickFromGallery = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan untuk upload KTP.');
-      return;
-    }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 0.9,
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setKtpUri(result.assets[0].uri);
-    }
-  };
-
-  const handlePickKtp = () => {
-    Alert.alert(
-      'Upload Foto KTP',
-      'Pilih sumber foto KTP Anda',
-      [
-        { text: 'Kamera', onPress: pickFromCamera },
-        { text: 'Galeri', onPress: pickFromGallery },
-        { text: 'Batal', style: 'cancel' },
-      ],
-      { cancelable: true }
-    );
-  };
 
   const handleSubmit = async () => {
+    const ownerId = property?.owner_id ?? property?.users_owner_id_fkey?.id;
+    if (currentUser?.id === ownerId) {
+      Alert.alert(t('common.fail', 'Gagal'), t('rental.request.selfRentalError', 'Anda tidak dapat menyewa kamar di properti milik sendiri.'));
+      return;
+    }
+
+    if (!isNiksLocked) {
+      if (!tenantNIK || tenantNIK.length !== 16 || !/^\d+$/.test(tenantNIK)) {
+        Alert.alert(t('common.fail', 'Gagal'), t('common.invalidNikLength', 'NIK harus terdiri dari 16 digit angka.'));
+        return;
+      }
+    }
+
     Alert.alert(
-      'Konfirmasi Pengajuan',
-      `Ajukan sewa kamar ${room?.room_number} di ${property?.name} selama ${durationMonths} bulan?`,
+      t('rental.request.confirmTitle', 'Konfirmasi Pengajuan'),
+      t('rental.request.confirmMsg', `Ajukan sewa kamar ${room?.room_number} di ${property?.name} selama ${durationMonths} bulan?`, { room: room?.room_number, property: property?.name, months: durationMonths }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('rental.request.cancel', 'Batal'), style: 'cancel' },
         {
-          text: 'Kirim Pengajuan',
+          text: t('rental.request.submitButton', 'Kirim Pengajuan'),
           onPress: async () => {
             setIsLoading(true);
             try {
-              let ktpPhotoUrl = null;
-
-              // Upload KTP jika ada
-              if (ktpUri) {
-                const { path, error: ktpError } = await uploadKtpPhoto(currentUser.id, ktpUri);
-                if (!ktpError && path) {
-                  ktpPhotoUrl = path;
+              if (!isNiksLocked) {
+                const isUnique = await checkNikUnique(tenantNIK, currentUser.id);
+                if (!isUnique) {
+                   Alert.alert(t('common.fail', 'Gagal'), t('common.duplicateNik', 'NIK sudah terdaftar pada akun lain.'));
+                   setIsLoading(false);
+                   return;
                 }
               }
 
@@ -136,26 +133,34 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 requestedStartDate: startDate.toISOString().split('T')[0],
                 durationMonths,
                 monthlyRate: parseFloat(room.base_price ?? 0),
-                ktpPhotoUrl,
                 tenantMessage: tenantMessage.trim() || null,
+                tenantNik: isNiksLocked ? null : tenantNIK, // Only pass if it's new
               });
 
               if (error) {
                 // Cek error unique constraint (sudah ada pengajuan pending)
                 if (error.code === '23505') {
                   Alert.alert(
-                    'Pengajuan Duplikat',
-                    'Kamar ini sudah memiliki pengajuan sewa yang sedang diproses.'
+                    t('rental.request.duplicateTitle', 'Pengajuan Duplikat'),
+                    t('rental.request.duplicateMsg', 'Kamar ini sudah memiliki pengajuan sewa yang sedang diproses.')
                   );
                 } else {
-                  Alert.alert('Gagal', error.message);
+                  Alert.alert(t('rental.request.failTitle', 'Gagal'), error.message);
                 }
                 return;
               }
 
+              // Panggil Local Notification sebagai pemberitahuan lokal di HP penyewa
+              scheduleLocalNotification(
+                t('rental.request.localNotifTitle', 'Pengajuan Berhasil Dikirim!'),
+                t('rental.request.localNotifBody', 'Pemilik kos {{property}} akan meninjau pengajuan Anda dalam beberapa jam kedepan.', { property: property?.name }),
+                { type: 'rental_request', status: 'pending' },
+                2
+              );
+
               Alert.alert(
-                'Pengajuan Dikirim! 🎉',
-                'Pengajuan sewa Anda berhasil dikirim. Pemilik kos akan membalas dalam 3 hari kerja.',
+                t('rental.request.sentTitle', 'Pengajuan Dikirim! 🎉'),
+                t('rental.request.sentMsg', 'Pengajuan sewa Anda berhasil dikirim. Pemilik kos akan meninjau pengajuan dalam beberapa jam kedepan.'),
                 [
                   {
                     text: 'OK',
@@ -167,7 +172,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 ]
               );
             } catch (err) {
-              Alert.alert('Error', 'Terjadi kesalahan, coba lagi.');
+              Alert.alert(t('rental.request.errorTitle', 'Error'), t('rental.request.errorMsg', 'Terjadi kesalahan, coba lagi.'));
             } finally {
               setIsLoading(false);
             }
@@ -182,21 +187,22 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+            
+          </View>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('rental.request.title')}</Text>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('rental.request.title')}</Text>
-        </View>
 
         {/* Room Summary */}
         <View style={styles.roomSummary}>
@@ -207,7 +213,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
             <Text style={styles.roomSummaryName}>{property?.name}</Text>
             <Text style={styles.roomSummaryRoom}>Kamar {room?.room_number}</Text>
             <Text style={styles.roomSummaryPrice}>
-              {formatCurrency(room?.base_price)}/bulan
+              {formatCurrency(room?.base_price)}{t('myRent.perMonth', '/bln')}
             </Text>
           </View>
         </View>
@@ -235,7 +241,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                     durationMonths === months && styles.durationLabelSelected,
                   ]}
                 >
-                  {months} {months === 1 ? 'Bulan' : 'Bulan'}
+                  {months} {months === 1 ? t('roomDetail.perMonth', 'bulan').replace('per ', '') : t('roomDetail.perMonth', 'bulan').replace('per ', '')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -243,7 +249,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
           {/* Custom duration */}
           <View style={styles.customDuration}>
-            <Text style={styles.customDurationLabel}>Atau masukkan manual:</Text>
+            <Text style={styles.customDurationLabel}>{t('rental.request.manualInput', 'Atau masukkan manual:')}</Text>
             <TextInput
               style={styles.customDurationInput}
               value={String(durationMonths)}
@@ -252,7 +258,7 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
                 if (!isNaN(n) && n > 0 && n <= 24) setDurationMonths(n);
               }}
               keyboardType="numeric"
-              placeholder="Jumlah bulan"
+              placeholder={t('rental.request.monthsPlaceholder', 'Jumlah bulan')}
               placeholderTextColor={COLORS.textTertiary}
             />
           </View>
@@ -262,46 +268,69 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
             <Ionicons name="calendar-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Periode Sewa</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.rentalPeriod', 'Periode Sewa')}</Text>
           </View>
           <View style={styles.dateRow}>
-            <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>Mulai</Text>
-              <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
-            </View>
+            <TouchableOpacity 
+              style={[styles.dateItem, { backgroundColor: COLORS.surface, borderColor: COLORS.primary, borderWidth: 1 }]} 
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dateLabel}>{t('rental.request.startDateLabel', 'Mulai')} <Ionicons name="pencil" size={12} color={COLORS.primary} /></Text>
+              <Text style={[styles.dateValue, { color: COLORS.primary }]}>{formatDate(startDate, i18n)}</Text>
+            </TouchableOpacity>
             <Text style={styles.dateSep}>→</Text>
             <View style={styles.dateItem}>
-              <Text style={styles.dateLabel}>Selesai</Text>
-              <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+              <Text style={styles.dateLabel}>{t('rental.request.endDateLabel', 'Selesai')}</Text>
+              <Text style={styles.dateValue}>{formatDate(endDate, i18n)}</Text>
             </View>
           </View>
+          
+          {showDatePicker && (
+            <DateTimePicker
+              value={startDate}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              maximumDate={maxStartDate}
+              onChange={handleDateChange}
+            />
+          )}
         </View>
 
-        {/* KTP Upload */}
+
+
+        {/* Jaminan Identitas */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[3] }}>
-            <Ionicons name="id-card-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rental.request.ktpPhotoLabel')}</Text>
+            <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.success} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('rentalRequest.identityGuarantee', 'Jaminan Identitas')}</Text>
           </View>
-          <Text style={styles.sectionSubtitle}>{t('rental.request.ktpPhotoHint')}</Text>
-
-          <TouchableOpacity style={styles.ktpUpload} onPress={handlePickKtp} activeOpacity={0.7}>
-            {ktpUri ? (
-              <Image source={{ uri: ktpUri }} style={styles.ktpPreview} />
-            ) : (
-              <View style={styles.ktpPlaceholder}>
-                <Ionicons name="camera-outline" size={40} color={COLORS.textTertiary} />
-                <Text style={styles.ktpPlaceholderText}>Ketuk untuk ambil / pilih foto KTP</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          {ktpUri && (
-            <TouchableOpacity onPress={() => setKtpUri(null)} style={styles.removeKtp}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="close" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
-                <Text style={styles.removeKtpText}>Hapus Foto</Text>
-              </View>
-            </TouchableOpacity>
+          
+          {isNiksLocked ? (
+            <View style={{ backgroundColor: COLORS.successLight, padding: SPACING[3], borderRadius: BORDER_RADIUS.md }}>
+               <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
+                 {t('rentalRequest.nikLockedMsg', 'NIK Anda otomatis disertakan sebagai jaminan pengajuan sewa ini:')}
+               </Text>
+               <Text style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
+                 {tenantNIK}
+               </Text>
+            </View>
+          ) : (
+            <View>
+              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary, marginBottom: 8 }}>
+                {t('rentalRequest.nikInputMsg', 'Silakan masukkan NIK Anda sebagai jaminan identitas pengajuan sewa:')}
+              </Text>
+              <TextInput
+                style={[styles.messageInput, { minHeight: 48, textAlignVertical: 'center' }]}
+                placeholder={t('rentalRequest.nikPlaceholder', 'Contoh: 3201234567890123')}
+                keyboardType="numeric"
+                maxLength={16}
+                value={tenantNIK}
+                onChangeText={setTenantNIK}
+                placeholderTextColor={COLORS.textTertiary}
+              />
+            </View>
           )}
         </View>
 
@@ -325,14 +354,14 @@ const RentalRequestFormScreen = ({ navigation, route }) => {
 
         {/* Summary */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Ringkasan Pengajuan</Text>
+          <Text style={styles.summaryTitle}>{t('rental.request.summaryTitle', 'Ringkasan Pengajuan')}</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Harga/bulan</Text>
+            <Text style={styles.summaryLabel}>{t('roomDetail.priceLabel', 'Harga/bulan')}</Text>
             <Text style={styles.summaryValue}>{formatCurrency(room?.base_price)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Durasi</Text>
-            <Text style={styles.summaryValue}>{durationMonths} bulan</Text>
+            <Text style={styles.summaryLabel}>{t('rental.request.durationLabel', 'Durasi')}</Text>
+            <Text style={styles.summaryValue}>{t('rental.request.durationMonths', '{{count}} Bulan', { count: durationMonths })}</Text>
           </View>
           <View style={[styles.summaryRow, styles.summaryRowTotal]}>
             <Text style={styles.summaryTotalLabel}>{t('rental.request.totalCost')}</Text>
@@ -366,11 +395,12 @@ const styles = StyleSheet.create({
   container: { paddingBottom: 100 },
   header: {
     backgroundColor: COLORS.primary,
-    
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3] },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],

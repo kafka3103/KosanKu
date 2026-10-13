@@ -19,8 +19,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu } from 'react-native-paper';
 
 import COLORS from '../../constants/colors';
 import { FONT_SIZE, FONT_WEIGHT } from '../../constants/typography';
@@ -28,10 +29,10 @@ import { SPACING, BORDER_RADIUS, SHADOW } from '../../constants/spacing';
 import useAuthStore from '../../store/authStore';
 import { getOwnerActiveTenants } from '../../services/propertyService';
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, i18n) => {
   if (!dateStr) return '—';
   try {
-    return format(new Date(dateStr), 'd MMM yyyy', { locale: idLocale });
+    return format(new Date(dateStr), 'd MMM yyyy', { locale: i18n?.language === 'id' ? idLocale : enLocale });
   } catch {
     return dateStr;
   }
@@ -45,7 +46,7 @@ const getDaysUntilEnd = (endDate) => {
   return diff;
 };
 
-const TenantCard = ({ contract, onCall, onWhatsApp }) => {
+const TenantCard = ({ contract, onCall, onWhatsApp, t, i18n }) => {
   const tenant = contract.users;
   const room = contract.rooms;
   const property = room?.properties;
@@ -60,14 +61,14 @@ const TenantCard = ({ contract, onCall, onWhatsApp }) => {
         <View style={styles.expiryWarning}>
           <Ionicons name="warning" size={16} color={COLORS.warning} style={{ marginRight: 4 }} />
           <Text style={styles.expiryWarningText}>
-            Kontrak berakhir {daysLeft === 0 ? 'hari ini' : `dalam ${daysLeft} hari`}
+            {daysLeft === 0 ? t('ownerTenantList.expiresToday', 'Kontrak berakhir hari ini') : t('ownerTenantList.expiresInDays', 'Kontrak berakhir dalam {{days}} hari', { days: daysLeft })}
           </Text>
         </View>
       )}
       {isExpired && (
         <View style={[styles.expiryWarning, styles.expiryExpired]}>
           <Ionicons name="close-circle" size={16} color={COLORS.error} style={{ marginRight: 4 }} />
-          <Text style={[styles.expiryWarningText, { color: COLORS.error }]}>Kontrak sudah berakhir</Text>
+          <Text style={[styles.expiryWarningText, { color: COLORS.error }]}>{t('ownerTenantList.expired', 'Kontrak sudah berakhir')}</Text>
         </View>
       )}
 
@@ -82,7 +83,7 @@ const TenantCard = ({ contract, onCall, onWhatsApp }) => {
           <Text style={styles.tenantName}>{tenant?.full_name ?? 'Tenant'}</Text>
           <Text style={styles.tenantContact}>{tenant?.phone_number ?? tenant?.email ?? '—'}</Text>
         </View>
-        {tenant?.phone_number && (
+        {!!tenant?.phone_number && (
           <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
             <TouchableOpacity
               style={[styles.callBtn, { backgroundColor: '#25D366' + '20' }]}
@@ -107,33 +108,33 @@ const TenantCard = ({ contract, onCall, onWhatsApp }) => {
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="business-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Properti</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.property', 'Properti')}</Text>
           </View>
           <Text style={styles.detailValue}>{property?.name}</Text>
         </View>
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="bed-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Kamar</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.room', 'Kamar')}</Text>
           </View>
           <Text style={styles.detailValue}>{room?.room_number}</Text>
         </View>
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Mulai</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.start', 'Mulai')}</Text>
           </View>
-          <Text style={styles.detailValue}>{formatDate(contract.start_date)}</Text>
+          <Text style={styles.detailValue}>{formatDate(contract.start_date, i18n)}</Text>
         </View>
         <View style={styles.detailRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="calendar-outline" size={14} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
-            <Text style={styles.detailLabel}>Selesai</Text>
+            <Text style={styles.detailLabel}>{t('ownerTenantList.end', 'Selesai')}</Text>
           </View>
           <Text style={[styles.detailValue, isExpiringSoon && { color: COLORS.warning }]}>
-            {formatDate(contract.end_date)}
+            {formatDate(contract.end_date, i18n)}
             {daysLeft != null && daysLeft >= 0 && (
-              <Text style={styles.daysLeft}> ({daysLeft} hari lagi)</Text>
+              <Text style={styles.daysLeft}>{t('ownerTenantList.daysLeft', ' ({{days}} hari lagi)', { days: daysLeft })}</Text>
             )}
           </Text>
         </View>
@@ -143,17 +144,25 @@ const TenantCard = ({ contract, onCall, onWhatsApp }) => {
 };
 
 const TenantListScreen = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser } = useAuthStore();
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [sortBy, setSortBy] = useState('nameAsc');
   const insets = useSafeAreaInsets();
 
   const loadTenants = useCallback(async (silent = false) => {
     if (!currentUser?.id) return;
     if (!silent) setIsLoading(true);
     const { data, error } = await getOwnerActiveTenants(currentUser.id);
+    console.log('[DEBUG TenantListScreen] loadTenants for owner:', currentUser.id);
+    console.log('[DEBUG TenantListScreen] Contracts data:', data ? data.length : null, 'Error:', error);
+    if (data) {
+      console.log('[DEBUG TenantListScreen] Contracts detail:', JSON.stringify(data, null, 2));
+    }
+    
     if (!error && data) setContracts(data);
     setIsLoading(false);
     setIsRefreshing(false);
@@ -168,7 +177,7 @@ const TenantListScreen = ({ navigation }) => {
   const handleCall = (phoneNumber) => {
     const cleaned = phoneNumber.replace(/\s+/g, '');
     Linking.openURL(`tel:${cleaned}`).catch(() => {
-      Alert.alert('Gagal', 'Tidak bisa membuka aplikasi telepon');
+      Alert.alert(t('ownerTenantList.failed', 'Gagal'), t('ownerTenantList.callFailed', 'Tidak bisa membuka aplikasi telepon'));
     });
   };
 
@@ -183,6 +192,18 @@ const TenantListScreen = ({ navigation }) => {
     });
   };
 
+  const sortedContracts = [...contracts].sort((a, b) => {
+    if (sortBy === 'nameAsc' || sortBy === 'nameDesc') {
+      const nameA = a.users?.full_name || '';
+      const nameB = b.users?.full_name || '';
+      return sortBy === 'nameAsc' ? nameA.localeCompare(nameB, undefined, { numeric: true }) : nameB.localeCompare(nameA, undefined, { numeric: true });
+    } else {
+      const dateA = new Date(a.end_date || 0).getTime();
+      const dateB = new Date(b.end_date || 0).getTime();
+      return sortBy === 'contractAsc' ? dateA - dateB : dateB - dateA;
+    }
+  });
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -194,19 +215,59 @@ const TenantListScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-          
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Daftar Penghuni</Text>
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('ownerTenantList.title', 'Daftar Penghuni')}</Text>
+        </View>
         <Text style={styles.headerSubtitle}>
-          {contracts.length} penghuni aktif
+          {t('ownerTenantList.activeTenants', '{{count}} penghuni aktif', { count: contracts.length })}
         </Text>
       </View>
 
+      {/* Sorting Menu */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: SPACING[5], paddingVertical: SPACING[3], backgroundColor: COLORS.background, zIndex: 10 }}>
+        <Menu
+          visible={sortVisible}
+          onDismiss={() => setSortVisible(false)}
+          anchor={
+            <TouchableOpacity 
+              onPress={() => setSortVisible(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: COLORS.primarySurface,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: COLORS.primaryLight + '50',
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="swap-vertical" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>
+                {sortBy === 'nameAsc' ? t('common.sort.asc', 'A-Z') :
+                 sortBy === 'nameDesc' ? t('common.sort.desc', 'Z-A') :
+                 sortBy === 'contractAsc' ? t('common.sort.contractAscShort', 'Terdekat') :
+                 sortBy === 'contractDesc' ? t('common.sort.contractDescShort', 'Terjauh') : 
+                 t('common.sort.title', 'Urutkan')}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={COLORS.primary} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+          }
+        >
+          <Menu.Item onPress={() => { setSortBy('nameAsc'); setSortVisible(false); }} title={t('common.sort.asc', 'A-Z')} />
+          <Menu.Item onPress={() => { setSortBy('nameDesc'); setSortVisible(false); }} title={t('common.sort.desc', 'Z-A')} />
+          <Menu.Item onPress={() => { setSortBy('contractAsc'); setSortVisible(false); }} title={t('common.sort.contractAsc', 'Akhir Kontrak Terdekat')} />
+          <Menu.Item onPress={() => { setSortBy('contractDesc'); setSortVisible(false); }} title={t('common.sort.contractDesc', 'Akhir Kontrak Terjauh')} />
+        </Menu>
+      </View>
+
       <FlatList
-        data={contracts}
+        data={sortedContracts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 180 }]}
         showsVerticalScrollIndicator={false}
@@ -221,9 +282,9 @@ const TenantListScreen = ({ navigation }) => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="people-outline" size={64} color={COLORS.textTertiary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>Belum Ada Penghuni</Text>
+            <Text style={styles.emptyTitle}>{t('ownerTenantList.emptyTitle', 'Belum Ada Penghuni')}</Text>
             <Text style={styles.emptySubtitle}>
-              Penghuni aktif akan muncul setelah Anda menyetujui pengajuan sewa.
+              {t('ownerTenantList.emptySubtitle', 'Penghuni aktif akan muncul setelah Anda menyetujui pengajuan sewa.')}
             </Text>
           </View>
         )}
@@ -232,6 +293,8 @@ const TenantListScreen = ({ navigation }) => {
             contract={item} 
             onCall={handleCall}
             onWhatsApp={handleWhatsApp}
+            t={t}
+            i18n={i18n}
           />
         )}
       />
@@ -253,14 +316,14 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
-  backBtn: { marginBottom: SPACING[3], flexDirection: 'row', alignItems: 'center' },
+  backBtn: { marginRight: SPACING[3] },
   backBtnText: { color: COLORS.primaryLight, fontSize: FONT_SIZE.base },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.white,
   },
-  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2 },
+  headerSubtitle: { fontSize: FONT_SIZE.sm, color: COLORS.primaryLight, marginTop: 2, marginLeft: 32 },
   listContent: { padding: SPACING[4], gap: SPACING[3], paddingBottom: SPACING[10] },
   card: {
     backgroundColor: COLORS.white,

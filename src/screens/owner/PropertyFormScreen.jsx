@@ -38,23 +38,14 @@ import {
   updateProperty,
   uploadPropertyPhoto,
   uploadMultiplePropertyPhotos,
+  getFacilityMaster,
 } from '../../services/propertyService';
+import { getLocalizedField } from '../../utils/useLocalizedField';
 
-const GENERAL_FACILITIES = [
-  { key: 'parking', label: 'Parkir', icon: 'car-outline' },
-  { key: 'cctv', label: 'CCTV', icon: 'videocam-outline' },
-  { key: 'security_24h', label: 'Security 24 Jam', icon: 'shield-checkmark-outline' },
-  { key: 'wifi_area', label: 'WiFi Area', icon: 'wifi-outline' },
-  { key: 'laundry', label: 'Laundry', icon: 'shirt-outline' },
-  { key: 'canteen', label: 'Kantin', icon: 'restaurant-outline' },
-  { key: 'garden', label: 'Taman', icon: 'leaf-outline' },
-  { key: 'gym', label: 'Gym', icon: 'barbell-outline' },
-];
-
-const GENDER_OPTIONS = [
-  { value: 'male', label: 'Putra', icon: 'man-outline' },
-  { value: 'female', label: 'Putri', icon: 'woman-outline' },
-  { value: 'mixed', label: 'Campur', icon: 'people-outline' },
+const GENDER_OPTIONS = (t) => [
+  { value: 'male', label: t('property.form.genderMale', 'Putra'), icon: 'man-outline' },
+  { value: 'female', label: t('property.form.genderFemale', 'Putri'), icon: 'woman-outline' },
+  { value: 'mixed', label: t('property.form.genderMixed', 'Campur'), icon: 'people-outline' },
 ];
 
 const PropertyFormScreen = ({ navigation, route }) => {
@@ -67,12 +58,14 @@ const PropertyFormScreen = ({ navigation, route }) => {
   // Form state
   const [name, setName] = useState(existingProperty?.name ?? '');
   const [description, setDescription] = useState(existingProperty?.description ?? '');
+  const [descriptionEn, setDescriptionEn] = useState(existingProperty?.description_en ?? '');
   const [addressLine, setAddressLine] = useState(existingProperty?.address_line ?? '');
   const [city, setCity] = useState(existingProperty?.city ?? '');
   const [district, setDistrict] = useState(existingProperty?.district ?? '');
   const [postalCode, setPostalCode] = useState(existingProperty?.postal_code ?? '');
   const [genderPolicy, setGenderPolicy] = useState(existingProperty?.gender_policy ?? 'mixed');
   const [rules, setRules] = useState(existingProperty?.rules ?? '');
+  const [rulesEn, setRulesEn] = useState(existingProperty?.rules_en ?? '');
   const [billingGenerateDay, setBillingGenerateDay] = useState(
     String(existingProperty?.billing_generate_day ?? '1')
   );
@@ -86,12 +79,25 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const [additionalPhotos, setAdditionalPhotos] = useState(existingProperty?.photo_urls ?? []);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [allFacilities, setAllFacilities] = useState([]);
+  const [isLoadingFacilities, setIsLoadingFacilities] = useState(true);
+
+  useEffect(() => {
+    const loadFacilities = async () => {
+      const { data, error } = await getFacilityMaster();
+      if (!error && data) {
+        setAllFacilities(data.filter(f => f.category === 'general'));
+      }
+      setIsLoadingFacilities(false);
+    };
+    loadFacilities();
+  }, []);
+
   // GPS Koordinat Lokasi
   const [latitude, setLatitude] = useState(existingProperty?.latitude != null ? parseFloat(existingProperty.latitude) : null);
   const [longitude, setLongitude] = useState(existingProperty?.longitude != null ? parseFloat(existingProperty.longitude) : null);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [tempLatitude, setTempLatitude] = useState(-6.2641);
-  const [tempLongitude, setTempLongitude] = useState(106.7944);
+  const [tempLatitude, setTempLatitude] = useState(existingProperty?.latitude ? parseFloat(existingProperty.latitude) : -6.2641);
+  const [tempLongitude, setTempLongitude] = useState(existingProperty?.longitude ? parseFloat(existingProperty.longitude) : 106.7944);
   const [locationLoading, setLocationLoading] = useState(false);
   const mapCameraRef = useRef(null);
   const [mapSearchQuery, setMapSearchQuery] = useState('');
@@ -123,10 +129,10 @@ const PropertyFormScreen = ({ navigation, route }) => {
           setMapSearchResults(data.features);
         }
       } else {
-        Alert.alert('Pencarian Peta', 'Lokasi tidak ditemukan. Coba masukkan nama jalan atau kota yang lebih spesifik.');
+        Alert.alert(t('property.form.mapSearchTitle', 'Pencarian Peta'), t('property.form.mapSearchErrorNotFound', 'Lokasi tidak ditemukan. Coba masukkan nama jalan atau kota yang lebih spesifik.'));
       }
     } catch (err) {
-      Alert.alert('Error', 'Gagal mencari lokasi di peta. Periksa koneksi internet Anda.');
+      Alert.alert('Error', t('property.form.mapSearchErrorNetwork', 'Gagal mencari lokasi di peta. Periksa koneksi internet Anda.'));
     } finally {
       setMapSearchLoading(false);
     }
@@ -137,7 +143,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
       setLocationLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Izin Ditolak', 'Akses lokasi diperlukan untuk mendeteksi koordinat GPS otomatis kosan Anda.');
+        Alert.alert(t('property.form.permRequired', 'Izin Ditolak'), t('property.form.permLocationDenied', 'Akses lokasi diperlukan untuk mendeteksi koordinat GPS otomatis kosan Anda.'));
         setLocationLoading(false);
         return;
       }
@@ -154,17 +160,14 @@ const PropertyFormScreen = ({ navigation, route }) => {
           zoomLevel: 15,
           animationDuration: 800,
         });
-        Alert.alert(
-          '📍 Lokasi GPS Terdeteksi!',
-          `Koordinat berhasil disimpan dari posisi Anda:\nLat: ${current.coords.latitude.toFixed(5)}\nLong: ${current.coords.longitude.toFixed(5)}`
-        );
+        // Remove alert as per user request
       } else {
-        Alert.alert('Gagal', 'Tidak dapat mengambil lokasi GPS saat ini.');
+        Alert.alert(t('property.form.gpsErrorTitle', 'Gagal'), t('property.form.gpsErrorMsg', 'Tidak dapat mengambil lokasi GPS saat ini.'));
       }
       setLocationLoading(false);
     } catch (err) {
       console.warn('GPS Error:', err);
-      Alert.alert('Error', 'Gagal mendeteksi lokasi GPS. Pastikan GPS di perangkat aktif.');
+      Alert.alert('Error', t('property.form.gpsDetectFailMsg', 'Gagal mendeteksi lokasi GPS. Pastikan GPS di perangkat aktif.'));
       setLocationLoading(false);
     }
   };
@@ -178,49 +181,61 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const pickCoverFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan untuk mengambil foto.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permCamDenied', 'Akses kamera diperlukan untuk mengambil foto.'));
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setCoverPhotoUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setCoverPhotoUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickCoverFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri foto diperlukan.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permGalleryDenied', 'Akses galeri foto diperlukan.'));
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.8,
+        });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setCoverPhotoUri(result.assets[0].uri);
-    }
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setCoverPhotoUri(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickCoverPhoto = () => {
     Alert.alert(
-      'Foto Cover Properti',
-      'Pilih sumber foto cover properti',
+      t('property.form.coverPhotoTitle', 'Foto Cover Properti'),
+      t('property.form.coverPhotoMsg', 'Pilih sumber foto cover properti'),
       [
-        { text: 'Kamera', onPress: pickCoverFromCamera },
-        { text: 'Galeri', onPress: pickCoverFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('property.form.cameraBtn', 'Kamera'), onPress: pickCoverFromCamera },
+        { text: t('property.form.galleryBtn', 'Galeri'), onPress: pickCoverFromGallery },
+        { text: t('property.form.cancelBtn', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -229,47 +244,61 @@ const PropertyFormScreen = ({ navigation, route }) => {
   const pickAdditionalFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses kamera diperlukan.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permCamDenied', 'Akses kamera diperlukan.'));
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setAdditionalPhotos(prev => [...prev, result.assets[0].uri]);
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          setAdditionalPhotos(prev => [...prev, result.assets[0].uri]);
+        }
+      } catch (e) {
+        console.warn('ImagePicker Camera Error:', e);
+      }
+    }, 500);
   };
 
   const pickAdditionalFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Izin Diperlukan', 'Akses galeri diperlukan.');
+      Alert.alert(t('property.form.permRequired', 'Izin Diperlukan'), t('property.form.permGalleryDenied', 'Akses galeri diperlukan.'));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets?.length > 0) {
-      const uris = result.assets.map(a => a.uri);
-      setAdditionalPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
-    }
+    
+    setTimeout(async () => {
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsMultipleSelection: true,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.length > 0) {
+          const uris = result.assets.map(a => a.uri);
+          setAdditionalPhotos(prev => [...prev, ...uris].slice(0, 5)); // Limit 5
+        }
+      } catch (e) {
+        console.warn('ImagePicker Gallery Error:', e);
+      }
+    }, 500);
   };
 
   const handlePickAdditionalPhotos = () => {
     if (additionalPhotos.length >= 5) {
-      Alert.alert('Batas Tercapai', 'Maksimal 5 foto tambahan.');
+      Alert.alert(t('property.form.limitReachedTitle', 'Batas Tercapai'), t('property.form.limitReachedMsg', 'Maksimal 5 foto tambahan.'));
       return;
     }
     Alert.alert(
-      'Foto Tambahan',
-      'Pilih sumber foto tambahan',
+      t('property.form.additionalPhotoTitle', 'Foto Tambahan'),
+      t('property.form.additionalPhotoMsg', 'Pilih sumber foto tambahan'),
       [
-        { text: 'Kamera', onPress: pickAdditionalFromCamera },
-        { text: 'Galeri', onPress: pickAdditionalFromGallery },
-        { text: 'Batal', style: 'cancel' },
+        { text: t('property.form.cameraBtn', 'Kamera'), onPress: pickAdditionalFromCamera },
+        { text: t('property.form.galleryBtn', 'Galeri'), onPress: pickAdditionalFromGallery },
+        { text: t('property.form.cancelBtn', 'Batal'), style: 'cancel' },
       ],
       { cancelable: true }
     );
@@ -281,15 +310,15 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Nama properti wajib diisi');
+      Alert.alert('Error', t('property.form.reqNameError', 'Nama properti wajib diisi'));
       return;
     }
     if (!addressLine.trim()) {
-      Alert.alert('Error', 'Alamat wajib diisi');
+      Alert.alert('Error', t('property.form.reqAddressError', 'Alamat wajib diisi'));
       return;
     }
     if (!city.trim()) {
-      Alert.alert('Error', 'Kota wajib diisi');
+      Alert.alert('Error', t('property.form.reqCityError', 'Kota wajib diisi'));
       return;
     }
 
@@ -326,12 +355,14 @@ const PropertyFormScreen = ({ navigation, route }) => {
       const propertyData = {
         name: name.trim(),
         description: description.trim() || null,
+        description_en: descriptionEn.trim() || null,
         address_line: addressLine.trim(),
         city: city.trim(),
         district: district.trim() || null,
         postal_code: postalCode.trim() || null,
         gender_policy: genderPolicy,
         rules: rules.trim() || null,
+        rules_en: rulesEn.trim() || null,
         billing_generate_day: parseInt(billingGenerateDay, 10) || 1,
         billing_due_days: parseInt(billingDueDays, 10) || 10,
         general_facilities: selectedFacilities,
@@ -349,17 +380,17 @@ const PropertyFormScreen = ({ navigation, route }) => {
       }
 
       if (result.error) {
-        Alert.alert('Gagal Menyimpan', result.error.message);
+        Alert.alert(t('property.form.failSaveTitle', 'Gagal Menyimpan'), result.error.message);
         return;
       }
 
       Alert.alert(
-        'Berhasil!',
-        isEdit ? 'Properti berhasil diperbarui' : 'Properti berhasil ditambahkan',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        t('property.form.successTitle', 'Berhasil!'),
+        isEdit ? t('property.form.successUpdateMsg', 'Properti berhasil diperbarui') : t('property.form.successAddMsg', 'Properti berhasil ditambahkan'),
+        [{ text: t('property.form.okBtn', 'OK'), onPress: () => navigation.goBack() }]
       );
     } catch (err) {
-      Alert.alert('Error', 'Terjadi kesalahan, coba lagi.');
+      Alert.alert('Error', t('property.form.failSaveMsg', 'Terjadi kesalahan, coba lagi.'));
     } finally {
       setIsLoading(false);
     }
@@ -370,23 +401,22 @@ const PropertyFormScreen = ({ navigation, route }) => {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 180 }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: Math.max((insets?.top || 0) + 16, 48) }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} style={{ marginRight: 0 }} />
-              
-            </View>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primaryLight} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {isEdit ? t('property.form.editTitle') : t('property.form.addTitle')}
           </Text>
         </View>
+      </View>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + SPACING[8] }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* Cover Photo */}
         <TouchableOpacity
@@ -403,41 +433,48 @@ const PropertyFormScreen = ({ navigation, route }) => {
             </View>
           )}
           <View style={styles.coverPhotoOverlay}>
-            <Text style={styles.coverPhotoOverlayText}>Ganti Foto Utama</Text>
+            <Text style={styles.coverPhotoOverlayText}>{t('property.form.changeCoverOverlay', 'Ganti Foto Utama')}</Text>
           </View>
         </TouchableOpacity>
 
         {/* Additional Photos */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[2] }}>
-            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>📸 Foto Tambahan ({additionalPhotos.length}/5)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="images-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.additionalPhotoHeader', 'Foto Tambahan ({{count}}/5)', { count: additionalPhotos.length })}</Text>
+            </View>
             {additionalPhotos.length < 5 && (
               <TouchableOpacity onPress={handlePickAdditionalPhotos}>
-                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>+ Tambah</Text>
+                <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.medium }}>{t('property.form.addAdditionalPhotoBtn', '+ Tambah')}</Text>
               </TouchableOpacity>
             )}
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], paddingHorizontal: SPACING[5] }}>
-            {additionalPhotos.map((photoUri, index) => (
-              <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
-                <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
-                <TouchableOpacity
-                  style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
-                  onPress={() => removeAdditionalPhoto(index)}
-                >
-                  <Ionicons name="close" size={16} color="white" />
-                </TouchableOpacity>
-              </View>
-            ))}
-            {additionalPhotos.length === 0 && (
-              <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.</Text>
-            )}
-          </ScrollView>
+          {additionalPhotos.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SPACING[5], paddingHorizontal: SPACING[5] }}>
+              {additionalPhotos.map((photoUri, index) => (
+                <View key={index.toString()} style={{ marginRight: SPACING[3], position: 'relative' }}>
+                  <Image source={{ uri: photoUri }} style={{ width: 100, height: 100, borderRadius: BORDER_RADIUS.md }} />
+                  <TouchableOpacity
+                    style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}
+                    onPress={() => removeAdditionalPhoto(index)}
+                  >
+                    <Ionicons name="close" size={16} color="white" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={{ color: COLORS.textTertiary, fontSize: FONT_SIZE.sm, marginVertical: SPACING[2] }}>{t('property.form.noAdditionalPhoto', 'Belum ada foto tambahan. Ketuk "+ Tambah" untuk menambahkan.')}</Text>
+          )}
         </View>
 
         {/* Informasi Dasar */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Informasi Dasar</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="document-text-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.basicInfoTitle', 'Informasi Dasar')}</Text>
+          </View>
 
           <Text style={styles.label}>{t('property.form.nameLabel')} *</Text>
           <TextInput
@@ -459,11 +496,25 @@ const PropertyFormScreen = ({ navigation, route }) => {
             textAlignVertical="top"
             placeholderTextColor={COLORS.textTertiary}
           />
+          <Text style={[styles.label, { marginTop: 12 }]}>{t('property.form.descriptionEnLabel', 'Deskripsi (Bahasa Inggris)')}</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder={t('property.form.descriptionEnPlaceholder', 'Ketik deskripsi dalam bahasa Inggris')}
+            value={descriptionEn}
+            onChangeText={setDescriptionEn}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            placeholderTextColor={COLORS.textTertiary}
+          />
         </View>
 
         {/* Lokasi */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Lokasi</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="location-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.locationTitle', 'Lokasi')}</Text>
+          </View>
 
           <Text style={styles.label}>{t('property.form.addressLabel')} *</Text>
           <TextInput
@@ -497,7 +548,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          <Text style={styles.label}>Kode Pos</Text>
+          <Text style={styles.label}>{t('property.form.postalCodeLabel', 'Kode Pos')}</Text>
           <TextInput
             style={styles.input}
             placeholder="40135"
@@ -510,78 +561,188 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Koordinat GPS / Peta */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📍 Titik Koordinat GPS Peta</Text>
-          <Text style={styles.sectionSubtitle}>Atur titik peta agar calon penghuni bisa menemukan kosan Anda melalui fitur pencarian GPS terdekat</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
+            <Ionicons name="location-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.gpsTitle', 'Titik Koordinat GPS Peta')}</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>{t('property.form.gpsSubtitle', 'Atur titik peta agar calon penghuni bisa menemukan kosan Anda melalui fitur pencarian GPS terdekat')}</Text>
 
-          {latitude != null && longitude != null ? (
-            <View style={{ backgroundColor: COLORS.primarySurface, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], borderWidth: 1, borderColor: COLORS.primary, marginBottom: SPACING[3] }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
-                <Ionicons name="navigate-circle" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>
-                  Titik GPS Tersimpan
-                </Text>
+          {/* Search Bar Mapbox (Cari Jalan / Lokasi) */}
+          <View style={{ marginBottom: SPACING[3] }}>
+            <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.grey100, borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING[3], borderWidth: 1, borderColor: COLORS.border }}>
+                <Ionicons name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 6 }} />
+                <TextInput
+                  style={{ flex: 1, paddingVertical: 10, fontSize: FONT_SIZE.sm, color: COLORS.textPrimary }}
+                  placeholder={t('property.form.mapSearchPlaceholder', 'Cari jalan, area, atau kota...')}
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={mapSearchQuery}
+                  onChangeText={setMapSearchQuery}
+                  returnKeyType="search"
+                  onSubmitEditing={handleSearchMapbox}
+                />
+                {mapSearchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => { setMapSearchQuery(''); setMapSearchResults([]); }}>
+                    <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
+                  </TouchableOpacity>
+                )}
               </View>
-              <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.semiBold }}>
-                Lat (ltd): {parseFloat(latitude).toFixed(5)}, Long (lnt): {parseFloat(longitude).toFixed(5)}
-              </Text>
-              <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 2 }}>
-                Titik lokasi ini akan tampil akurat di peta pencarian tenant.
+              <TouchableOpacity
+                style={{ backgroundColor: COLORS.primary, paddingHorizontal: SPACING[4], justifyContent: 'center', alignItems: 'center', borderRadius: BORDER_RADIUS.lg }}
+                onPress={handleSearchMapbox}
+                disabled={mapSearchLoading}
+              >
+                {mapSearchLoading ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>{t('property.form.mapSearchBtn', 'Cari')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Dropdown Hasil Pencarian Mapbox */}
+            {mapSearchResults.length > 0 && (
+              <View style={{ marginTop: 6, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, maxHeight: 150, overflow: 'hidden' }}>
+                <ScrollView nestedScrollEnabled={true}>
+                  {mapSearchResults.map((item, idx) => (
+                    <TouchableOpacity
+                      key={idx.toString()}
+                      style={{ padding: SPACING[3], borderBottomWidth: idx < mapSearchResults.length - 1 ? 1 : 0, borderBottomColor: COLORS.border, flexDirection: 'row', alignItems: 'center' }}
+                      onPress={() => {
+                        const newLat = parseFloat(item.center[1]);
+                        const newLon = parseFloat(item.center[0]);
+                        setTempLatitude(newLat);
+                        setTempLongitude(newLon);
+                        setMapSearchResults([]);
+                        mapCameraRef.current?.setCamera({
+                          centerCoordinate: [newLon, newLat],
+                          zoomLevel: 15,
+                          animationDuration: 800,
+                        });
+                      }}
+                    >
+                      <Ionicons name="location-outline" size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
+                      <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textPrimary, flex: 1 }} numberOfLines={2}>
+                        {item.place_name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={{ backgroundColor: COLORS.primarySurface, borderWidth: 1, borderColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: SPACING[3], borderRadius: BORDER_RADIUS.lg, marginBottom: SPACING[3] }}
+            onPress={async () => {
+              await handleAutoDetectGPS();
+            }}
+          >
+            {locationLoading ? (
+              <ActivityIndicator size="small" color={COLORS.primary} style={{ marginRight: 8 }} />
+            ) : (
+              <Ionicons name="locate" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+            )}
+            <Text style={{ color: COLORS.primary, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>
+              {t('property.form.mapUseCurrentPosBtn', 'Gunakan Posisi Saya Saat ini')}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Mapbox Inline Map */}
+          <View style={{ height: 230, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, position: 'relative' }}>
+            <MapboxGL.MapView
+              style={{ flex: 1 }}
+              logoEnabled={false}
+              attributionEnabled={false}
+              styleURL={MapboxGL.StyleURL.Street}
+              onPress={(feature) => {
+                const coords = feature.geometry.coordinates;
+                setTempLatitude(coords[1]);
+                setTempLongitude(coords[0]);
+              }}
+            >
+              <MapboxGL.Camera
+                ref={mapCameraRef}
+                defaultSettings={{
+                  centerCoordinate: [tempLongitude, tempLatitude],
+                  zoomLevel: 15,
+                }}
+              />
+              <MapboxGL.MarkerView
+                id="location-picker-marker"
+                coordinate={[tempLongitude, tempLatitude]}
+              >
+                <View style={{ backgroundColor: COLORS.accent, padding: 8, borderRadius: 24, borderWidth: 3, borderColor: COLORS.white }}>
+                  <Ionicons name="location" size={22} color={COLORS.white} />
+                </View>
+              </MapboxGL.MarkerView>
+            </MapboxGL.MapView>
+            <View style={{ position: 'absolute', bottom: 10, left: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', padding: 8, borderRadius: 8 }}>
+              <Text style={{ color: COLORS.white, fontSize: 11, textAlign: 'center' }}>
+                {t('property.form.mapHint', '💡 Ketuk di atas peta untuk memindahkan pin ke lokasi kosan Anda')}
               </Text>
             </View>
-          ) : (
-            <View style={{ backgroundColor: `${COLORS.warning}15`, borderRadius: BORDER_RADIUS.xl, padding: SPACING[4], borderWidth: 1, borderColor: COLORS.warning, marginBottom: SPACING[3] }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
-                <Ionicons name="alert-circle" size={22} color={COLORS.warning} style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.warning }}>
-                  Titik Peta Belum Diatur
-                </Text>
-              </View>
-              <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary }}>
-                Kosan tanpa titik GPS tidak akan muncul di peta & pencarian urutan terdekat tenant.
-              </Text>
+          </View>
+
+          {/* Coordinate Info Text */}
+          <View style={{ marginTop: SPACING[2], alignItems: 'center' }}>
+            <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textTertiary }}>
+              Latitude: {tempLatitude.toFixed(6)}, Longitude: {tempLongitude.toFixed(6)}
+            </Text>
+          </View>
+
+          {/* Batal dan Simpan Inline */}
+          {((latitude !== tempLatitude) || (longitude !== tempLongitude)) && (
+            <View style={{ marginTop: SPACING[3], flexDirection: 'row', gap: SPACING[3] }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: SPACING[3], backgroundColor: COLORS.grey200, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
+                onPress={() => {
+                  setTempLatitude(latitude ?? -6.2641);
+                  setTempLongitude(longitude ?? 106.7944);
+                  mapCameraRef.current?.setCamera({
+                    centerCoordinate: [longitude ?? 106.7944, latitude ?? -6.2641],
+                    zoomLevel: 15,
+                    animationDuration: 500,
+                  });
+                }}
+              >
+                <Text style={{ color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.bold }}>{t('property.form.cancelBtn', 'Batal')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 2, paddingVertical: SPACING[3], backgroundColor: COLORS.accent, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
+                onPress={() => {
+                  setLatitude(tempLatitude);
+                  setLongitude(tempLongitude);
+                }}
+              >
+                <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold }}>{t('property.form.mapSavePointBtn', '✅ Simpan Titik Ini')}</Text>
+              </TouchableOpacity>
             </View>
           )}
 
-          <View style={{ flexDirection: 'row', gap: SPACING[3] }}>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING[3], borderRadius: BORDER_RADIUS.md }}
-              onPress={() => {
-                setTempLatitude(latitude ?? -6.2641);
-                setTempLongitude(longitude ?? 106.7944);
-                setShowLocationModal(true);
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="map-outline" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
-              <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.white }}>
-                {latitude != null ? 'Ubah Titik Peta' : 'Pilih Titik di Peta'}
-              </Text>
-            </TouchableOpacity>
+          {/* Saved Status Inline */}
+          {latitude === tempLatitude && longitude === tempLongitude && latitude != null && (
+            <View style={{ marginTop: SPACING[3], backgroundColor: COLORS.primarySurface, borderRadius: BORDER_RADIUS.md, padding: SPACING[3], borderWidth: 1, borderColor: COLORS.primary }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.primary, textAlign: 'center', fontWeight: FONT_WEIGHT.semiBold }}>
+                  {t('property.form.gpsSavedLabel', 'Titik GPS Tersimpan')}
+                </Text>
+              </View>
+            </View>
+          )}
 
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: COLORS.primarySurface, borderWidth: 1, borderColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING[3], borderRadius: BORDER_RADIUS.md }}
-              onPress={handleAutoDetectGPS}
-              disabled={locationLoading}
-              activeOpacity={0.8}
-            >
-              {locationLoading ? (
-                <ActivityIndicator size="small" color={COLORS.primary} style={{ marginRight: 6 }} />
-              ) : (
-                <Ionicons name="locate" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
-              )}
-              <Text style={{ fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold, color: COLORS.primary }}>
-                {locationLoading ? 'Mendeteksi...' : 'Deteksi GPS Saya'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Gender Policy */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👤 Kebijakan Penghuni</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="people-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.genderTitle', 'Kebijakan Penghuni')}</Text>
+          </View>
           <Text style={styles.label}>{t('property.form.genderPolicyLabel')}</Text>
           <View style={styles.genderRow}>
-            {GENDER_OPTIONS.map((opt) => (
+            {GENDER_OPTIONS(t).map((opt) => (
               <TouchableOpacity
                 key={opt.value}
                 style={[
@@ -607,36 +768,46 @@ const PropertyFormScreen = ({ navigation, route }) => {
 
         {/* Fasilitas Umum */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🏢 Fasilitas Umum</Text>
-          <Text style={styles.sectionSubtitle}>Fasilitas area bersama (bukan per kamar)</Text>
-          <View style={styles.facilitiesGrid}>
-            {GENERAL_FACILITIES.map((fac) => {
-              const isSelected = selectedFacilities.includes(fac.key);
-              return (
-                <TouchableOpacity
-                  key={fac.key}
-                  style={[styles.facilityChip, isSelected && styles.facilityChipSelected]}
-                  onPress={() => toggleFacility(fac.key)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name={fac.icon} size={20} color={isSelected ? COLORS.primary : COLORS.textTertiary} style={styles.facilityIcon} />
-                  <Text
-                    style={[
-                      styles.facilityLabel,
-                      isSelected && styles.facilityLabelSelected,
-                    ]}
-                  >
-                    {fac.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[4] }}>
+            <Ionicons name="business-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.genFacTitle', 'Fasilitas Umum')}</Text>
           </View>
+          <Text style={styles.sectionSubtitle}>{t('property.form.genFacSubtitle', 'Fasilitas area bersama (bukan per kamar)')}</Text>
+          
+          {isLoadingFacilities ? (
+            <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING[2] }} />
+          ) : (
+            <View style={styles.facilitiesGrid}>
+              {allFacilities.map((fac) => {
+                const isSelected = selectedFacilities.includes(fac.name);
+                return (
+                  <TouchableOpacity
+                    key={fac.id}
+                    style={[styles.facilityChip, isSelected && styles.facilityChipSelected]}
+                    onPress={() => toggleFacility(fac.name)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.facilityLabel,
+                        isSelected && styles.facilityLabelSelected,
+                      ]}
+                    >
+                      {getLocalizedField(fac, 'name')}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Peraturan */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📜 Peraturan Kosan</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="reader-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.rulesTitle', 'Peraturan Kosan')}</Text>
+          </View>
           <TextInput
             style={[styles.input, styles.textArea, { minHeight: 100 }]}
             placeholder={t('property.form.rulesPlaceholder')}
@@ -647,11 +818,25 @@ const PropertyFormScreen = ({ navigation, route }) => {
             textAlignVertical="top"
             placeholderTextColor={COLORS.textTertiary}
           />
+          <Text style={[styles.label, { marginTop: 12 }]}>{t('property.form.rulesEnLabel', 'Peraturan Kosan (Bahasa Inggris)')}</Text>
+          <TextInput
+            style={[styles.input, styles.textArea, { minHeight: 100 }]}
+            placeholder={t('property.form.rulesEnPlaceholder', 'Tuliskan peraturan kos dalam bahasa Inggris')}
+            value={rulesEn}
+            onChangeText={setRulesEn}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            placeholderTextColor={COLORS.textTertiary}
+          />
         </View>
 
         {/* Billing */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💳 Pengaturan Tagihan</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING[2] }}>
+            <Ionicons name="card-outline" size={20} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('property.form.billingTitle', 'Pengaturan Tagihan')}</Text>
+          </View>
 
           <View style={styles.row}>
             <View style={styles.rowItem}>
@@ -664,7 +849,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 keyboardType="numeric"
                 placeholderTextColor={COLORS.textTertiary}
               />
-              <Text style={styles.fieldHint}>Tanggal 1-28</Text>
+              <Text style={styles.fieldHint}>{t('property.form.billingDayHint', 'Tanggal 1-28')}</Text>
             </View>
             <View style={styles.rowItem}>
               <Text style={styles.label}>{t('property.form.billingDueDaysLabel')}</Text>
@@ -676,7 +861,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
                 keyboardType="numeric"
                 placeholderTextColor={COLORS.textTertiary}
               />
-              <Text style={styles.fieldHint}>Hari setelah generate</Text>
+              <Text style={styles.fieldHint}>{t('property.form.billingDueHint', 'Hari setelah generate')}</Text>
             </View>
           </View>
         </View>
@@ -698,208 +883,7 @@ const PropertyFormScreen = ({ navigation, route }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal Pemilih Titik GPS Peta */}
-      <Modal
-        visible={showLocationModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowLocationModal(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: COLORS.white, borderTopLeftRadius: BORDER_RADIUS['3xl'], borderTopRightRadius: BORDER_RADIUS['3xl'], padding: SPACING[5], paddingBottom: Math.max(insets.bottom, SPACING[5]), maxHeight: '88%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING[4] }}>
-              <View>
-                <Text style={{ fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold, color: COLORS.textPrimary }}>
-                  Pilih Titik Lokasi Peta
-                </Text>
-                <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, marginTop: 2 }}>
-                  Tentukan posisi koordinat kosan agar akurat di peta
-                </Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowLocationModal(false)}>
-                <Ionicons name="close-circle" size={26} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
 
-            {/* Mapbox Native Map Picker */}
-            <View style={{ marginBottom: SPACING[3] }}>
-            {/* Search Bar Mapbox (Cari Jalan / Lokasi) */}
-            <View style={{ marginBottom: SPACING[3] }}>
-              <View style={{ flexDirection: 'row', gap: SPACING[2] }}>
-                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.grey100, borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING[3], borderWidth: 1, borderColor: COLORS.border }}>
-                  <Ionicons name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 6 }} />
-                  <TextInput
-                    style={{ flex: 1, paddingVertical: 10, fontSize: FONT_SIZE.sm, color: COLORS.textPrimary }}
-                    placeholder="Cari jalan, area, atau kota..."
-                    placeholderTextColor={COLORS.textTertiary}
-                    value={mapSearchQuery}
-                    onChangeText={setMapSearchQuery}
-                    returnKeyType="search"
-                    onSubmitEditing={handleSearchMapbox}
-                  />
-                  {mapSearchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => { setMapSearchQuery(''); setMapSearchResults([]); }}>
-                      <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <TouchableOpacity
-                  style={{ backgroundColor: COLORS.primary, paddingHorizontal: SPACING[4], justifyContent: 'center', alignItems: 'center', borderRadius: BORDER_RADIUS.lg }}
-                  onPress={handleSearchMapbox}
-                    disabled={mapSearchLoading}
-                  >
-                    {mapSearchLoading ? (
-                      <ActivityIndicator size="small" color={COLORS.white} />
-                    ) : (
-                      <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>Cari</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-              {/* Dropdown Hasil Pencarian Mapbox */}
-              {mapSearchResults.length > 0 && (
-                <View style={{ marginTop: 6, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, maxHeight: 150, overflow: 'hidden' }}>
-                  <ScrollView nestedScrollEnabled={true}>
-                    {mapSearchResults.map((item, idx) => (
-                      <TouchableOpacity
-                        key={idx.toString()}
-                        style={{ padding: SPACING[3], borderBottomWidth: idx < mapSearchResults.length - 1 ? 1 : 0, borderBottomColor: COLORS.border, flexDirection: 'row', alignItems: 'center' }}
-                        onPress={() => {
-                          const newLat = parseFloat(item.center[1]);
-                          const newLon = parseFloat(item.center[0]);
-                          setTempLatitude(newLat);
-                          setTempLongitude(newLon);
-                          setMapSearchResults([]);
-                          mapCameraRef.current?.setCamera({
-                            centerCoordinate: [newLon, newLat],
-                            zoomLevel: 15,
-                            animationDuration: 800,
-                          });
-                        }}
-                      >
-                        <Ionicons name="location-outline" size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
-                        <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textPrimary, flex: 1 }} numberOfLines={2}>
-                          {item.place_name}
-                        </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={{ backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: SPACING[3], borderRadius: BORDER_RADIUS.lg, marginBottom: SPACING[3] }}
-                onPress={async () => {
-                  await handleAutoDetectGPS();
-                }}
-              >
-                <Ionicons name="locate" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
-                <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.sm }}>
-                  Gunakan Posisi Saya Saat ini
-                </Text>
-              </TouchableOpacity>
-
-              <View style={{ height: 300, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, position: 'relative' }}>
-                <MapboxGL.MapView
-                  style={{ flex: 1 }}
-                  logoEnabled={false}
-                  attributionEnabled={false}
-                  styleURL={MapboxGL.StyleURL.Street}
-                  onPress={(feature) => {
-                    const coords = feature.geometry.coordinates;
-                    setTempLatitude(coords[1]);
-                    setTempLongitude(coords[0]);
-                  }}
-                >
-                  <MapboxGL.Camera
-                    ref={mapCameraRef}
-                    defaultSettings={{
-                      centerCoordinate: [tempLongitude, tempLatitude],
-                      zoomLevel: 15,
-                    }}
-                  />
-                  <MapboxGL.MarkerView
-                    id="location-picker-marker"
-                    coordinate={[tempLongitude, tempLatitude]}
-                  >
-                    <View style={{ backgroundColor: COLORS.accent, padding: 8, borderRadius: 24, borderWidth: 3, borderColor: COLORS.white }}>
-                      <Ionicons name="location" size={22} color={COLORS.white} />
-                    </View>
-                  </MapboxGL.MarkerView>
-                </MapboxGL.MapView>
-                <View style={{ position: 'absolute', bottom: 10, left: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', padding: 8, borderRadius: 8 }}>
-                  <Text style={{ color: COLORS.white, fontSize: 11, textAlign: 'center' }}>
-                    💡 Ketuk di atas peta untuk memindahkan pin ke lokasi kosan Anda
-                  </Text>
-                </View>
-              </View>
-
-              {/* Tombol Nudge / Geser Manual Cepat jika butuh presisi mikro */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING[2], paddingHorizontal: SPACING[1] }}>
-                <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, fontWeight: FONT_WEIGHT.medium }}>
-                  Presisi Koordinat:
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  <TouchableOpacity onPress={() => {
-                    const newLat = parseFloat((tempLatitude + 0.0005).toFixed(5));
-                    setTempLatitude(newLat);
-                    mapCameraRef.current?.setCamera({ centerCoordinate: [tempLongitude, newLat], animationDuration: 300 });
-                  }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>▲ Utara</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {
-                    const newLat = parseFloat((tempLatitude - 0.0005).toFixed(5));
-                    setTempLatitude(newLat);
-                    mapCameraRef.current?.setCamera({ centerCoordinate: [tempLongitude, newLat], animationDuration: 300 });
-                  }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>▼ Selatan</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {
-                    const newLon = parseFloat((tempLongitude - 0.0005).toFixed(5));
-                    setTempLongitude(newLon);
-                    mapCameraRef.current?.setCamera({ centerCoordinate: [newLon, tempLatitude], animationDuration: 300 });
-                  }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>◀ Barat</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => {
-                    const newLon = parseFloat((tempLongitude + 0.0005).toFixed(5));
-                    setTempLongitude(newLon);
-                    mapCameraRef.current?.setCamera({ centerCoordinate: [newLon, tempLatitude], animationDuration: 300 });
-                  }} style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: COLORS.grey200, borderRadius: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 'bold' }}>Timur ▶</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            <View style={{ backgroundColor: COLORS.grey50, padding: SPACING[3], borderRadius: BORDER_RADIUS.md, marginBottom: SPACING[4] }}>
-              <Text style={{ fontSize: FONT_SIZE.xs, color: COLORS.textSecondary, textAlign: 'center' }}>
-                📌 Koordinat yang akan disimpan: <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>{parseFloat(tempLatitude).toFixed(5)}, {parseFloat(tempLongitude).toFixed(5)}</Text>
-              </Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: SPACING[3] }}>
-              <TouchableOpacity
-                style={{ flex: 1, paddingVertical: SPACING[3], backgroundColor: COLORS.grey200, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
-                onPress={() => setShowLocationModal(false)}
-              >
-                <Text style={{ color: COLORS.textPrimary, fontWeight: FONT_WEIGHT.bold }}>Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ flex: 2, paddingVertical: SPACING[3], backgroundColor: COLORS.accent, borderRadius: BORDER_RADIUS.md, alignItems: 'center' }}
-                onPress={() => {
-                  setLatitude(tempLatitude);
-                  setLongitude(tempLongitude);
-                  setShowLocationModal(false);
-                }}
-              >
-                <Text style={{ color: COLORS.white, fontWeight: FONT_WEIGHT.bold }}>✅ Simpan Titik Ini</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -910,16 +894,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   container: {
-    paddingBottom: 100,
   },
   header: {
     backgroundColor: COLORS.primary,
-    
     paddingBottom: SPACING[5],
     paddingHorizontal: SPACING[5],
   },
   backBtn: {
-    marginBottom: SPACING[3],
+    marginRight: SPACING[3],
   },
   backBtnText: {
     color: COLORS.primaryLight,
